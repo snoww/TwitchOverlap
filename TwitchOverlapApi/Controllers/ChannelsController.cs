@@ -7,7 +7,7 @@ using TwitchOverlapApi.Services;
 namespace TwitchOverlapApi.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class ChannelsController : ControllerBase
     {
         private readonly TwitchService _service;
