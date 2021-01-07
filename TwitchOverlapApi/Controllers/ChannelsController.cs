@@ -18,9 +18,9 @@ namespace TwitchOverlapApi.Controllers
         }
 
         [HttpGet("{name}")]
-        public async Task<ActionResult<Channel>> Get(string name)
+        public async Task<ActionResult<ChannelProjection>> Get(string name)
         {
-            Channel channel = await _service.Get(name);
+            ChannelProjection channel = await _service.Get(name);
             if (channel == null)
             {
                 return NotFound();

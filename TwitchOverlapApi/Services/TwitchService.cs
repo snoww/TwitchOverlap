@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -28,47 +29,63 @@ namespace TwitchOverlapApi.Services
             _channels = database.GetCollection<Channel>(settings.CollectionName);
         }
 
-        public async Task<Channel> Get(string name)
+        public async Task<ChannelProjection> Get(string name)
         {
             string cacheKey = name.ToLowerInvariant();
 
-            byte[] encodedChannel = await _cache.GetAsync(cacheKey);
-            string channelJson;
+            string channelJson = await _cache.GetStringAsync(cacheKey);
 
-            if (encodedChannel != null)
+            if (!string.IsNullOrEmpty(channelJson))
             {
-                channelJson = Encoding.UTF8.GetString(encodedChannel);
-                return JsonSerializer.Deserialize<Channel>(channelJson);
+                // channelJson = Encoding.UTF8.GetString(encodedChannel);
+                return JsonSerializer.Deserialize<ChannelProjection>(channelJson);
             }
-            
-            Channel channel = await _channels.Find(x => x.Id == cacheKey).FirstOrDefaultAsync();
 
+            Channel channel = await _channels.Find(x => x.Id == name).FirstOrDefaultAsync();
             if (channel == null)
             {
                 return null;
             }
-
-            channelJson = JsonSerializer.Serialize(channel);
-            encodedChannel = Encoding.UTF8.GetBytes(channelJson);
-            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromMinutes(10))
-                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(20));
             
-            await _cache.SetAsync(cacheKey, encodedChannel, options);
-            return channel;
+            List<ChannelGames> games = await _channels.Find(x => x.Game != null)
+                .Project(x => new ChannelGames {Id = x.Id, Game = x.Game})
+                .ToListAsync();
+
+            ChannelProjection channelProjection = await ProjectChannelsWithGames(channel, games);
+
+            channelJson = JsonSerializer.Serialize(channelProjection);
+
+            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(5))
+                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(10));
+            await _cache.SetStringAsync(cacheKey, channelJson, options);
+            
+            return channelProjection;
         }
 
-        // public Channel GetFromDate(string name, DateTime start)
-        // {
-        //     Channel channel = Get(name); 
-        //     return channel.FilterFromDate(start);
-        // }
-        //
-        // public Channel GetFromRange(string name, DateTime start, DateTime end)
-        // {
-        //     Channel channel = Get(name); 
-        //     return channel.FilterDateRange(start, end);
-        // }
+        private static async Task<ChannelProjection> ProjectChannelsWithGames(Channel channels, List<ChannelGames> channelGamesList)
+        {
+            var channelProjection = new ChannelProjection
+            {
+                Id = channels.Id,
+                Timestamp = channels.Timestamp,
+                Game = channels.Game,
+                Viewers = channels.Viewers,
+                Chatters = channels.Chatters
+            };
+
+            var data = new Dictionary<string, Data>(channels.Data.Count);
+
+            IEnumerable<Task> tasks = channels.Data.Select(async x =>
+            {
+                data.Add(x.Key, new Data{Shared = x.Value, Game = channelGamesList.First(y => y.Id == x.Key).Game});
+            });
+
+            await Task.WhenAll(tasks);
+            channelProjection.Data = data;
+            
+            return channelProjection;
+        }
     }
     
     public class LowerCaseElementNameConvention : IMemberMapConvention 
