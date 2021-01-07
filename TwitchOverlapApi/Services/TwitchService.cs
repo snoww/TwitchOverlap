@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
@@ -17,6 +15,8 @@ namespace TwitchOverlapApi.Services
     {
         private readonly IMongoCollection<Channel> _channels;
         private readonly IDistributedCache _cache;
+
+        private const string GameCacheKey = "channel:game";
         
         public TwitchService(ITwitchDatabaseSettings settings, IDistributedCache cache)
         {
@@ -41,26 +41,41 @@ namespace TwitchOverlapApi.Services
                 return JsonSerializer.Deserialize<ChannelProjection>(channelJson);
             }
 
-            Channel channel = await _channels.Find(x => x.Id == name).FirstOrDefaultAsync();
+            Channel channel = await _channels.Find(x => x.Id == cacheKey).FirstOrDefaultAsync();
             if (channel == null)
             {
                 return null;
+            }
+
+            List<ChannelGames> channelGames = await GetChannelGames();
+
+            ChannelProjection channelProjection = await ProjectChannelsWithGames(channel, channelGames);
+            
+            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
+                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(channelProjection), options);
+            
+            return channelProjection;
+        }
+
+        private async Task<List<ChannelGames>> GetChannelGames()
+        {
+            string channelGames = await _cache.GetStringAsync(GameCacheKey);
+            if (!string.IsNullOrEmpty(channelGames))
+            {
+                return JsonSerializer.Deserialize<List<ChannelGames>>(channelGames);
             }
             
             List<ChannelGames> games = await _channels.Find(x => x.Game != null)
                 .Project(x => new ChannelGames {Id = x.Id, Game = x.Game})
                 .ToListAsync();
 
-            ChannelProjection channelProjection = await ProjectChannelsWithGames(channel, games);
-
-            channelJson = JsonSerializer.Serialize(channelProjection);
-
             DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
-                .SetSlidingExpiration(TimeSpan.FromMinutes(5))
-                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(10));
-            await _cache.SetStringAsync(cacheKey, channelJson, options);
-            
-            return channelProjection;
+                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
+
+            await _cache.SetStringAsync(GameCacheKey, JsonSerializer.Serialize(games), options);
+
+            return games;
         }
 
         private static async Task<ChannelProjection> ProjectChannelsWithGames(Channel channels, List<ChannelGames> channelGamesList)
