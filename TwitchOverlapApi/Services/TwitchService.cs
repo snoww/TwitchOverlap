@@ -117,7 +117,7 @@ namespace TwitchOverlapApi.Services
 
             IEnumerable<Task> tasks = channels.Data.Select(async x =>
             {
-                data.TryAdd(x.Key, new Data{Shared = x.Value, Game = channelGamesList.First(y => y.Id == x.Key).Game});
+                data.TryAdd(x.Key, new Data{Shared = x.Value, Game = channelGamesList.FirstOrDefault(y => y.Id == x.Key)?.Game});
             });
 
             await Task.WhenAll(tasks);
