@@ -24,7 +24,7 @@ namespace ChannelIntersection
 
             var conventions = new ConventionPack {new LowerCaseElementNameConvention()};
             ConventionRegistry.Register("LowerCaseElementName", conventions, _ => true);
-            var client = new MongoClient("mongodb://***REMOVED***@localhost/?authSource=admin");
+            var client = new MongoClient("mongodb://localhost");
             IMongoDatabase db = client.GetDatabase("twitch");
             IMongoCollection<ChannelModel> channelCollection = db.GetCollection<ChannelModel>("channels");
             Console.WriteLine("connected to database");
@@ -109,8 +109,8 @@ namespace ChannelIntersection
             do
             {
                 using var request = new HttpRequestMessage();
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "***REMOVED***");
-                request.Headers.Add("Client-Id", "***REMOVED***");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "twitch token");
+                request.Headers.Add("Client-Id", "twitch clientid");
                 
                 if (string.IsNullOrWhiteSpace(pageToken))
                 {
@@ -140,8 +140,8 @@ namespace ChannelIntersection
                         if (!Regex.IsMatch(username!, "^[a-zA-Z0-9_]*$"))
                         {
                             using var userRequest = new HttpRequestMessage();
-                            userRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "***REMOVED***");
-                            userRequest.Headers.Add("Client-Id", "***REMOVED***");
+                            userRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "6arurlalcovn004wuqesfzu82ae65l");
+                            userRequest.Headers.Add("Client-Id", "gp762nuuoqcoxypju8c569th9wz7q5");
                             userRequest.RequestUri = new Uri($"https://api.twitch.tv/helix/users?id={channel.GetProperty("user_id").GetString()}");
                             using HttpResponseMessage userResponse = await Http.SendAsync(userRequest);
                             JsonDocument userJson = await JsonDocument.ParseAsync(await userResponse.Content.ReadAsStreamAsync());
