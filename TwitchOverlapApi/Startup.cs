@@ -68,12 +68,12 @@ namespace TwitchOverlapApi
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "TwitchOverlapApi v1"));
             }
-
-            app.UseCors();
-
+            
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            
+            app.UseCors();
 
             app.UseAuthorization();
 
