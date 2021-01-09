@@ -37,4 +37,10 @@ namespace TwitchOverlapApi.Models
         public int Shared { get; set; }
         public string Game { get; set; }
     }
+
+    public class ChannelSummary
+    {
+        public string Id { get; set; }
+        public int Chatters { get; set; }
+    }
 }

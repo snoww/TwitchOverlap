@@ -17,6 +17,7 @@ namespace TwitchOverlapApi.Services
         private readonly IDistributedCache _cache;
 
         private const string GameCacheKey = "channel:game";
+        private const string ChannelCacheKey = "channel:list";
         
         public TwitchService(ITwitchDatabaseSettings settings, IDistributedCache cache)
         {
@@ -27,6 +28,28 @@ namespace TwitchOverlapApi.Services
             IMongoDatabase database = client.GetDatabase(settings.DatabaseName);
 
             _channels = database.GetCollection<Channel>(settings.CollectionName);
+        }
+        
+        public async Task<List<ChannelSummary>> Get()
+        {
+            string channelListJson = await _cache.GetStringAsync(ChannelCacheKey);
+            if (!string.IsNullOrEmpty(channelListJson))
+            {
+                // channelJson = Encoding.UTF8.GetString(encodedChannel);
+                return JsonSerializer.Deserialize<List<ChannelSummary>>(channelListJson);
+            }
+            
+            DateTime latestHalfHour = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(30));
+            List<ChannelSummary> channelLists = await _channels.Find(x => x.Timestamp > latestHalfHour)
+                .SortByDescending(x => x.Chatters)
+                .Project(x => new ChannelSummary {Id = x.Id, Chatters = x.Chatters})
+                .ToListAsync();
+            
+            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
+                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
+            await _cache.SetStringAsync(ChannelCacheKey, JsonSerializer.Serialize(channelLists), options);
+
+            return channelLists;
         }
 
         public async Task<ChannelProjection> Get(string name)
