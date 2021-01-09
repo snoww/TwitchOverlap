@@ -20,6 +20,8 @@ namespace TwitchOverlapApi
 {
     public class Startup
     {
+        private readonly string _allowedCorsOrgins = "_allowedCorsOrigins";
+        
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -30,6 +32,14 @@ namespace TwitchOverlapApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy(_allowedCorsOrgins, builder =>
+                {
+                    builder.WithOrigins("https://stats.roki.sh");
+                });
+            });
+            
             services.Configure<TwitchDatabaseSettings>(Configuration.GetSection(nameof(TwitchDatabaseSettings)));
             services.AddSingleton<ITwitchDatabaseSettings>(sp => sp.GetRequiredService<IOptions<TwitchDatabaseSettings>>().Value);
             services.AddSingleton<TwitchService>();
@@ -59,13 +69,15 @@ namespace TwitchOverlapApi
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "TwitchOverlapApi v1"));
             }
 
+            app.UseCors();
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+            app.UseEndpoints(endpoints => { endpoints.MapControllers().RequireCors(_allowedCorsOrgins); });
         }
     }
 }
