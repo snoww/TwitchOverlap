@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -112,15 +113,15 @@ namespace TwitchOverlapApi.Services
                 Chatters = channels.Chatters
             };
 
-            var data = new Dictionary<string, Data>(channels.Data.Count);
+            var data = new ConcurrentDictionary<string, Data>();
 
             IEnumerable<Task> tasks = channels.Data.Select(async x =>
             {
-                data.Add(x.Key, new Data{Shared = x.Value, Game = channelGamesList.First(y => y.Id == x.Key).Game});
+                data.TryAdd(x.Key, new Data{Shared = x.Value, Game = channelGamesList.First(y => y.Id == x.Key).Game});
             });
 
             await Task.WhenAll(tasks);
-            channelProjection.Data = data;
+            channelProjection.Data = new Dictionary<string, Data>(data);
             
             return channelProjection;
         }
