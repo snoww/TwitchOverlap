@@ -17,7 +17,9 @@ namespace ChannelIntersection
     public static class Program
     {
         private static readonly HttpClient Http = new();
-        
+        private static string twitchToken = Environment.GetEnvironmentVariable("TWITCH_TOKEN");
+        private static string twitchClient = Environment.GetEnvironmentVariable("TWITCH_CLIENT");
+
         public static async Task Main(string[] args)
         {
             DateTime timestamp = DateTime.UtcNow;
@@ -39,11 +41,13 @@ namespace ChannelIntersection
             
             var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
             var processed = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, int>>();
+            var totalIntersectionCount = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, byte>>();
             
             IEnumerable<Task> processTasks = channels.Select(async channel =>
             {
                 channelChatters.TryAdd(channel, await GetChatters(channel));
                 processed.TryAdd(channel, new ConcurrentDictionary<string, int>());
+                totalIntersectionCount.TryAdd(channel, new ConcurrentDictionary<string, byte>());
             });
 
             await Task.WhenAll(processTasks);
@@ -54,7 +58,17 @@ namespace ChannelIntersection
             Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
             {
                 ChannelModel[] pair = x.ToArray();
-                int count = channelChatters[pair[0]].Count(y => channelChatters[pair[1]].Contains(y));
+                int count = channelChatters[pair[0]].Count(y =>
+                {
+                    if (channelChatters[pair[1]].Contains(y))
+                    {
+                        totalIntersectionCount[pair[0]].TryAdd(y, byte.MaxValue);
+                        totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
+                        return true;
+                    }
+
+                    return false;
+                });
                 processed[pair[0]].TryAdd(pair[1].Id, count);
                 processed[pair[1]].TryAdd(pair[0].Id, count);
             });
@@ -63,15 +77,16 @@ namespace ChannelIntersection
             sw.Restart();
 
             var updateOptions = new FindOneAndReplaceOptions<ChannelModel> {IsUpsert = true};
-
+            
             IEnumerable<Task> insertTasks = processed.Select(async channel =>
             {
                 (ChannelModel ch, ConcurrentDictionary<string, int> value) = channel;
                 ch.Timestamp = timestamp;
                 ch.Data = new Dictionary<string, int>(value);
+                ch.Overlaps = totalIntersectionCount[ch].Count;
                 await channelCollection.FindOneAndReplaceAsync<ChannelModel>(x => x.Id == ch.Id, ch, updateOptions);
             });
-
+            
             await Task.WhenAll(insertTasks);
             
             Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
@@ -109,8 +124,8 @@ namespace ChannelIntersection
             do
             {
                 using var request = new HttpRequestMessage();
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "twitch token");
-                request.Headers.Add("Client-Id", "twitch clientid");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", twitchToken);
+                request.Headers.Add("Client-Id", twitchClient);
                 
                 if (string.IsNullOrWhiteSpace(pageToken))
                 {
@@ -140,8 +155,8 @@ namespace ChannelIntersection
                         if (!Regex.IsMatch(username!, "^[a-zA-Z0-9_]*$"))
                         {
                             using var userRequest = new HttpRequestMessage();
-                            userRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "6arurlalcovn004wuqesfzu82ae65l");
-                            userRequest.Headers.Add("Client-Id", "gp762nuuoqcoxypju8c569th9wz7q5");
+                            userRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", twitchToken);
+                            userRequest.Headers.Add("Client-Id", twitchClient);
                             userRequest.RequestUri = new Uri($"https://api.twitch.tv/helix/users?id={channel.GetProperty("user_id").GetString()}");
                             using HttpResponseMessage userResponse = await Http.SendAsync(userRequest);
                             JsonDocument userJson = await JsonDocument.ParseAsync(await userResponse.Content.ReadAsStreamAsync());

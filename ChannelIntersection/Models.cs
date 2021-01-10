@@ -12,7 +12,9 @@ namespace ChannelIntersection
         public string Game { get; set; }
         public int Viewers { get; set; }
         public int Chatters { get; set; }
+        public int Overlaps { get; set; }
         public Dictionary<string, int> Data { get; set; }
+        
         public int CompareTo(object obj)
         {
             var other = obj as ChannelModel;
