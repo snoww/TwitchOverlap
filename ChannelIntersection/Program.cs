@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -17,11 +18,17 @@ namespace ChannelIntersection
     public static class Program
     {
         private static readonly HttpClient Http = new();
-        private static string twitchToken = Environment.GetEnvironmentVariable("TWITCH_TOKEN");
-        private static string twitchClient = Environment.GetEnvironmentVariable("TWITCH_CLIENT");
+        private static string _twitchToken;
+        private static string _twitchClient;
 
         public static async Task Main(string[] args)
         {
+            using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
+            {
+                _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
+                _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
+            }
+            
             DateTime timestamp = DateTime.UtcNow;
 
             var conventions = new ConventionPack {new LowerCaseElementNameConvention()};
@@ -124,8 +131,8 @@ namespace ChannelIntersection
             do
             {
                 using var request = new HttpRequestMessage();
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", twitchToken);
-                request.Headers.Add("Client-Id", twitchClient);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
+                request.Headers.Add("Client-Id", _twitchClient);
                 
                 if (string.IsNullOrWhiteSpace(pageToken))
                 {
@@ -155,8 +162,8 @@ namespace ChannelIntersection
                         if (!Regex.IsMatch(username!, "^[a-zA-Z0-9_]*$"))
                         {
                             using var userRequest = new HttpRequestMessage();
-                            userRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", twitchToken);
-                            userRequest.Headers.Add("Client-Id", twitchClient);
+                            userRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
+                            userRequest.Headers.Add("Client-Id", _twitchClient);
                             userRequest.RequestUri = new Uri($"https://api.twitch.tv/helix/users?id={channel.GetProperty("user_id").GetString()}");
                             using HttpResponseMessage userResponse = await Http.SendAsync(userRequest);
                             JsonDocument userJson = await JsonDocument.ParseAsync(await userResponse.Content.ReadAsStreamAsync());
