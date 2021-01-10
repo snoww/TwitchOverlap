@@ -52,7 +52,7 @@ namespace ChannelIntersection
 
             Dictionary<string, string> avatars = await GetChannelAvatars(channels);
             
-            Console.WriteLine($"retrieved {avatars.Count} new channels avatars in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"retrieved channels avatars in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
             
             var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
@@ -107,13 +107,10 @@ namespace ChannelIntersection
                     .Set(x => x.Chatters, ch.Chatters)
                     .Set(x => x.Viewers, ch.Viewers);
 
-                if (avatars.ContainsKey(ch.Id))
+                string avatar = avatars[ch.Id];
+                if (!string.IsNullOrWhiteSpace(avatar))
                 {
-                    string avatar = avatars[ch.Id];
-                    if (avatar != null)
-                    {
-                        update = update.Set(x => x.Avatar, avatar);
-                    }
+                    update = update.Set(x => x.Avatar, avatar);
                 }
                 await _channelCollection.FindOneAndUpdateAsync<ChannelModel>(x => x.Id == ch.Id, update, updateOptions);
             });
@@ -209,8 +206,8 @@ namespace ChannelIntersection
         
         private static async Task<Dictionary<string, string>> GetChannelAvatars(List<ChannelModel> channels)
         {
-            Dictionary<string, string> newChannels = await RemoveExistingChannels(channels);
-            List<string> requests = RequestBuilder(newChannels.Keys.ToList());
+            var avatars = new Dictionary<string, string>(channels.Count);
+            List<string> requests = RequestBuilder(channels);
             foreach (string reqString in requests)
             {
                 using var request = new HttpRequestMessage();
@@ -218,51 +215,36 @@ namespace ChannelIntersection
                 request.Headers.Add("Client-Id", _twitchClient);
                 request.RequestUri = new Uri($"https://api.twitch.tv/helix/users?{reqString}");
                 using HttpResponseMessage response = await Http.SendAsync(request);
-                using JsonDocument json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+                using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
                 JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
                 foreach (JsonElement channel in data)
                 {
                     string channelName = channel.GetProperty("login").GetString();
-                    if (newChannels.ContainsKey(channelName!))
+                    string[] parts = channel.GetProperty("profile_image_url").GetString()?.Split("/");
+                    if (parts != null && parts.Length != 4)
                     {
-                        Match match = Regex.Match(channel.GetProperty("profile_image_url").GetString()!, 
-                            @"[0-9a-f]{8}[-]?([0-9a-f]{4}[-]?){3}[0-9a-f]{12}");
-                        if (match.Success)
-                            newChannels[channelName] = match.Value;
+                        avatars[channelName!] = parts[4];
+                    }
+                    else
+                    {
+                        avatars[channelName!] = null;
                     }
                 }
             }
 
-            return newChannels;
+            return avatars;
         }
 
-        private static async Task<Dictionary<string, string>> RemoveExistingChannels(IEnumerable<ChannelModel> channels)
-        {
-            var newChannels = new Dictionary<string, string>();
-            var options = new CountOptions {Limit = 1};
-            FilterDefinitionBuilder<ChannelModel> builder = Builders<ChannelModel>.Filter;
-            FilterDefinition<ChannelModel> filter = builder.Exists(x => x.Avatar);
-            foreach (ChannelModel channel in channels)
-            {
-                if (await _channelCollection.CountDocumentsAsync(builder.Eq(x => x.Id, channel.Id) & filter, options) == 0)
-                {
-                    newChannels.Add(channel.Id, null);
-                }
-            }
-
-            return newChannels;
-        }
-
-        private static List<string> RequestBuilder(IReadOnlyCollection<string> channels)
+        private static List<string> RequestBuilder(IReadOnlyCollection<ChannelModel> channels)
         {
             var shards = (int) Math.Ceiling(channels.Count / 100.0);
             var list = new List<string>(shards);
             for (int i = 0; i < shards; i++)
             {
                 var request = new StringBuilder();
-                foreach (string channel in channels.Skip(i * 100).Take(100))
+                foreach (ChannelModel channel in channels.Skip(i * 100).Take(100))
                 {
-                    request.Append("&login=").Append(channel);
+                    request.Append("&login=").Append(channel.Id);
                 }
                 list.Add(request.ToString().Substring(1));
             }
