@@ -23,4 +23,11 @@ namespace ChannelIntersection
             return string.Compare(Id, other.Id, StringComparison.Ordinal);
         }
     }
+
+    public class ChannelData
+    {
+        [BsonId]
+        public string Id { get; set; }
+        public string Avatar { get; set; }
+    }
 }

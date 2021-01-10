@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace ChannelIntersection
         private static string _twitchToken;
         private static string _twitchClient;
         private static string _mongodbConnection;
+        private static IMongoCollection<ChannelData> _dataCollection;
 
         public static async Task Main(string[] args)
         {
@@ -39,6 +41,7 @@ namespace ChannelIntersection
             IMongoDatabase db = client.GetDatabase("twitch");
             IMongoCollection<ChannelModel> channelCollection = db.GetCollection<ChannelModel>("channels");
             Console.WriteLine("connected to database");
+            _dataCollection = db.GetCollection<ChannelData>("data");
 
             var sw = new Stopwatch();
             sw.Start();
@@ -46,6 +49,11 @@ namespace ChannelIntersection
             List<ChannelModel> channels = await GetTopChannels();
             
             Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
+            sw.Restart();
+
+            int avatarsCount = await GetChannelAvatars(channels);
+            
+            Console.WriteLine($"retrieved {avatarsCount} new channels avatars in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
             
             var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
@@ -184,6 +192,65 @@ namespace ChannelIntersection
 
             return channels;
         }
+        
+        private static async Task<int> GetChannelAvatars(List<ChannelModel> channels)
+        {
+            List<string> newChannels = await RemoveExistingChannels(channels);
+            List<string> requests = RequestBuilder(newChannels);
+            var updateOptions = new FindOneAndReplaceOptions<ChannelData> {IsUpsert = true};
+            foreach (string reqString in requests)
+            {
+                using var request = new HttpRequestMessage();
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
+                request.Headers.Add("Client-Id", _twitchClient);
+                request.RequestUri = new Uri($"https://api.twitch.tv/helix/users?{reqString}");
+                using HttpResponseMessage response = await Http.SendAsync(request);
+                using JsonDocument json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+                JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
+                foreach (ChannelData channelData in data.Select(channel => new ChannelData
+                {
+                    Id = channel.GetProperty("login").GetString(),
+                    Avatar = channel.GetProperty("profile_image_url").GetString()
+                }))
+                {
+                    await _dataCollection.FindOneAndReplaceAsync<ChannelData>(x => x.Id == channelData.Id, channelData, updateOptions);
+                }
+            }
+
+            return newChannels.Count;
+        }
+
+        private static async Task<List<string>> RemoveExistingChannels(IEnumerable<ChannelModel> channels)
+        {
+            var list = new List<string>();
+            var options = new CountOptions {Limit = 1};
+            foreach (ChannelModel channel in channels)
+            {
+                if (await _dataCollection.CountDocumentsAsync(x => x.Id == channel.Id, options) == 0)
+                {
+                    list.Add(channel.Id);
+                }
+            }
+
+            return list;
+        }
+
+        private static List<string> RequestBuilder(IReadOnlyCollection<string> channels)
+        {
+            int shards = channels.Count / 100;
+            var list = new List<string>(shards);
+            for (int i = 0; i < shards; i++)
+            {
+                var request = new StringBuilder();
+                foreach (string channel in channels.Skip(i * 100).Take(100))
+                {
+                    request.Append("&login=").Append(channel);
+                }
+                list.Add(request.ToString().Substring(1));
+            }
+
+            return list;
+        } 
         
         private static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
         {
