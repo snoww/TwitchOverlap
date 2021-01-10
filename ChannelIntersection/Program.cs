@@ -238,7 +238,7 @@ namespace ChannelIntersection
             var newChannels = new Dictionary<string, string>();
             var options = new CountOptions {Limit = 1};
             FilterDefinitionBuilder<ChannelModel> builder = Builders<ChannelModel>.Filter;
-            FilterDefinition<ChannelModel> filter = builder.Exists(x => x.Avatar) & builder.Ne(x => x.Avatar, null);
+            FilterDefinition<ChannelModel> filter = builder.Exists(x => x.Avatar);
             foreach (ChannelModel channel in channels)
             {
                 if (await _channelCollection.CountDocumentsAsync(builder.Eq(x => x.Id, channel.Id) & filter, options) == 0)
