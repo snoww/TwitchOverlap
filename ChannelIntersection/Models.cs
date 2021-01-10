@@ -8,6 +8,7 @@ namespace ChannelIntersection
     {
         [BsonId]
         public string Id { get; set; }
+        public string Avatar { get; set; }
         public DateTime Timestamp { get; set; }
         public string Game { get; set; }
         public int Viewers { get; set; }
@@ -22,12 +23,5 @@ namespace ChannelIntersection
             
             return string.Compare(Id, other.Id, StringComparison.Ordinal);
         }
-    }
-
-    public class ChannelData
-    {
-        [BsonId]
-        public string Id { get; set; }
-        public string Avatar { get; set; }
     }
 }

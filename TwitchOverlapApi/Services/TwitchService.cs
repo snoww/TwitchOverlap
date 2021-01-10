@@ -66,7 +66,6 @@ namespace TwitchOverlapApi.Services
 
             if (!string.IsNullOrEmpty(channelJson))
             {
-                // channelJson = Encoding.UTF8.GetString(encodedChannel);
                 return JsonSerializer.Deserialize<ChannelProjection>(channelJson);
             }
 

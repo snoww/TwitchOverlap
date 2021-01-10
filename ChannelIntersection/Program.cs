@@ -22,7 +22,7 @@ namespace ChannelIntersection
         private static string _twitchToken;
         private static string _twitchClient;
         private static string _mongodbConnection;
-        private static IMongoCollection<ChannelData> _dataCollection;
+        private static IMongoCollection<ChannelModel> _channelCollection;
 
         public static async Task Main(string[] args)
         {
@@ -38,10 +38,9 @@ namespace ChannelIntersection
             var conventions = new ConventionPack {new LowerCaseElementNameConvention()};
             ConventionRegistry.Register("LowerCaseElementName", conventions, _ => true);
             var client = new MongoClient(_mongodbConnection);
-            IMongoDatabase db = client.GetDatabase("twitch");
-            IMongoCollection<ChannelModel> channelCollection = db.GetCollection<ChannelModel>("channels");
+            IMongoDatabase db = client.GetDatabase("twitch-test");
+            _channelCollection = db.GetCollection<ChannelModel>("channels");
             Console.WriteLine("connected to database");
-            _dataCollection = db.GetCollection<ChannelData>("data");
 
             var sw = new Stopwatch();
             sw.Start();
@@ -51,9 +50,9 @@ namespace ChannelIntersection
             Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            int avatarsCount = await GetChannelAvatars(channels);
+            Dictionary<string, string> avatars = await GetChannelAvatars(channels);
             
-            Console.WriteLine($"retrieved {avatarsCount} new channels avatars in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"retrieved {avatars.Count} new channels avatars in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
             
             var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
@@ -93,15 +92,30 @@ namespace ChannelIntersection
             Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            var updateOptions = new FindOneAndReplaceOptions<ChannelModel> {IsUpsert = true};
+            var updateOptions = new FindOneAndUpdateOptions<ChannelModel> {IsUpsert = true};
             
             IEnumerable<Task> insertTasks = processed.Select(async channel =>
             {
                 (ChannelModel ch, ConcurrentDictionary<string, int> value) = channel;
-                ch.Timestamp = timestamp;
-                ch.Data = new Dictionary<string, int>(value);
-                ch.Overlaps = totalIntersectionCount[ch].Count;
-                await channelCollection.FindOneAndReplaceAsync<ChannelModel>(x => x.Id == ch.Id, ch, updateOptions);
+                int totalOverlaps = totalIntersectionCount[ch].Count;
+                UpdateDefinition<ChannelModel> update = Builders<ChannelModel>.Update
+                    .SetOnInsert(x => x.Id, ch.Id)
+                    .Set(x => x.Data, new Dictionary<string, int>(value))
+                    .Set(x => x.Timestamp, timestamp)
+                    .Set(x => x.Overlaps, totalOverlaps)
+                    .Set(x => x.Game, ch.Game)
+                    .Set(x => x.Chatters, ch.Chatters)
+                    .Set(x => x.Viewers, ch.Viewers);
+
+                if (avatars.ContainsKey(ch.Id))
+                {
+                    string avatar = avatars[ch.Id];
+                    if (avatar != null)
+                    {
+                        update = update.Set(x => x.Avatar, avatar);
+                    }
+                }
+                await _channelCollection.FindOneAndUpdateAsync<ChannelModel>(x => x.Id == ch.Id, update, updateOptions);
             });
             
             await Task.WhenAll(insertTasks);
@@ -193,11 +207,10 @@ namespace ChannelIntersection
             return channels;
         }
         
-        private static async Task<int> GetChannelAvatars(List<ChannelModel> channels)
+        private static async Task<Dictionary<string, string>> GetChannelAvatars(List<ChannelModel> channels)
         {
-            List<string> newChannels = await RemoveExistingChannels(channels);
-            List<string> requests = RequestBuilder(newChannels);
-            var updateOptions = new FindOneAndReplaceOptions<ChannelData> {IsUpsert = true};
+            Dictionary<string, string> newChannels = await RemoveExistingChannels(channels);
+            List<string> requests = RequestBuilder(newChannels.Keys.ToList());
             foreach (string reqString in requests)
             {
                 using var request = new HttpRequestMessage();
@@ -207,37 +220,39 @@ namespace ChannelIntersection
                 using HttpResponseMessage response = await Http.SendAsync(request);
                 using JsonDocument json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
                 JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
-                foreach (ChannelData channelData in data.Select(channel => new ChannelData
+                foreach (JsonElement channel in data)
                 {
-                    Id = channel.GetProperty("login").GetString(),
-                    Avatar = channel.GetProperty("profile_image_url").GetString()
-                }))
-                {
-                    await _dataCollection.FindOneAndReplaceAsync<ChannelData>(x => x.Id == channelData.Id, channelData, updateOptions);
+                    string channelName = channel.GetProperty("login").GetString();
+                    if (newChannels.ContainsKey(channelName!))
+                    {
+                        newChannels[channelName] = channel.GetProperty("profile_image_url").GetString();
+                    }
                 }
             }
 
-            return newChannels.Count;
+            return newChannels;
         }
 
-        private static async Task<List<string>> RemoveExistingChannels(IEnumerable<ChannelModel> channels)
+        private static async Task<Dictionary<string, string>> RemoveExistingChannels(IEnumerable<ChannelModel> channels)
         {
-            var list = new List<string>();
+            var newChannels = new Dictionary<string, string>();
             var options = new CountOptions {Limit = 1};
+            FilterDefinitionBuilder<ChannelModel> builder = Builders<ChannelModel>.Filter;
+            FilterDefinition<ChannelModel> filter = builder.Exists(x => x.Avatar) & builder.Ne(x => x.Avatar, null);
             foreach (ChannelModel channel in channels)
             {
-                if (await _dataCollection.CountDocumentsAsync(x => x.Id == channel.Id, options) == 0)
+                if (await _channelCollection.CountDocumentsAsync(builder.Eq(x => x.Id, channel.Id) & filter, options) == 0)
                 {
-                    list.Add(channel.Id);
+                    newChannels.Add(channel.Id, null);
                 }
             }
 
-            return list;
+            return newChannels;
         }
 
         private static List<string> RequestBuilder(IReadOnlyCollection<string> channels)
         {
-            int shards = channels.Count / 100;
+            var shards = (int) Math.Ceiling(channels.Count / 100.0);
             var list = new List<string>(shards);
             for (int i = 0; i < shards; i++)
             {
