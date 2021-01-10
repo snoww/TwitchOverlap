@@ -38,7 +38,7 @@ namespace ChannelIntersection
             var conventions = new ConventionPack {new LowerCaseElementNameConvention()};
             ConventionRegistry.Register("LowerCaseElementName", conventions, _ => true);
             var client = new MongoClient(_mongodbConnection);
-            IMongoDatabase db = client.GetDatabase("twitch-test");
+            IMongoDatabase db = client.GetDatabase("twitch");
             _channelCollection = db.GetCollection<ChannelModel>("channels");
             Console.WriteLine("connected to database");
 
