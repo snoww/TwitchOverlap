@@ -110,7 +110,7 @@ namespace TwitchOverlapApi.Services
                 Timestamp = channels.Timestamp,
                 Game = channels.Game,
                 Viewers = channels.Viewers,
-                Overlap = channels.Overlap,
+                Overlaps = channels.Overlaps,
                 Chatters = channels.Chatters
             };
 

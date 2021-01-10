@@ -12,7 +12,7 @@ namespace TwitchOverlapApi.Models
         public string Game { get; set; }
         public int Viewers { get; set; }
         public int Chatters { get; set; }
-        public int Overlap { get; set; }
+        public int Overlaps { get; set; }
         public Dictionary<string, int> Data { get; set; }
     }
 
@@ -30,7 +30,7 @@ namespace TwitchOverlapApi.Models
         public string Game { get; set; }
         public int Viewers { get; set; }
         public int Chatters { get; set; }
-        public int Overlap { get; set; }
+        public int Overlaps { get; set; }
         public Dictionary<string, Data> Data { get; set; }
     }
 
