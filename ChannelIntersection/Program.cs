@@ -225,7 +225,10 @@ namespace ChannelIntersection
                     string channelName = channel.GetProperty("login").GetString();
                     if (newChannels.ContainsKey(channelName!))
                     {
-                        newChannels[channelName] = channel.GetProperty("profile_image_url").GetString();
+                        Match match = Regex.Match(channel.GetProperty("profile_image_url").GetString()!, 
+                            @"[0-9a-f]{8}[-]?([0-9a-f]{4}[-]?){3}[0-9a-f]{12}");
+                        if (match.Success)
+                            newChannels[channelName] = match.Value;
                     }
                 }
             }
