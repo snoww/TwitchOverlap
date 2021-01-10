@@ -20,6 +20,7 @@ namespace ChannelIntersection
         private static readonly HttpClient Http = new();
         private static string _twitchToken;
         private static string _twitchClient;
+        private static string _mongodbConnection;
 
         public static async Task Main(string[] args)
         {
@@ -27,13 +28,14 @@ namespace ChannelIntersection
             {
                 _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
                 _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
+                _mongodbConnection = json.RootElement.GetProperty("MONGODB").GetString();
             }
             
             DateTime timestamp = DateTime.UtcNow;
 
             var conventions = new ConventionPack {new LowerCaseElementNameConvention()};
             ConventionRegistry.Register("LowerCaseElementName", conventions, _ => true);
-            var client = new MongoClient("mongodb://localhost");
+            var client = new MongoClient(_mongodbConnection);
             IMongoDatabase db = client.GetDatabase("twitch");
             IMongoCollection<ChannelModel> channelCollection = db.GetCollection<ChannelModel>("channels");
             Console.WriteLine("connected to database");
