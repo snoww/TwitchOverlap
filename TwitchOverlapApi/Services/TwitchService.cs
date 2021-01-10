@@ -43,7 +43,7 @@ namespace TwitchOverlapApi.Services
             DateTime latestHalfHour = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(25));
             List<ChannelSummary> channelLists = await _channels.Find(x => x.Timestamp >= latestHalfHour)
                 .SortByDescending(x => x.Chatters)
-                .Project(x => new ChannelSummary {Id = x.Id, Chatters = x.Chatters})
+                .Project(x => new ChannelSummary {Id = x.Id, Chatters = x.Chatters, Avatar = x.Avatar})
                 .ToListAsync();
 
             if (channelLists == null)
@@ -120,7 +120,8 @@ namespace TwitchOverlapApi.Services
                 Game = channels.Game,
                 Viewers = channels.Viewers,
                 Overlaps = channels.Overlaps,
-                Chatters = channels.Chatters
+                Chatters = channels.Chatters,
+                Avatar = channels.Avatar
             };
 
             var data = new ConcurrentDictionary<string, Data>();

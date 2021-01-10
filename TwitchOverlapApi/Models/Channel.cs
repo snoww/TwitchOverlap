@@ -8,6 +8,7 @@ namespace TwitchOverlapApi.Models
     {
         [BsonId]
         public string Id { get; set; }
+        public string Avatar { get; set; }
         public DateTime Timestamp { get; set; }
         public string Game { get; set; }
         public int Viewers { get; set; }
@@ -26,6 +27,7 @@ namespace TwitchOverlapApi.Models
     public class ChannelProjection
     {
         public string Id { get; set; }
+        public string Avatar { get; set; }
         public DateTime Timestamp { get; set; }
         public string Game { get; set; }
         public int Viewers { get; set; }
@@ -44,5 +46,6 @@ namespace TwitchOverlapApi.Models
     {
         public string Id { get; set; }
         public int Chatters { get; set; }
+        public string Avatar { get; set; }
     }
 }
