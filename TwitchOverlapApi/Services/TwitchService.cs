@@ -45,6 +45,11 @@ namespace TwitchOverlapApi.Services
                 .SortByDescending(x => x.Chatters)
                 .Project(x => new ChannelSummary {Id = x.Id, Chatters = x.Chatters})
                 .ToListAsync();
+
+            if (channelLists == null)
+            {
+                return null;
+            }
             
             DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
                 .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
@@ -93,6 +98,11 @@ namespace TwitchOverlapApi.Services
             List<ChannelGames> games = await _channels.Find(x => x.Game != null)
                 .Project(x => new ChannelGames {Id = x.Id, Game = x.Game})
                 .ToListAsync();
+
+            if (games == null)
+            {
+                return null;
+            }
 
             DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
                 .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
