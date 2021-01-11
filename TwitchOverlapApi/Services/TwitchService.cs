@@ -40,7 +40,7 @@ namespace TwitchOverlapApi.Services
                 return JsonSerializer.Deserialize<List<ChannelSummary>>(channelListJson);
             }
             
-            DateTime latestHalfHour = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(30));
+            DateTime latestHalfHour = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(35));
             List<ChannelSummary> channelLists = await _channels.Find(x => x.Timestamp >= latestHalfHour)
                 .SortByDescending(x => x.Chatters)
                 .Project(x => new ChannelSummary {Id = x.Id, Chatters = x.Chatters, Avatar = x.Avatar})
