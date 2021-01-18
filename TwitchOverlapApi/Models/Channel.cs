@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace TwitchOverlapApi.Models
@@ -27,6 +28,8 @@ namespace TwitchOverlapApi.Models
     public class ChannelProjection
     {
         public string Id { get; set; }
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; }
         public string Avatar { get; set; }
         public DateTime Timestamp { get; set; }
         public string Game { get; set; }
@@ -45,6 +48,8 @@ namespace TwitchOverlapApi.Models
     public class ChannelSummary
     {
         public string Id { get; set; }
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; }
         public int Chatters { get; set; }
         public string Avatar { get; set; }
     }

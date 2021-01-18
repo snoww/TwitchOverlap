@@ -50,11 +50,6 @@ namespace ChannelIntersection
             Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            Dictionary<string, string> avatars = await GetChannelAvatars(channels);
-            
-            Console.WriteLine($"retrieved channels avatars in {sw.ElapsedMilliseconds}ms");
-            sw.Restart();
-            
             var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
             var processed = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, int>>();
             var totalIntersectionCount = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, byte>>();
@@ -92,27 +87,15 @@ namespace ChannelIntersection
             Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            var updateOptions = new FindOneAndUpdateOptions<ChannelModel> {IsUpsert = true};
+            var updateOptions = new FindOneAndReplaceOptions<ChannelModel> {IsUpsert = true};
             
             IEnumerable<Task> insertTasks = processed.Select(async channel =>
             {
                 (ChannelModel ch, ConcurrentDictionary<string, int> value) = channel;
-                int totalOverlaps = totalIntersectionCount[ch].Count;
-                UpdateDefinition<ChannelModel> update = Builders<ChannelModel>.Update
-                    .SetOnInsert(x => x.Id, ch.Id)
-                    .Set(x => x.Data, new Dictionary<string, int>(value))
-                    .Set(x => x.Timestamp, timestamp)
-                    .Set(x => x.Overlaps, totalOverlaps)
-                    .Set(x => x.Game, ch.Game)
-                    .Set(x => x.Chatters, ch.Chatters)
-                    .Set(x => x.Viewers, ch.Viewers);
-
-                string avatar = avatars[ch.Id];
-                if (!string.IsNullOrWhiteSpace(avatar))
-                {
-                    update = update.Set(x => x.Avatar, avatar);
-                }
-                await _channelCollection.FindOneAndUpdateAsync<ChannelModel>(x => x.Id == ch.Id, update, updateOptions);
+                ch.Timestamp = timestamp;
+                ch.Data = new Dictionary<string, int>(value);
+                ch.Overlaps = totalIntersectionCount[ch].Count;
+                await _channelCollection.FindOneAndReplaceAsync<ChannelModel>(x => x.Id == ch.Id, ch, updateOptions);
             });
             
             await Task.WhenAll(insertTasks);
@@ -203,55 +186,7 @@ namespace ChannelIntersection
 
             return channels;
         }
-        
-        private static async Task<Dictionary<string, string>> GetChannelAvatars(List<ChannelModel> channels)
-        {
-            var avatars = new Dictionary<string, string>(channels.Count);
-            List<string> requests = RequestBuilder(channels);
-            foreach (string reqString in requests)
-            {
-                using var request = new HttpRequestMessage();
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
-                request.Headers.Add("Client-Id", _twitchClient);
-                request.RequestUri = new Uri($"https://api.twitch.tv/helix/users?{reqString}");
-                using HttpResponseMessage response = await Http.SendAsync(request);
-                using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-                JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
-                foreach (JsonElement channel in data)
-                {
-                    string channelName = channel.GetProperty("login").GetString();
-                    string[] parts = channel.GetProperty("profile_image_url").GetString()?.Split("/");
-                    if (parts != null && parts.Length != 4)
-                    {
-                        avatars[channelName!] = parts[4];
-                    }
-                    else
-                    {
-                        avatars[channelName!] = null;
-                    }
-                }
-            }
 
-            return avatars;
-        }
-
-        private static List<string> RequestBuilder(IReadOnlyCollection<ChannelModel> channels)
-        {
-            var shards = (int) Math.Ceiling(channels.Count / 100.0);
-            var list = new List<string>(shards);
-            for (int i = 0; i < shards; i++)
-            {
-                var request = new StringBuilder();
-                foreach (ChannelModel channel in channels.Skip(i * 100).Take(100))
-                {
-                    request.Append("&login=").Append(channel.Id);
-                }
-                list.Add(request.ToString().Substring(1));
-            }
-
-            return list;
-        } 
-        
         private static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
         {
             if (length == 1) return list.Select(t => new[] { t });

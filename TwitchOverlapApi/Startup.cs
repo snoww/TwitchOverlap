@@ -1,16 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using TwitchOverlapApi.Models;
@@ -20,7 +13,7 @@ namespace TwitchOverlapApi
 {
     public class Startup
     {
-        private readonly string _allowedCorsOrgins = "_allowedCorsOrigins";
+        private readonly string _allowedCorsOrigins = "_allowedCorsOrigins";
         
         public Startup(IConfiguration configuration)
         {
@@ -34,12 +27,13 @@ namespace TwitchOverlapApi
         {
             services.AddCors(options =>
             {
-                options.AddPolicy(_allowedCorsOrgins, builder =>
+                options.AddPolicy(_allowedCorsOrigins, builder =>
                 {
                     builder.WithOrigins("https://stats.roki.sh");
                 });
             });
-            
+
+            services.AddHttpClient();
             services.Configure<TwitchDatabaseSettings>(Configuration.GetSection(nameof(TwitchDatabaseSettings)));
             services.AddSingleton<ITwitchDatabaseSettings>(sp => sp.GetRequiredService<IOptions<TwitchDatabaseSettings>>().Value);
             services.AddSingleton<TwitchService>();
@@ -77,7 +71,7 @@ namespace TwitchOverlapApi
 
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers().RequireCors(_allowedCorsOrgins); });
+            app.UseEndpoints(endpoints => { endpoints.MapControllers().RequireCors(_allowedCorsOrigins); });
         }
     }
 }
