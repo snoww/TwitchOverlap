@@ -21,6 +21,7 @@ namespace TwitchOverlapApi.Services
         private readonly IMongoCollection<Channel> _channels;
         private readonly IDistributedCache _cache;
         private readonly IHttpClientFactory _factory;
+        private readonly Random _random = new Random();
         private static string _twitchToken;
         private static string _twitchClient;
 
@@ -171,9 +172,7 @@ namespace TwitchOverlapApi.Services
         {
             (List<ChannelSummary> channelSummaries, List<ChannelSummary> notCached) = await GetCachedChannelData(channels);
             List<string> requests = RequestBuilder(notCached);
-
-            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromDays(30));
+            
             using HttpClient http = _factory.CreateClient();
             foreach (string reqString in requests)
             {
@@ -193,6 +192,9 @@ namespace TwitchOverlapApi.Services
                         Avatar = channel.GetProperty("profile_image_url").GetString()?.Replace("-300x300", "-70x70")
                     };
                     summary.Chatters = channels.First(x => x.Id.Equals(summary.Id, StringComparison.Ordinal)).Chatters;
+                    
+                    DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
+                        .SetAbsoluteExpiration(TimeSpan.FromDays(_random.Next(3, 8)));
                     await _cache.SetStringAsync($"channel:{summary.Id}:display", summary.DisplayName, options);
                     await _cache.SetStringAsync($"channel:{summary.Id}:avatar", summary.Avatar, options);
                     channelSummaries.Add(summary);
