@@ -41,29 +41,5 @@ namespace TwitchOverlapApi.Controllers
         
             return channel;
         }
-
-        // [HttpGet("{name}/from")]
-        // public ActionResult<Channel> Get(string name, [FromQuery(Name = "start")] DateTime start)
-        // {
-        //     Channel channel = _service.GetFromDate(name, start);
-        //     if (channel == null)
-        //     {
-        //         return NotFound();
-        //     }
-        //
-        //     return channel;
-        // }
-        //
-        // [HttpGet("{name}/range")]
-        // public ActionResult<Channel> Get(string name, [FromQuery(Name = "start")] DateTime start, [FromQuery(Name = "end")] DateTime end)
-        // {
-        //     Channel channel = _service.GetFromRange(name, start, end);
-        //     if (channel == null)
-        //     {
-        //         return NotFound();
-        //     }
-        //
-        //     return channel;
-        // }
     }
 }

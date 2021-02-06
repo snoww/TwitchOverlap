@@ -21,7 +21,7 @@ namespace TwitchOverlapApi.Services
         private readonly IMongoCollection<Channel> _channels;
         private readonly IDistributedCache _cache;
         private readonly IHttpClientFactory _factory;
-        private readonly Random _random = new Random();
+        private readonly Random _random = new();
         private static string _twitchToken;
         private static string _twitchClient;
 
