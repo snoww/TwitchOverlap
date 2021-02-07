@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -87,7 +86,7 @@ namespace ChannelIntersection
             Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            var updateOptions = new FindOneAndReplaceOptions<ChannelModel> {IsUpsert = true};
+            var updateOptions = new ReplaceOptions{IsUpsert = true};
             
             IEnumerable<Task> insertTasks = processed.Select(async channel =>
             {
@@ -95,7 +94,7 @@ namespace ChannelIntersection
                 ch.Timestamp = timestamp;
                 ch.Data = new Dictionary<string, int>(value);
                 ch.Overlaps = totalIntersectionCount[ch].Count;
-                await _channelCollection.FindOneAndReplaceAsync<ChannelModel>(x => x.Id == ch.Id, ch, updateOptions);
+                await _channelCollection.ReplaceOneAsync(x => x.Id == ch.Id, ch, updateOptions);
             });
             
             await Task.WhenAll(insertTasks);
@@ -120,7 +119,13 @@ namespace ChannelIntersection
             {
                 foreach (JsonElement viewer in viewerType.Value.EnumerateArray())
                 {
-                    chatterList.Add(viewer.GetString()?.ToLowerInvariant());
+                    string username = viewer.GetString()?.ToLowerInvariant();
+                    if (username == null || username.EndsWith("bot"))
+                    {
+                        continue;
+                    }
+                    
+                    chatterList.Add(username);
                 }
             }
 
