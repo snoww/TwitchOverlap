@@ -119,8 +119,8 @@ namespace ChannelIntersection
             {
                 foreach (JsonElement viewer in viewerType.Value.EnumerateArray())
                 {
-                    string username = viewer.GetString()?.ToLowerInvariant();
-                    if (username == null || username.EndsWith("bot"))
+                    string username = viewer.GetString()?.ToLower();
+                    if (username == null || username.EndsWith("bot", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -167,7 +167,7 @@ namespace ChannelIntersection
                             break;
                         }
 
-                        string username = channel.GetProperty("user_name").GetString()?.ToLowerInvariant();
+                        string username = channel.GetProperty("user_name").GetString()?.ToLower();
                         if (!Regex.IsMatch(username!, "^[a-zA-Z0-9_]*$"))
                         {
                             using var userRequest = new HttpRequestMessage();
@@ -176,12 +176,12 @@ namespace ChannelIntersection
                             userRequest.RequestUri = new Uri($"https://api.twitch.tv/helix/users?id={channel.GetProperty("user_id").GetString()}");
                             using HttpResponseMessage userResponse = await Http.SendAsync(userRequest);
                             JsonDocument userJson = await JsonDocument.ParseAsync(await userResponse.Content.ReadAsStreamAsync());
-                            username = userJson.RootElement.GetProperty("data")[0].GetProperty("login").GetString()?.ToLowerInvariant();
+                            username = userJson.RootElement.GetProperty("data")[0].GetProperty("login").GetString()?.ToLower();
                         }
 
                         channels.Add(new ChannelModel
                         {
-                            Id = username?.ToLowerInvariant(),
+                            Id = username?.ToLower(),
                             Game = channel.GetProperty("game_name").GetString(),
                             Viewers = viewerCount
                         });
@@ -205,7 +205,7 @@ namespace ChannelIntersection
     {
         public void Apply(BsonMemberMap memberMap) 
         {
-            memberMap.SetElementName(memberMap.MemberName.ToLowerInvariant());
+            memberMap.SetElementName(memberMap.MemberName.ToLower());
         }
 
         public string Name => "LowerCaseElementNameConvention";
