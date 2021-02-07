@@ -91,15 +91,13 @@ namespace ChannelIntersection
             IEnumerable<Task> insertTasks = processed.Select(async channel =>
             {
                 (ChannelModel ch, ConcurrentDictionary<string, int> value) = channel;
-                ch.Timestamp = timestamp.DateTime;
                 ch.Data = new Dictionary<string, int>(value);
-                ch.Overlaps = totalIntersectionCount[ch].Count;
                 UpdateDefinition<ChannelModel> update = Builders<ChannelModel>.Update
-                    .Set(x => x.Timestamp, ch.Timestamp)
+                    .Set(x => x.Timestamp, timestamp)
                     .Set(x => x.Game, ch.Game)
                     .Set(x => x.Viewers, ch.Viewers)
                     .Set(x => x.Chatters, ch.Chatters)
-                    .Set(x => x.Overlaps, ch.Overlaps)
+                    .Set(x => x.Overlaps, totalIntersectionCount[ch].Count)
                     .Set(x => x.Data, ch.Data)
                     .SetOnInsert(x => x.Id, ch.Id);
 
