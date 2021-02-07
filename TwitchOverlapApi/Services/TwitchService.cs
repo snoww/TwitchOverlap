@@ -92,7 +92,7 @@ namespace TwitchOverlapApi.Services
 
             List<ChannelGames> channelGames = await GetChannelGames();
 
-            ChannelProjection channelProjection = await ProjectChannelsWithGames(channel, channelGames);
+            ChannelProjection channelProjection = ProjectChannelsWithGames(channel, channelGames);
             
             string displayName = await _cache.GetStringAsync($"channel:{channel.Id}:display");
             string avatar = await _cache.GetStringAsync($"channel:{channel.Id}:avatar");
@@ -142,7 +142,7 @@ namespace TwitchOverlapApi.Services
             return games;
         }
 
-        private static async Task<ChannelProjection> ProjectChannelsWithGames(Channel channels, IReadOnlyCollection<ChannelGames> channelGamesList)
+        private static ChannelProjection ProjectChannelsWithGames(Channel channels, IReadOnlyCollection<ChannelGames> channelGamesList)
         {
             var channelProjection = new ChannelProjection
             {
@@ -157,12 +157,11 @@ namespace TwitchOverlapApi.Services
 
             var data = new ConcurrentDictionary<string, Data>();
 
-            IEnumerable<Task> tasks = channels.Data.Select(async x =>
+            Parallel.ForEach(channels.Data, x =>
             {
                 data.TryAdd(x.Key, new Data{Shared = x.Value, Game = channelGamesList.FirstOrDefault(y => y.Id == x.Key)?.Game});
             });
 
-            await Task.WhenAll(tasks);
             channelProjection.Data = new Dictionary<string, Data>(data);
             
             return channelProjection;
