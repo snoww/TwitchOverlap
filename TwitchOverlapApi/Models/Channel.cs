@@ -5,8 +5,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace TwitchOverlapApi.Models
 {
-    [BsonIgnoreExtraElements]
-    public class Channel
+    public class ChannelModel
     {
         [BsonId]
         public string Id { get; set; }
@@ -17,6 +16,25 @@ namespace TwitchOverlapApi.Models
         public int Chatters { get; set; }
         public int Overlaps { get; set; }
         public Dictionary<string, int> Data { get; set; }
+        public List<Dictionary<string, Dictionary<string, int>>> History { get; set; }
+    }
+
+    public class Channel
+    {
+        public string Id { get; set; }
+        public string Avatar { get; set; }
+        public DateTime Timestamp { get; set; }
+        public string Game { get; set; }
+        public int Viewers { get; set; }
+        public int Chatters { get; set; }
+        public int Overlaps { get; set; }
+        public Dictionary<string, int> Data { get; set; }
+    }
+
+    public class ChannelHistory
+    {
+        public string Id { get; set; }
+        public List<Dictionary<string, Dictionary<string, int>>> History { get; set; }
     }
 
     public class ChannelGames

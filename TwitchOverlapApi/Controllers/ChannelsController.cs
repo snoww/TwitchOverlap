@@ -31,7 +31,7 @@ namespace TwitchOverlapApi.Controllers
         }
         
         [HttpGet("{name}")]
-        public async Task<ActionResult<ChannelProjection>> Get(string name)
+        public async Task<ActionResult<ChannelProjection>> GetChannel(string name)
         {
             ChannelProjection channel = await _service.Get(name);
             if (channel == null)
@@ -40,6 +40,18 @@ namespace TwitchOverlapApi.Controllers
             }
         
             return channel;
+        }
+
+        [HttpGet("history/{name}")]
+        public async Task<ActionResult<ChannelHistory>> GetHistory(string name)
+        {
+            ChannelHistory history = await _service.GetChannelHistory(name);
+            if (history == null)
+            {
+                return NotFound();
+            }
+        
+            return history;
         }
     }
 }

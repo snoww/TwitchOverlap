@@ -18,7 +18,7 @@ namespace TwitchOverlapApi.Services
 {
     public class TwitchService
     {
-        private readonly IMongoCollection<Channel> _channels;
+        private readonly IMongoCollection<ChannelModel> _channels;
         private readonly IDistributedCache _cache;
         private readonly IHttpClientFactory _factory;
         private readonly Random _random = new();
@@ -36,7 +36,7 @@ namespace TwitchOverlapApi.Services
             ConventionRegistry.Register("LowerCaseElementName", conventions, _ => true);
             var client = new MongoClient(settings.ConnectionString);
             IMongoDatabase database = client.GetDatabase(settings.DatabaseName);
-            _channels = database.GetCollection<Channel>(settings.CollectionName);
+            _channels = database.GetCollection<ChannelModel>(settings.CollectionName);
             
             using JsonDocument json = JsonDocument.Parse(File.ReadAllText("config.json"));
             _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
@@ -77,14 +77,26 @@ namespace TwitchOverlapApi.Services
         {
             string cacheKey = name.ToLowerInvariant();
 
-            string channelJson = await _cache.GetStringAsync(cacheKey);
+            string channelJson = await _cache.GetStringAsync($"channel:{cacheKey}");
 
             if (!string.IsNullOrEmpty(channelJson))
             {
                 return JsonSerializer.Deserialize<ChannelProjection>(channelJson);
             }
 
-            Channel channel = await _channels.Find(x => x.Id == cacheKey).FirstOrDefaultAsync();
+            Channel channel = await _channels.Find(x => x.Id == cacheKey)
+                .Project(x => new Channel
+                {
+                    Id = x.Id,
+                    Avatar = x.Avatar,
+                    Timestamp = x.Timestamp,
+                    Game = x.Game,
+                    Viewers = x.Viewers,
+                    Chatters = x.Chatters,
+                    Overlaps = x.Overlaps,
+                    Data = x.Data
+                })
+                .FirstOrDefaultAsync();
             if (channel == null)
             {
                 return null;
@@ -112,9 +124,39 @@ namespace TwitchOverlapApi.Services
             
             DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
                 .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(channelProjection), options);
+            await _cache.SetStringAsync($"channel:{cacheKey}", JsonSerializer.Serialize(channelProjection), options);
             
             return channelProjection;
+        }
+
+        public async Task<ChannelHistory> GetChannelHistory(string name)
+        {
+            string cacheKey = name.ToLowerInvariant();
+
+            string channelHistoryJson = await _cache.GetStringAsync($"channel:{cacheKey}:history");
+
+            if (!string.IsNullOrEmpty(channelHistoryJson))
+            {
+                return JsonSerializer.Deserialize<ChannelHistory>(channelHistoryJson);
+            }
+
+            ChannelHistory history = await _channels.Find(x => x.Id == cacheKey)
+                .Project(x => new ChannelHistory
+                {
+                    Id = x.Id,
+                    History = x.History
+                })
+                .FirstOrDefaultAsync();
+            if (history == null)
+            {
+                return null;
+            }
+            
+            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
+                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
+            await _cache.SetStringAsync($"channel:{cacheKey}:history", JsonSerializer.Serialize(history), options);
+
+            return history;
         }
 
         private async Task<List<ChannelGames>> GetChannelGames()
