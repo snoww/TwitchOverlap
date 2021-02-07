@@ -107,7 +107,7 @@ namespace ChannelIntersection
                 {
                     {timestamp.ToUnixTimeSeconds().ToString(), ch.Data.OrderByDescending(x => x.Value).Take(5).ToDictionary(x => x.Key, x => x.Value)}
                 };
-                update = update.PushEach(x => x.History, new[] {history}, -100);
+                update = update.PushEach(x => x.History, new[] {history}, -24);
                 await _channelCollection.UpdateOneAsync(x => x.Id == ch.Id, update, updateOptions);
             });
             
