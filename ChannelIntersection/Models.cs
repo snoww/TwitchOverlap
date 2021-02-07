@@ -14,13 +14,12 @@ namespace ChannelIntersection
         public int Chatters { get; set; }
         public int Overlaps { get; set; }
         public Dictionary<string, int> Data { get; set; }
+        public List<Dictionary<string, Dictionary<string, int>>> History { get; set; }
         
         public int CompareTo(object obj)
         {
             var other = obj as ChannelModel;
-            if (other?.Id == null) return 1;
-            
-            return string.Compare(Id, other.Id, StringComparison.Ordinal);
+            return other?.Id == null ? 1 : string.Compare(Id, other.Id, StringComparison.Ordinal);
         }
     }
 }

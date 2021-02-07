@@ -23,7 +23,7 @@ namespace ChannelIntersection
         private static string _mongodbConnection;
         private static IMongoCollection<ChannelModel> _channelCollection;
 
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
             using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
             {
@@ -32,7 +32,7 @@ namespace ChannelIntersection
                 _mongodbConnection = json.RootElement.GetProperty("MONGODB").GetString();
             }
             
-            DateTime timestamp = DateTime.UtcNow;
+            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
 
             var conventions = new ConventionPack {new LowerCaseElementNameConvention()};
             ConventionRegistry.Register("LowerCaseElementName", conventions, _ => true);
@@ -86,15 +86,29 @@ namespace ChannelIntersection
             Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            var updateOptions = new ReplaceOptions{IsUpsert = true};
+            var updateOptions = new UpdateOptions{IsUpsert = true};
             
             IEnumerable<Task> insertTasks = processed.Select(async channel =>
             {
                 (ChannelModel ch, ConcurrentDictionary<string, int> value) = channel;
-                ch.Timestamp = timestamp;
+                ch.Timestamp = timestamp.DateTime;
                 ch.Data = new Dictionary<string, int>(value);
                 ch.Overlaps = totalIntersectionCount[ch].Count;
-                await _channelCollection.ReplaceOneAsync(x => x.Id == ch.Id, ch, updateOptions);
+                UpdateDefinition<ChannelModel> update = Builders<ChannelModel>.Update
+                    .Set(x => x.Timestamp, ch.Timestamp)
+                    .Set(x => x.Game, ch.Game)
+                    .Set(x => x.Viewers, ch.Viewers)
+                    .Set(x => x.Chatters, ch.Chatters)
+                    .Set(x => x.Overlaps, ch.Overlaps)
+                    .Set(x => x.Data, ch.Data)
+                    .SetOnInsert(x => x.Id, ch.Id);
+
+                var history = new Dictionary<string, Dictionary<string, int>>
+                {
+                    {timestamp.ToUnixTimeSeconds().ToString(), ch.Data.OrderByDescending(x => x.Value).Take(10).ToDictionary(x => x.Key, x => x.Value)}
+                };
+                update = update.PushEach(x => x.History, new[] {history}, -100);
+                await _channelCollection.UpdateOneAsync(x => x.Id == ch.Id, update, updateOptions);
             });
             
             await Task.WhenAll(insertTasks);
@@ -161,7 +175,7 @@ namespace ChannelIntersection
                     foreach (JsonElement channel in channelEnumerator)
                     {
                         int viewerCount = channel.GetProperty("viewer_count").GetInt32();
-                        if (viewerCount < 1000)
+                        if (viewerCount < 2000)
                         {
                             pageToken = null;
                             break;
