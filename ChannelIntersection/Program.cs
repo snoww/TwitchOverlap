@@ -93,7 +93,7 @@ namespace ChannelIntersection
                 (ChannelModel ch, ConcurrentDictionary<string, int> value) = channel;
                 ch.Data = new Dictionary<string, int>(value);
                 UpdateDefinition<ChannelModel> update = Builders<ChannelModel>.Update
-                    .Set(x => x.Timestamp, timestamp)
+                    .Set(x => x.Timestamp, timestamp.DateTime)
                     .Set(x => x.Game, ch.Game)
                     .Set(x => x.Viewers, ch.Viewers)
                     .Set(x => x.Chatters, ch.Chatters)
