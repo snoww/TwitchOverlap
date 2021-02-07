@@ -5,6 +5,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace TwitchOverlapApi.Models
 {
+    [BsonIgnoreExtraElements]
     public class Channel
     {
         [BsonId]
