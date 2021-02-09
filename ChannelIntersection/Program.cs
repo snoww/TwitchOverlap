@@ -103,7 +103,7 @@ namespace ChannelIntersection
 
                 var history = new Dictionary<string, Dictionary<string, int>>
                 {
-                    {timestamp.ToUnixTimeSeconds().ToString(), ch.Data.OrderByDescending(x => x.Value).Take(5).ToDictionary(x => x.Key, x => x.Value)}
+                    {timestamp.ToUnixTimeSeconds().ToString(), ch.Data.OrderByDescending(x => x.Value).Take(6).ToDictionary(x => x.Key, x => x.Value)}
                 };
                 update = update.PushEach(x => x.History, new[] {history}, -24);
                 await _channelCollection.UpdateOneAsync(x => x.Id == ch.Id, update, updateOptions);
