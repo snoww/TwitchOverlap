@@ -26,8 +26,8 @@
             <div class="row gy-2">
                 <div class="col">
                     <div class="card text-center p-2 h-100">
-                        <h6 class="card-title">Last Update</h6>
-                        <p class="card-text">@Model.Timestamp.ToString("MM/dd/yyyy hh:mm")Z</p>
+                        <h6 class="card-title">Last Updated</h6>
+                        <p id="last-updated" class="card-text">@Model.Timestamp.ToString("u")</p>
                     </div>
                 </div>
                 <div class="col">
@@ -50,13 +50,13 @@
                 </div>
                 <div class="col">
                     <div class="card text-center p-2 h-100">
-                        <h6 class="card-title">Overlap Probability</h6>
+                        <h6 class="card-title">Overlap Percentage</h6>
                         <p class="card-text">@(((double) Model.Overlaps / Model.Viewers).ToString("P"))</p>
                     </div>
                 </div>
                 <div class="col">
                     <div class="card text-center p-2 h-100">
-                        <h6 class="card-title">Total Overlap</h6>
+                        <h6 class="card-title">Total Overlapped</h6>
                         <p class="card-text">@Model.Overlaps.ToString("N0")</p>
                     </div>
                 </div>
@@ -98,6 +98,14 @@
 </div>
 
 <script>
+const lastUpdated = document.getElementById("last-updated");
+const date = new Date(lastUpdated.innerHTML);
+const year = new Intl.DateTimeFormat("default", { year: "numeric" }).format(date);
+const month = new Intl.DateTimeFormat("default", { month: "2-digit" }).format(date);
+const day = new Intl.DateTimeFormat("default", { day: "2-digit" }).format(date);
+const time = new Intl.DateTimeFormat("default", { hour: "numeric", minute: "numeric" }).format(date);
+lastUpdated.innerHTML = `${year}-${month}-${day} ${time}`;
+
 function toRGB(input) {
     let hash = 0;
     if (input === 0) return hash;
