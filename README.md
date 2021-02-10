@@ -1,14 +1,20 @@
-# Twitch Overlap API
+# Twitch Overlap
 
-This repo contains the API server for [stats.roki.sh](https://stats.roki.sh).
+This repo contains the site for [stats.roki.sh](https://stats.roki.sh).
 
-## `./TwitchOverlapApi`
+## `./TwitchOverlap`
 
-This project is the server for the api, written in ASP.NET Core.
+This site shows data for the overlap of different communities on [Twitch.tv](https://twitch.tv). For each channel, it shows a list of all the channels that share a common chatter. The probability score represented is the percentage of shared viewers compared to the total shared viewers.
 
-Connects to a mongodb backend server which contains the data for each channel. 
+The probability score is calculated by `channel_shared/total_shared`.
 
-Results are cached for 5 minutes using redis. 
+`channel_shared` is the number of shared viewers from a particular channel
+
+`total_shared` is the total number of unique shared viewers from all channels.
+
+Motivation from [Subreddit User-Overlap](https://subredditstats.com/subreddit-user-overlaps).
+
+I am mainly a backend dev so the UI isn't great, I did what I could, also got some help from a [friend](https://github.com/oliverbaileysmith).
 
 ## `./ChannelIntersection`
 
