@@ -32,31 +32,31 @@
                 </div>
                 <div class="col">
                     <div class="card text-center p-2 h-100">
-                        <h6 class="card-title">Viewers</h6>
+                        <h6 class="card-title" title="Total viewers in stream, includes embedded viewers">Viewers</h6>
                         <p class="card-text">@Model.Viewers.ToString("N0")</p>
                     </div>
                 </div>
                 <div class="col">
                     <div class="card text-center p-2 h-100">
-                        <h6 class="card-title">Chatters</h6>
+                        <h6 class="card-title" title="Total chatters in stream, excludes embedded viewers">Chatters</h6>
                         <p class="card-text">@Model.Chatters.ToString("N0")</p>
                     </div>
                 </div>
                 <div class="col">
                     <div class="card text-center p-2 h-100">
-                        <h6 class="card-title">Chatter/Viewer Ratio</h6>
+                        <h6 class="card-title" title="Ratio of chatters to viewers, higher is better">Chatter/Viewer Ratio</h6>
                         <p class="card-text">@(((double) Model.Chatters / Model.Viewers).ToString("N2"))</p>
                     </div>
                 </div>
                 <div class="col">
                     <div class="card text-center p-2 h-100">
-                        <h6 class="card-title">Overlap Percentage</h6>
+                        <h6 class="card-title" title="Percentage of total viewers that are also watching another stream">Overlap Percentage</h6>
                         <p class="card-text">@(((double) Model.Overlaps / Model.Viewers).ToString("P"))</p>
                     </div>
                 </div>
                 <div class="col">
                     <div class="card text-center p-2 h-100">
-                        <h6 class="card-title">Total Overlapped</h6>
+                        <h6 class="card-title" title="Total number of viewers watching another stream">Total Overlapped</h6>
                         <p class="card-text">@Model.Overlaps.ToString("N0")</p>
                     </div>
                 </div>
