@@ -173,7 +173,7 @@ namespace ChannelIntersection
                     foreach (JsonElement channel in channelEnumerator)
                     {
                         int viewerCount = channel.GetProperty("viewer_count").GetInt32();
-                        if (viewerCount < 2000)
+                        if (viewerCount < 1500)
                         {
                             pageToken = null;
                             break;
