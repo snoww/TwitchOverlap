@@ -27,7 +27,7 @@
                 <div class="col">
                     <div class="card text-center p-2 h-100">
                         <h6 class="card-title">Last Update</h6>
-                        <p class="card-text">@Model.Timestamp.ToLocalTime().ToString("g")</p>
+                        <p class="card-text">@Model.Timestamp.ToString("MM/dd/yyyy hh:mm")Z</p>
                     </div>
                 </div>
                 <div class="col">
@@ -64,7 +64,7 @@
         </div>
     </div>
     <div class="chart-container" style="position: relative;">
-        <canvas id="myChart" style="width: 1000px; height: 500px"></canvas>
+        <canvas id="channel-trend-chart" style="width: 1000px; height: 500px"></canvas>
     </div>
     <div class="table-responsive mt-3">
         <table class="table table-hover" id="data-table">
@@ -98,11 +98,6 @@
 </div>
 
 <script>
-const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-  return new bootstrap.Tooltip(tooltipTriggerEl)
-});
-
 function toRGB(input) {
     let hash = 0;
     if (input === 0) return hash;
@@ -120,7 +115,7 @@ function toRGB(input) {
 (function () {
 const arr = [@(Model.History != null ? string.Join(',', Model.History) : null)];
 if (arr.length === 0) {
-	document.getElementById("myChart").outerHTML = "";
+	document.getElementById("channel-trend-chart").outerHTML = "";
 	return;
 }
 let timeSet = [];
@@ -147,11 +142,11 @@ for (const property in rawdata) {
 }
 
 if (datacoll.length === 0) {
-	document.getElementById("myChart").outerHTML = "";
+	document.getElementById("channel-trend-chart").outerHTML = "";
 	return;
 }
 
-const ctx = document.getElementById('myChart');
+const ctx = document.getElementById('channel-trend-chart');
 const config = {
 	type: 'line',
 	data: {
