@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchOverlapApi", "TwitchOverlapApi\TwitchOverlapApi.csproj", "{6F1FE491-26C5-42EA-9997-570A7ED4207D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChannelIntersection", "ChannelIntersection\ChannelIntersection.csproj", "{3F4C96BF-4904-48AC-AC39-AF7A84B70EC3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchOverlap", "TwitchOverlap\TwitchOverlap.csproj", "{88481136-6D01-477A-9220-0F3036771882}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,13 +10,13 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6F1FE491-26C5-42EA-9997-570A7ED4207D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6F1FE491-26C5-42EA-9997-570A7ED4207D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6F1FE491-26C5-42EA-9997-570A7ED4207D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6F1FE491-26C5-42EA-9997-570A7ED4207D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3F4C96BF-4904-48AC-AC39-AF7A84B70EC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3F4C96BF-4904-48AC-AC39-AF7A84B70EC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F4C96BF-4904-48AC-AC39-AF7A84B70EC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F4C96BF-4904-48AC-AC39-AF7A84B70EC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88481136-6D01-477A-9220-0F3036771882}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88481136-6D01-477A-9220-0F3036771882}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88481136-6D01-477A-9220-0F3036771882}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88481136-6D01-477A-9220-0F3036771882}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

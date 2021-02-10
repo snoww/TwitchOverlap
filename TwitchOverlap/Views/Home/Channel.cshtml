@@ -1,0 +1,194 @@
+﻿@model ChannelProjection
+
+@{
+    ViewData["Title"] = Model.DisplayName;
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+
+<div id="channel">
+    <div id="channel-card">
+        <div class="d-flex mb-2" id="avatar-card">
+            <a href="https://www.twitch.tv/@Model.Id" target="_blank" rel="noopener noreferrer">
+                <img src="@Model.Avatar" class="rounded-circle" alt="twitch-avatar">
+            </a>
+            <div>
+                <h3>
+                    <a href="https://www.twitch.tv/@Model.Id" target="_blank" rel="noopener noreferrer">@Model.DisplayName</a>
+                </h3>
+                <p>
+                    <a href="https://www.twitch.tv/directory/game/@Model.Game" target="_blank" rel="noopener noreferrer">@Model.Game</a>
+                </p>
+            </div>
+        </div>
+        <div class="container">
+            <div class="row gy-2">
+                <div class="col">
+                    <div class="card text-center p-2 h-100">
+                        <h6 class="card-title">Last Update</h6>
+                        <p class="card-text">@Model.Timestamp.ToLocalTime().ToString("g")</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card text-center p-2 h-100">
+                        <h6 class="card-title">Viewers</h6>
+                        <p class="card-text">@Model.Viewers.ToString("N0")</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card text-center p-2 h-100">
+                        <h6 class="card-title">Chatters</h6>
+                        <p class="card-text">@Model.Chatters.ToString("N0")</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card text-center p-2 h-100">
+                        <h6 class="card-title">Chatter/Viewer Ratio</h6>
+                        <p class="card-text">@(((double) Model.Chatters / Model.Viewers).ToString("N2"))</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card text-center p-2 h-100">
+                        <h6 class="card-title">Overlap Probability</h6>
+                        <p class="card-text">@(((double) Model.Overlaps / Model.Viewers).ToString("P"))</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card text-center p-2 h-100">
+                        <h6 class="card-title">Total Overlap</h6>
+                        <p class="card-text">@Model.Overlaps.ToString("N0")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="chart-container" style="position: relative;">
+        <canvas id="myChart" style="width: 1000px; height: 500px"></canvas>
+    </div>
+    <div class="table-responsive mt-3">
+        <table class="table table-hover" id="data-table">
+            <thead>
+            <tr>
+                <th scope="col" style="width: 20%">Channel</th>
+                <th scope="col" style="width: 15%">Overlap Probability</th>
+                <th scope="col" style="width: 15%">Overlap Chatters</th>
+                <th scope="col" style="width: 15%">% of Total Chatters</th>
+                <th scope="col" style="width: 35%">Playing</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach ((string channel, Data data) in Model.Data.OrderByDescending(x => x.Value.Shared))
+            {
+                <tr>
+                    <td>
+                        <a asp-controller="Home" asp-action="Channel" asp-route-name=@channel>@channel</a>
+                    </td>
+                    <td>@(((double) data.Shared / Model.Overlaps).ToString("P"))</td>
+                    <td>@(data.Shared.ToString("N0"))</td>
+                    <td>@(((double) data.Shared / Model.Chatters).ToString("P"))</td>
+                    <td>
+                        <a href="https://www.twitch.tv/directory/game/@Model.Game" target="_blank" rel="noopener noreferrer">@data.Game</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
+function toRGB(input) {
+    let hash = 0;
+    if (input === 0) return hash;
+    for (let i = 0; i < input.length; i++) {
+        hash = input.charCodeAt(i) + ((hash << 5) - hash);
+        hash = hash & hash;
+    }
+    const rgb = [0, 0, 0];
+    for (let i = 0; i < 3; i++) {
+        rgb[i] = (hash >> (i * 8)) & 255;
+    }
+    return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+}
+
+(function () {
+const arr = [@(Model.History != null ? string.Join(',', Model.History) : null)];
+if (arr.length === 0) {
+	document.getElementById("myChart").outerHTML = "";
+	return;
+}
+let timeSet = [];
+for(let i = 0; i < arr.length; i++) {
+    const date = new Date(arr[i] * 1000);
+    const month = new Intl.DateTimeFormat("default", { month: "short" }).format(date);
+    const day = new Intl.DateTimeFormat("default", { day: "2-digit" }).format(date);
+    const time = new Intl.DateTimeFormat("default", { hour: "numeric", minute: "numeric", hour12: false }).format(date);
+    const dt = `${month}-${day} ${time}`;
+    timeSet.push(dt);
+}
+const rawdata = @Html.Raw(Json.Serialize(Model.OverlapPoints));
+let datacoll = [];
+for (const property in rawdata) {
+    let datapoints = {};
+    let color = toRGB(property);
+    datapoints.label = property;
+    datapoints.data = rawdata[property];
+    datapoints.backgroundColor = color;
+    datapoints.borderColor = color;
+    datapoints.fill = false;
+    datapoints.lineTension = 0;
+    datacoll.push(datapoints);
+}
+
+if (datacoll.length === 0) {
+	document.getElementById("myChart").outerHTML = "";
+	return;
+}
+
+const ctx = document.getElementById('myChart');
+const config = {
+	type: 'line',
+	data: {
+		labels: timeSet,
+		datasets: datacoll
+	},
+	options: {
+		responsive: true,
+		maintainAspectRatio: false,
+		title: {
+			display: true,
+			text: 'Overlap Trend'
+		},
+		tooltips: {
+			mode: 'point'
+        },
+		hover: {
+			mode: 'nearest',
+			intersect: true
+		},
+		scales: {
+			xAxes: [{
+				display: true,
+				scaleLabel: {
+					display: true,
+				}
+			}],
+			yAxes: [{
+				display: true,
+				scaleLabel: {
+					display: true,
+					labelString: 'Overlapping Viewers'
+				}
+			}]
+		},
+	}
+};
+new Chart(ctx, config);
+})();
+</script>

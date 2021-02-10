@@ -1,0 +1,137 @@
+﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+html * {
+  font-family: 'Roboto', sans-serif;
+}
+
+a.navbar-brand {
+  white-space: normal;
+  text-align: center;
+  /*word-break: break-all;*/
+}
+
+/*!* Provide sufficient contrast against white background *!*/
+/*a {*/
+/*  color: #0366d6;*/
+/*}*/
+
+.btn-primary {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  font-size: 14px;
+}
+@media (min-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+.border-top {
+  border-top: 1px solid #e5e5e5;
+}
+.border-bottom {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy {
+  font-size: 1rem;
+  line-height: inherit;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 60px; /* Vertically center the text there */
+}
+
+#channel-card > p {
+  margin-bottom: 0;
+}
+
+#channel-card > div > div {
+  margin-left: 10px;
+}
+
+* a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#channel-card a:hover, #data-table a:hover, #summary-card a:hover {
+  text-decoration: underline;
+  color: inherit;
+}
+
+body > header > nav > div > div.navbar-collapse.collapse.d-sm-inline-flex.justify-content-between > ul > li > a:hover {
+  color: inherit;
+}
+
+#avatar-card {
+  margin-bottom: -5px;
+}
+
+#avatar-card > div {
+  margin-top: 5px;
+}
+
+#summary-card:hover {
+  background-color: #d3d3d3;
+}
+
+@media (prefers-color-scheme: dark) {
+  #summary-card:hover {
+    background-color: #666666;
+  }
+}
+
+#summary-data > div > p {
+  font-size: 14px;
+}
+
+body > div > main > div.container > div > div {
+  padding-right: 5px;
+  padding-left: 5px;
+}
+
+#summary-data > div > p {
+  white-space: nowrap;
+}
+
+#summary-data > div > h6 > a {
+  overflow: hidden;
+}
+
+body > div > main > div > p > a {
+  color: initial;
+  text-decoration: underline;
+}

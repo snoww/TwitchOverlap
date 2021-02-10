@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="A fan made open source site to check a the overlap of communities on Twitch. The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently cross-chatting in the channel"/>
+    <title>@ViewData["Title"] - Twitch Community Overlap</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-dark-5@0.1/dist/css/bootstrap-dark.min.css">
+    <link rel="stylesheet" href="~/css/site.css"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-53NJ04WTT9"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-53NJ04WTT9');
+    </script>
+</head>
+<body>
+<header>
+    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light border-bottom box-shadow mb-3">
+        <div class="container">
+            <a class="navbar-brand" href="/">Home</a>
+            @* <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between"> *@
+            @*     <ul class="navbar-nav flex-grow-1"> *@
+            @*         <li class="nav-item"> *@
+            @*              *@
+            @*         </li> *@
+            @*     </ul> *@
+            @* </div> *@
+            @* <button type="button" class="btn btn-primary" id="dark-mode-toggle" style="white-space: nowrap;">Light Mode</button> *@
+            <div class="col-sm-4 col-sm-offset-4 align-items-center">
+                <div class="input-group">
+                    <input id="search-channel" type="text" class="form-control" placeholder="channel" required oninvalid="this.setCustomValidity('please type in a channel')" oninput="setCustomValidity('')"/>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit" onclick="searchChannel()">Search</button>
+                    </div>
+                </div>
+            </div>
+            <a href="https://github.com/snoww/twitchoverlapapi">GitHub Source</a>
+        </div>
+    </nav>
+</header>
+<div class="container">
+    <main role="main" class="pb-3">
+        @RenderBody()
+    </main>
+</div>
+
+<footer class="border-top footer text-muted">
+    <div class="container">
+        Created by: Snoww - <a href="https://github.com/snoww/twitchoverlapapi">GitHub Source</a>
+    </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
+<script>
+function searchChannel() {
+    window.location.href = `/channel/${document.getElementById("search-channel").value}`;
+}
+
+document.getElementById("search-channel").addEventListener("keyup", (e) => {
+    console.log("keyup");
+    if (e.key === "Enter") searchChannel();
+});
+</script>
+@* <script> *@
+@*   document.querySelector("#dark-mode-toggle").onclick = function(){ *@
+@*     darkmode.toggleDarkMode(); *@
+@*     if (document.getElementsByTagName("html")[0].classList.contains("dark")) { *@
+@*         document.querySelector("#dark-mode-toggle").innerText = "Light Mode"; *@
+@*     } else { *@
+@*         document.querySelector("#dark-mode-toggle").innerText = "Dark Mode"; *@
+@*     } *@
+@*   } *@
+@* </script> *@
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
