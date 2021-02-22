@@ -27,7 +27,21 @@
                 <div class="col">
                     <div class="card text-center p-2 h-100">
                         <h6 class="card-title">Last Updated</h6>
-                        <p id="last-updated" class="card-text">@Model.Timestamp.ToString("u")</p>
+                        @{
+                            TimeSpan ts = DateTime.UtcNow - Model.Timestamp;
+                            if (ts.TotalMinutes <= 60)
+                            {
+                                <p id="last-updated" class="card-text">@(ts.Minutes == 1 ? $"{ts.Minutes} minute" : $"{ts.Minutes} minutes") ago</p>
+                            }
+                            else if (ts.TotalDays <= 7)
+                            {
+                                <p id="last-updated" class="card-text">@(ts.Days == 1 ? $"{ts.Days} day" : $"{ts.Days} days") ago</p>
+                            }
+                            else
+                            {
+                                <p id="last-updated" class="card-text">@Model.Timestamp.ToString("g")Z</p>
+                            }
+                        }
                     </div>
                 </div>
                 <div class="col">
