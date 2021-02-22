@@ -31,15 +31,15 @@
                             TimeSpan ts = DateTime.UtcNow - Model.Timestamp;
                             if (ts.TotalMinutes <= 60)
                             {
-                                <p id="last-updated" class="card-text">@(ts.Minutes == 1 ? $"{ts.Minutes} minute" : $"{ts.Minutes} minutes") ago</p>
+                                <p id="last-updated" class="card-text" title="@Model.Timestamp.ToString("g")Z">@(ts.Minutes == 1 ? $"{ts.Minutes} minute" : $"{ts.Minutes} minutes") ago</p>
                             }
                             else if (ts.TotalHours <= 24)
                             {
-                                <p id="last-updated" class="card-text">@(ts.Hours == 1 ? $"{ts.Hours} hour" : $"{ts.Hours} hours") ago</p>
+                                <p id="last-updated" class="card-text" title="@Model.Timestamp.ToString("g")Z">@(ts.Hours == 1 ? $"{ts.Hours} hour" : $"{ts.Hours} hours") ago</p>
                             }
                             else if (ts.TotalDays <= 7)
                             {
-                                <p id="last-updated" class="card-text">@(ts.Days == 1 ? $"{ts.Days} day" : $"{ts.Days} days") ago</p>
+                                <p id="last-updated" class="card-text" title="@Model.Timestamp.ToString("g")Z">@(ts.Days == 1 ? $"{ts.Days} day" : $"{ts.Days} days") ago</p>
                             }
                             else
                             {
