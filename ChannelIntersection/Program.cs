@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
+using StackExchange.Redis;
 
 namespace ChannelIntersection
 {
@@ -22,6 +23,8 @@ namespace ChannelIntersection
         private static string _twitchClient;
         private static string _mongodbConnection;
         private static IMongoCollection<ChannelModel> _channelCollection;
+        private static IDatabase _cache;
+        private static IServer _cacheServer;
 
         public static async Task Main()
         {
@@ -40,11 +43,16 @@ namespace ChannelIntersection
             IMongoDatabase db = client.GetDatabase("twitch");
             _channelCollection = db.GetCollection<ChannelModel>("channels");
             Console.WriteLine("connected to database");
+            
+            ConnectionMultiplexer redis = await ConnectionMultiplexer.ConnectAsync("localhost");
+            _cacheServer = redis.GetServer("localhost");
+            _cache = redis.GetDatabase();
+            Console.WriteLine("connected to cache");
 
             var sw = new Stopwatch();
             sw.Start();
 
-            List<ChannelModel> channels = await GetTopChannels();
+            (List<ChannelModel> channels, HashSet<string> channelNames) = await GetTopChannels();
             
             Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
@@ -144,9 +152,10 @@ namespace ChannelIntersection
             return chatterList;
         }
         
-        private static async Task<List<ChannelModel>> GetTopChannels()
+        private static async Task<(List<ChannelModel> channels, HashSet<string> channelNames)> GetTopChannels()
         {
             var channels = new List<ChannelModel>();
+            var channelNames = new HashSet<string>();
             
             var pageToken = string.Empty;
             do
@@ -191,9 +200,12 @@ namespace ChannelIntersection
                             username = userJson.RootElement.GetProperty("data")[0].GetProperty("login").GetString()?.ToLower();
                         }
 
+                        string channelName = username!.ToLower();
+                        _cache.StringSet($"channel:tracked:{channelName}", 1, flags: CommandFlags.FireAndForget, expiry: TimeSpan.FromHours(1));
+                        channelNames.Add(channelName);
                         channels.Add(new ChannelModel
                         {
-                            Id = username?.ToLower(),
+                            Id = channelName,
                             Game = channel.GetProperty("game_name").GetString(),
                             Viewers = viewerCount
                         });
@@ -201,7 +213,27 @@ namespace ChannelIntersection
                 }
             } while (pageToken != null);
 
-            return channels;
+            return (channels, channelNames);
+        }
+
+        private static async Task<List<ChannelModel>> GetRequestedChannels(List<ChannelModel> liveChannels, IReadOnlySet<string> liveChannelNames)
+        {
+            var newChannels = new ConcurrentDictionary<string, byte>();
+            await foreach (RedisKey key in _cacheServer.KeysAsync(pattern: "channel:tracked:"))
+            {
+                string channelName = ((string) key)[16..];
+                if (!liveChannelNames.Contains(channelName))
+                {
+                    newChannels.TryAdd(channelName, 1);
+                }
+            }
+            
+            return liveChannels;
+        }
+
+        private static async Task<List<ChannelModel>> GetRequestedChannelsInformation(ConcurrentDictionary<string, byte> newChannels)
+        {
+            return null;
         }
 
         private static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable

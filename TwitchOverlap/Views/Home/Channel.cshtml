@@ -9,11 +9,11 @@
 
 <div id="channel">
     <div id="channel-card">
-        <div class="d-flex mb-2" id="avatar-card">
+        <div class="d-flex mb-2 avatar-card">
             <a href="https://www.twitch.tv/@Model.Id" target="_blank" rel="noopener noreferrer">
                 <img src="@Model.Avatar" class="rounded-circle" alt="twitch-avatar" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'">
             </a>
-            <div>
+            <div class="ps-3">
                 <h3>
                     <a href="https://www.twitch.tv/@Model.Id" target="_blank" rel="noopener noreferrer">@Model.DisplayName</a>
                 </h3>
@@ -49,32 +49,32 @@
                     </div>
                 </div>
                 <div class="col">
-                    <div class="card text-center p-2 h-100">
-                        <h6 class="card-title" title="Total viewers in stream, includes embedded viewers">Viewers</h6>
+                    <div class="card text-center p-2 h-100" title="Total viewers in stream, includes embedded viewers">
+                        <h6 class="card-title">Viewers</h6>
                         <p class="card-text">@Model.Viewers.ToString("N0")</p>
                     </div>
                 </div>
                 <div class="col">
-                    <div class="card text-center p-2 h-100">
-                        <h6 class="card-title" title="Total chatters in stream, excludes embedded viewers">Chatters</h6>
+                    <div class="card text-center p-2 h-100" title="Total chatters in stream, excludes embedded viewers">
+                        <h6 class="card-title">Chatters</h6>
                         <p class="card-text">@Model.Chatters.ToString("N0")</p>
                     </div>
                 </div>
                 <div class="col">
-                    <div class="card text-center p-2 h-100">
-                        <h6 class="card-title" title="Ratio of chatters to viewers, higher is better">Chatter/Viewer Ratio</h6>
+                    <div class="card text-center p-2 h-100" title="Ratio of chatters to viewers, higher is better">
+                        <h6 class="card-title">Chatter/Viewer Ratio</h6>
                         <p class="card-text">@(((double) Model.Chatters / Model.Viewers).ToString("N2"))</p>
                     </div>
                 </div>
                 <div class="col">
-                    <div class="card text-center p-2 h-100">
-                        <h6 class="card-title" title="Percentage of total viewers that are also watching another stream">Overlap Percentage</h6>
+                    <div class="card text-center p-2 h-100" title="Percentage of total viewers that are also watching another stream">
+                        <h6 class="card-title">Overlap Percentage</h6>
                         <p class="card-text">@(((double) Model.Overlaps / Model.Viewers).ToString("P"))</p>
                     </div>
                 </div>
                 <div class="col">
-                    <div class="card text-center p-2 h-100">
-                        <h6 class="card-title" title="Total number of viewers watching another stream">Total Overlapped</h6>
+                    <div class="card text-center p-2 h-100" title="Total number of viewers watching another stream">
+                        <h6 class="card-title">Total Overlapped</h6>
                         <p class="card-text">@Model.Overlaps.ToString("N0")</p>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
         <canvas id="channel-trend-chart" style="width: 1000px; height: 500px"></canvas>
     </div>
     <div class="table-responsive mt-3">
-        <table class="table table-hover" id="data-table">
+        <table class="table table-hover data-table">
             <thead>
             <tr>
                 <th scope="col" style="width: 20%">Channel</th>

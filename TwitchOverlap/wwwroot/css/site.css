@@ -1,42 +1,10 @@
-﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
-for details on configuring this project to bundle and minify static web assets. */
-
-html * {
-  font-family: 'Roboto', sans-serif;
+﻿html * {
+  font-family: 'Open Sans', sans-serif;
 }
 
 a.navbar-brand {
   white-space: normal;
   text-align: center;
-  /*word-break: break-all;*/
-}
-
-/*!* Provide sufficient contrast against white background *!*/
-/*a {*/
-/*  color: #0366d6;*/
-/*}*/
-
-.btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
-}
-
-.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
-}
-
-/* Sticky footer styles
--------------------------------------------------- */
-html {
-  font-size: 14px;
-}
-@media (min-width: 768px) {
-  html {
-    font-size: 15px;
-  }
 }
 
 .border-top {
@@ -55,31 +23,21 @@ button.accept-policy {
   line-height: inherit;
 }
 
-/* Sticky footer styles
--------------------------------------------------- */
 html {
   position: relative;
   min-height: 100%;
 }
 
 body {
-  /* Margin bottom by footer height */
   margin-bottom: 60px;
 }
+
 .footer {
   position: absolute;
   bottom: 0;
   width: 100%;
   white-space: nowrap;
-  line-height: 60px; /* Vertically center the text there */
-}
-
-#channel-card > p {
-  margin-bottom: 0;
-}
-
-#channel-card > div > div {
-  margin-left: 10px;
+  line-height: 60px;
 }
 
 * a {
@@ -87,7 +45,7 @@ body {
   text-decoration: none;
 }
 
-#channel-card a:hover, #data-table a:hover, #summary-card a:hover {
+.channel-card a:hover, .data-table a:hover, .summary-card a:hover, .avatar-card a:hover {
   text-decoration: underline;
   color: inherit;
 }
@@ -96,25 +54,33 @@ body > header > nav > div > div.navbar-collapse.collapse.d-sm-inline-flex.justif
   color: inherit;
 }
 
-#avatar-card {
+.avatar-card {
   margin-bottom: -5px;
 }
 
-#avatar-card > div {
+.avatar-card > div {
   margin-top: 5px;
 }
 
-#summary-card:hover {
+.summary-card:hover {
   background-color: #d3d3d3;
 }
 
+body > header > nav > div > a:hover {
+  color: #6200ee !important;
+}
+
 @media (prefers-color-scheme: dark) {
-  #summary-card:hover {
+  .summary-card:hover {
     background-color: #666666;
+  }
+
+  body > header > nav > div > a:hover {
+    color: #bb86fc !important;
   }
 }
 
-#summary-data > div > p {
+.summary-data > div > p {
   font-size: 14px;
 }
 
@@ -123,15 +89,41 @@ body > div > main > div.container > div > div {
   padding-left: 5px;
 }
 
-#summary-data > div > p {
+.summary-data > div > p {
   white-space: nowrap;
 }
 
-#summary-data > div > h6 > a {
+.summary-data > div > h6 > a {
   overflow: hidden;
 }
 
 body > div > main > div > p > a {
   color: initial;
   text-decoration: underline;
+}
+
+@media only screen and (max-width: 600px) {
+  .summary-card {
+    padding-left: 0.2rem!important;
+    padding-top: 0.1rem!important;
+    padding-bottom: 0.1rem!important;
+  }
+  .channel-summary {
+    padding-left: 0.3rem!important;
+  }
+}
+
+.summary-card {
+  padding-left: 0.75rem;
+}
+
+.channel-summary {
+  overflow: hidden;
+}
+
+.channel-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

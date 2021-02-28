@@ -5,7 +5,7 @@
 }
 
 <div>
-    <h4 class="display-4 text-center">Twitch Community Overlap</h4>
+    <h1 class="display-4 text-center">Twitch Community Overlap</h1>
     <p class="mb-2">The site shows stats about the overlap of chatters from different channels. You can find out who your favorite streamer shares viewers with, or how many people are currently cross-chatting in the channel. The source code for the site is open sourced on GitHub.</p>
     <p class="mb-2">Currently tracks all channels over 1,500 viewers. Data updates every 30 minutes (for now).</p>
     <p class="mb-4">Click a channel below or use the search box above.</p>
@@ -15,18 +15,16 @@
         @foreach (ChannelSummary summary in Model)
         {
             <div class="col gy-2">
-                <div class="card" id="summary-card">
-                    <div class="card-body p-1">
-                        <div class="d-flex pt-2 justify-content-sm-start justify-content-md-evenly" id="summary-data">
-                            <a asp-controller="Home" asp-action="Channel" asp-route-name=@summary.Id>
-                                <img src="@summary.Avatar" class="rounded-circle" alt="@summary.Id" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'" width="50" height="50">
-                            </a>
-                            <div class="p-2">
-                                <h6 class="mb-0">
-                                    <a asp-controller="Home" asp-action="Channel" asp-route-name=@summary.Id>@summary.DisplayName</a>
-                                </h6>
-                                <p class="mb-0 pt-1">chatters: @summary.Chatters.ToString("N0")</p>
-                            </div>
+                <div class="summary-card card py-1">
+                    <div class="d-flex pt-2 justify-content-start summary-data">
+                        <a asp-controller="Home" asp-action="Channel" asp-route-name=@summary.Id>
+                            <img src="@summary.Avatar" class="rounded-circle" alt="@summary.Id" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'" width="50" height="50">
+                        </a>
+                        <div class="p-2 ps-md-3 channel-summary">
+                            <h6 class="mb-0 channel-name">
+                                <a asp-controller="Home" asp-action="Channel" asp-route-name=@summary.Id>@summary.DisplayName</a>
+                            </h6>
+                            <p class="mb-0 pt-1">chatters: @summary.Chatters.ToString("N0")</p>
                         </div>
                     </div>
                 </div>
