@@ -6,8 +6,8 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.2" />
-      <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="5.0.1" />
       <PackageReference Include="MongoDB.Driver" Version="2.11.6" />
+      <PackageReference Include="StackExchange.Redis" Version="2.2.4" />
     </ItemGroup>
 
     <ItemGroup>

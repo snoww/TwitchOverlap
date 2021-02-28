@@ -8,10 +8,10 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Distributed;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
+using StackExchange.Redis;
 using TwitchOverlap.Models;
 using TwitchOverlapApi.Models;
 
@@ -20,7 +20,7 @@ namespace TwitchOverlap.Services
 public class TwitchService
     {
         private readonly IMongoCollection<Channel> _channels;
-        private readonly IDistributedCache _cache;
+        private readonly IDatabase _cache;
         private readonly IHttpClientFactory _factory;
         private readonly Random _random = new();
         private static string _twitchToken;
@@ -29,9 +29,9 @@ public class TwitchService
         private const string GameCacheKey = "channel:games";
         private const string ChannelCacheKey = "channel:list";
         
-        public TwitchService(ITwitchDatabaseSettings settings, IDistributedCache cache, IHttpClientFactory factory)
+        public TwitchService(ITwitchDatabaseSettings settings, IRedisCache cache, IHttpClientFactory factory)
         {
-            _cache = cache;
+            _cache = cache.Redis.GetDatabase();
             _factory = factory;
             var conventions = new ConventionPack {new LowerCaseElementNameConvention()};
             ConventionRegistry.Register("LowerCaseElementName", conventions, _ => true);
@@ -46,7 +46,7 @@ public class TwitchService
         
         public async Task<List<ChannelSummary>> Get()
         {
-            string channelListJson = await _cache.GetStringAsync(ChannelCacheKey);
+            string channelListJson = await _cache.StringGetAsync(ChannelCacheKey);
             List<ChannelSummary> channelList;
             if (!string.IsNullOrEmpty(channelListJson))
             {
@@ -66,10 +66,8 @@ public class TwitchService
             }
 
             List<ChannelSummary> channelSummaries = await GetChannelData(channelList);
-
-            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
-                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
-            await _cache.SetStringAsync(ChannelCacheKey, JsonSerializer.Serialize(channelSummaries), options);
+            
+            await _cache.StringSetAsync(ChannelCacheKey, JsonSerializer.Serialize(channelSummaries), TimeSpan.FromMinutes(5));
             
             return channelSummaries.OrderByDescending(x => x.Chatters).ToList();
         }
@@ -78,7 +76,7 @@ public class TwitchService
         {
             string cacheKey = name.ToLowerInvariant();
 
-            string channelJson = await _cache.GetStringAsync($"channel:{cacheKey}");
+            string channelJson = await _cache.StringGetAsync($"channel:{cacheKey}");
 
             if (!string.IsNullOrEmpty(channelJson))
             {
@@ -95,8 +93,8 @@ public class TwitchService
 
             ChannelProjection channelProjection = ProjectChannelDataWithGames(channel, channelGames);
             
-            string displayName = await _cache.GetStringAsync($"channel:{channel.Id}:display");
-            string avatar = await _cache.GetStringAsync($"channel:{channel.Id}:avatar");
+            string displayName = await _cache.StringGetAsync($"channel:{channel.Id}:display");
+            string avatar = await _cache.StringGetAsync($"channel:{channel.Id}:avatar");
             if (displayName != null && avatar != null)
             {
                 channelProjection.DisplayName = displayName;
@@ -106,21 +104,18 @@ public class TwitchService
             {
                 var cs = new ChannelSummary{Id = channelProjection.Id};
                 await GetChannelData(new List<ChannelSummary> {cs});
-                channelProjection.DisplayName = await _cache.GetStringAsync($"channel:{channel.Id}:display");
-                channelProjection.Avatar = await _cache.GetStringAsync($"channel:{channel.Id}:avatar");
+                channelProjection.DisplayName = await _cache.StringGetAsync($"channel:{channel.Id}:display");
+                channelProjection.Avatar = await _cache.StringGetAsync($"channel:{channel.Id}:avatar");
             }
             
-            
-            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
-                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
-            await _cache.SetStringAsync($"channel:{cacheKey}", JsonSerializer.Serialize(channelProjection), options);
+            await _cache.StringSetAsync($"channel:{cacheKey}", JsonSerializer.Serialize(channelProjection), TimeSpan.FromMinutes(5));
             
             return channelProjection;
         }
 
         private async Task<List<ChannelGames>> GetChannelGames()
         {
-            string channelGames = await _cache.GetStringAsync(GameCacheKey);
+            string channelGames = await _cache.StringGetAsync(GameCacheKey);
             if (!string.IsNullOrEmpty(channelGames))
             {
                 return JsonSerializer.Deserialize<List<ChannelGames>>(channelGames);
@@ -135,10 +130,7 @@ public class TwitchService
                 return null;
             }
 
-            DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
-                .SetAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(5));
-
-            await _cache.SetStringAsync(GameCacheKey, JsonSerializer.Serialize(games), options);
+            await _cache.StringSetAsync(GameCacheKey, JsonSerializer.Serialize(games), TimeSpan.FromMinutes(5));
 
             return games;
         }
@@ -244,10 +236,8 @@ public class TwitchService
                     };
                     summary.Chatters = channels.First(x => x.Id.Equals(summary.Id, StringComparison.Ordinal)).Chatters;
                     
-                    DistributedCacheEntryOptions options = new DistributedCacheEntryOptions()
-                        .SetAbsoluteExpiration(TimeSpan.FromDays(_random.Next(3, 8)));
-                    await _cache.SetStringAsync($"channel:{summary.Id}:display", summary.DisplayName, options);
-                    await _cache.SetStringAsync($"channel:{summary.Id}:avatar", summary.Avatar, options);
+                    await _cache.StringSetAsync($"channel:{summary.Id}:display", summary.DisplayName, TimeSpan.FromDays(_random.Next(3, 8)));
+                    await _cache.StringSetAsync($"channel:{summary.Id}:avatar", summary.Avatar, TimeSpan.FromDays(_random.Next(3, 8)));
                     channelSummaries.Add(summary);
                 }
             }
@@ -262,8 +252,8 @@ public class TwitchService
 
             foreach (ChannelSummary channel in channels)
             {
-                string displayName = await _cache.GetStringAsync($"channel:{channel.Id}:display");
-                string avatar = await _cache.GetStringAsync($"channel:{channel.Id}:avatar");
+                string displayName = await _cache.StringGetAsync($"channel:{channel.Id}:display");
+                string avatar = await _cache.StringGetAsync($"channel:{channel.Id}:avatar");
                 if (displayName != null && avatar != null)
                 {
                     channel.DisplayName = displayName;
