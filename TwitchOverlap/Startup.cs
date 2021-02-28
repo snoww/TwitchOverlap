@@ -20,9 +20,11 @@ namespace TwitchOverlap
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            Cache = new RedisCache("localhost");
         }
 
         public IConfiguration Configuration { get; }
+        public IRedisCache Cache { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -34,7 +36,7 @@ namespace TwitchOverlap
             services.AddSingleton<TwitchService>();
             services.AddRouting(options => options.LowercaseUrls = true);
             services.AddControllers();
-            services.AddSingleton(new RedisCache("localhost"));
+            services.AddSingleton(Cache);
             
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
         }
