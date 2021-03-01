@@ -1,8 +1,14 @@
 @model List<ChannelSummary>
 
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Twitch Community Overlap";
 }
+
+@section metatags
+{
+    <meta property="og:description" content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently cross-chatting in the channel. The source code for the site is open sourced on GitHub."/>
+}
+
 
 <div>
     <img src="https://cdn.frankerfacez.com/emoticon/425196/2" alt="sadge">

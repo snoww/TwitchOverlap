@@ -1,7 +1,13 @@
 ﻿@model ChannelProjection
 
 @{
-    ViewData["Title"] = Model.DisplayName;
+    ViewData["Title"] = $"{Model.DisplayName} - Twitch Community Overlap";
+}
+
+@section metatags
+{
+    <meta property="og:description" content="Channel overlap stats for @Model.DisplayName. Currently sharing @Model.Overlaps.ToString("N0") total viewers. Find out in detail who's viewers are cross-chatting in @Model.DisplayName's channel. The site is open source on GitHub."/>
+    <meta property="og:image" content="@Model.Avatar">
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.css">
