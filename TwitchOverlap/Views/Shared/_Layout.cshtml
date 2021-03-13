@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark light">
     @await RenderSectionAsync("metatags", false)
     <title>@ViewData["Title"]</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-dark-5@0.1/dist/css/bootstrap-dark.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-dark-5@0.1/dist/css/bootstrap-night.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous">
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -62,16 +62,6 @@ document.getElementById("search-channel").addEventListener("keyup", (e) => {
     if (e.key === "Enter") searchChannel();
 });
 </script>
-@* <script> *@
-@*   document.querySelector("#dark-mode-toggle").onclick = function(){ *@
-@*     darkmode.toggleDarkMode(); *@
-@*     if (document.getElementsByTagName("html")[0].classList.contains("dark")) { *@
-@*         document.querySelector("#dark-mode-toggle").innerText = "Light Mode"; *@
-@*     } else { *@
-@*         document.querySelector("#dark-mode-toggle").innerText = "Dark Mode"; *@
-@*     } *@
-@*   } *@
-@* </script> *@
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
