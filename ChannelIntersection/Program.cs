@@ -9,10 +9,12 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ChannelIntersection.Models;
+using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
-using StackExchange.Redis;
+using Z.EntityFramework.Plus;
 
 namespace ChannelIntersection
 {
@@ -23,9 +25,8 @@ namespace ChannelIntersection
         private static string _twitchClient;
         private static string _mongodbConnection;
         private static IMongoCollection<ChannelModel> _channelCollection;
-        private static IDatabase _cache;
-        private static IServer _cacheServer;
-
+        private static string _psqlConnection;
+        
         public static async Task Main()
         {
             using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
@@ -33,26 +34,25 @@ namespace ChannelIntersection
                 _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
                 _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
                 _mongodbConnection = json.RootElement.GetProperty("MONGODB").GetString();
+                _psqlConnection = json.RootElement.GetProperty("POSTGRES").GetString();
             }
             
-            DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+            DateTime timestamp = DateTime.UtcNow;
 
             var conventions = new ConventionPack {new LowerCaseElementNameConvention()};
             ConventionRegistry.Register("LowerCaseElementName", conventions, _ => true);
             var client = new MongoClient(_mongodbConnection);
             IMongoDatabase db = client.GetDatabase("twitch");
             _channelCollection = db.GetCollection<ChannelModel>("channels");
+
+            var dbContext = new TwitchContext(_psqlConnection);
+
             Console.WriteLine("connected to database");
             
-            ConnectionMultiplexer redis = await ConnectionMultiplexer.ConnectAsync("localhost");
-            _cacheServer = redis.GetServer("localhost");
-            _cache = redis.GetDatabase();
-            Console.WriteLine("connected to cache");
-
             var sw = new Stopwatch();
             sw.Start();
 
-            (List<ChannelModel> channels, HashSet<string> channelNames) = await GetTopChannels();
+            List<ChannelModel> channels = await GetTopChannels();
             
             Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
@@ -94,30 +94,61 @@ namespace ChannelIntersection
             Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            var updateOptions = new UpdateOptions{IsUpsert = true};
+            var channelAddBag = new ConcurrentBag<Channel>();
+            var channelUpdateBag = new ConcurrentBag<Channel>();
+            var dataBag = new ConcurrentBag<Overlap>();
             
+            var updateOptions = new UpdateOptions{IsUpsert = true};
+
             IEnumerable<Task> insertTasks = processed.Select(async channel =>
             {
                 (ChannelModel ch, ConcurrentDictionary<string, int> value) = channel;
                 ch.Data = new Dictionary<string, int>(value);
                 UpdateDefinition<ChannelModel> update = Builders<ChannelModel>.Update
-                    .Set(x => x.Timestamp, timestamp.UtcDateTime)
+                    .Set(x => x.Timestamp, timestamp)
                     .Set(x => x.Game, ch.Game)
                     .Set(x => x.Viewers, ch.Viewers)
                     .Set(x => x.Chatters, ch.Chatters)
                     .Set(x => x.Overlaps, totalIntersectionCount[ch].Count)
                     .Set(x => x.Data, ch.Data)
                     .SetOnInsert(x => x.Id, ch.Id);
-
+                
                 var history = new Dictionary<string, Dictionary<string, int>>
                 {
-                    {timestamp.ToUnixTimeSeconds().ToString(), ch.Data.OrderByDescending(x => x.Value).Take(6).ToDictionary(x => x.Key, x => x.Value)}
+                    {((DateTimeOffset) timestamp).ToUnixTimeMilliseconds().ToString(), ch.Data.OrderByDescending(x => x.Value).Take(6).ToDictionary(x => x.Key, x => x.Value)}
                 };
                 update = update.PushEach(x => x.History, new[] {history}, -24);
                 await _channelCollection.UpdateOneAsync(x => x.Id == ch.Id, update, updateOptions);
             });
-            
             await Task.WhenAll(insertTasks);
+
+            foreach ((ChannelModel ch, ConcurrentDictionary<string, int> _) in processed)
+            {
+                Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
+                if (dbChannel == null)
+                {
+                    channelAddBag.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp));
+                }
+                else
+                {
+                    dbChannel.Game = ch.Game;
+                    dbChannel.Viewers = ch.Viewers;
+                    dbChannel.Chatters = ch.Chatters;
+                    dbChannel.Shared = totalIntersectionCount[ch].Count;
+                    dbChannel.LastUpdate = timestamp;
+                    channelUpdateBag.Add(dbChannel);
+                }
+                dataBag.Add(new Overlap(ch.Id, timestamp, ch.Data));
+            }
+            
+            await dbContext.Channels.AddRangeAsync(channelAddBag);
+            dbContext.Channels.UpdateRange(channelUpdateBag);
+            await dbContext.Overlaps.AddRangeAsync(dataBag);
+
+            await dbContext.SaveChangesAsync();
+
+            DateTime thirtyDays = timestamp.AddDays(-14);
+            await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
             
             Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
             sw.Stop();
@@ -152,10 +183,9 @@ namespace ChannelIntersection
             return chatterList;
         }
         
-        private static async Task<(List<ChannelModel> channels, HashSet<string> channelNames)> GetTopChannels()
+        private static async Task<List<ChannelModel>> GetTopChannels()
         {
             var channels = new List<ChannelModel>();
-            var channelNames = new HashSet<string>();
             
             var pageToken = string.Empty;
             do
@@ -199,13 +229,10 @@ namespace ChannelIntersection
                             JsonDocument userJson = await JsonDocument.ParseAsync(await userResponse.Content.ReadAsStreamAsync());
                             username = userJson.RootElement.GetProperty("data")[0].GetProperty("login").GetString()?.ToLower();
                         }
-
-                        string channelName = username!.ToLower();
-                        _cache.StringSet($"channel:tracked:{channelName}", 1, flags: CommandFlags.FireAndForget, expiry: TimeSpan.FromHours(1));
-                        channelNames.Add(channelName);
+                        
                         channels.Add(new ChannelModel
                         {
-                            Id = channelName,
+                            Id = username,
                             Game = channel.GetProperty("game_name").GetString(),
                             Viewers = viewerCount
                         });
@@ -213,27 +240,7 @@ namespace ChannelIntersection
                 }
             } while (pageToken != null);
 
-            return (channels, channelNames);
-        }
-
-        private static async Task<List<ChannelModel>> GetRequestedChannels(List<ChannelModel> liveChannels, IReadOnlySet<string> liveChannelNames)
-        {
-            var newChannels = new ConcurrentDictionary<string, byte>();
-            await foreach (RedisKey key in _cacheServer.KeysAsync(pattern: "channel:tracked:"))
-            {
-                string channelName = ((string) key)[16..];
-                if (!liveChannelNames.Contains(channelName))
-                {
-                    newChannels.TryAdd(channelName, 1);
-                }
-            }
-            
-            return liveChannels;
-        }
-
-        private static async Task<List<ChannelModel>> GetRequestedChannelsInformation(ConcurrentDictionary<string, byte> newChannels)
-        {
-            return null;
+            return channels;
         }
 
         private static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
