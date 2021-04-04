@@ -96,7 +96,7 @@
                 <td class="table-stats-col">@(data.Shared.ToString("N0"))</td>
                 <td class="table-stats-col">@(((double) data.Shared / Model.Chatters).ToString("P"))</td>
                 <td class="table-stats-col hover:underline hover:text-pink-500 truncate">
-                    <a href="https://www.twitch.tv/directory/game/@Model.Game" target="_blank" rel="noopener noreferrer">@data.Game</a>
+                    <a href="https://www.twitch.tv/directory/game/@data.Game" target="_blank" rel="noopener noreferrer">@data.Game</a>
                 </td>
             </tr>
         }
