@@ -5,22 +5,19 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <UpToDateCheckBuilt Include="wwwroot/css/t.css" Set="Css" />
+        <UpToDateCheckBuilt Include="postcss.config.js" Set="Css" />
+        <UpToDateCheckBuilt Include="tailwind.config.js" Set="Css" />
+    </ItemGroup>
+
+    <Target Name="Tailwind" BeforeTargets="Build" Condition="'$(Configuration)'=='Release'">
+        <Exec Command="npm run css:publish" />
+    </Target>
+
+    <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.2" />
       <PackageReference Include="MongoDB.Driver" Version="2.11.6" />
       <PackageReference Include="StackExchange.Redis" Version="2.2.4" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Update="wwwroot\css\site.css">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <Content Update="wwwroot\favicon.ico">
-        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
     </ItemGroup>
 
 </Project>

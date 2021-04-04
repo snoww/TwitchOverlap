@@ -1,0 +1,19 @@
+{
+  "name": "twitchoverlap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "tailwind.config.js",
+  "dependencies": {},
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.3.2",
+    "autoprefixer": "^10.2.5",
+    "postcss": "^8.2.9",
+    "tailwindcss": "^2.0.4"
+  },
+  "scripts": {
+    "css:build": "npx tailwindcss-cli@latest build ./wwwroot/css/t.css -o ./wwwroot/css/tailwind.css",
+    "css:publish": "cross-env NODE_ENV=production npx tailwindcss-cli@latest build ./wwwroot/css/t.css -o ./wwwroot/css/tailwind.min.css"
+  },
+  "author": "",
+  "license": "ISC"
+}

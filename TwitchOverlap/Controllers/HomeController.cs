@@ -33,13 +33,13 @@ namespace TwitchOverlap.Controllers
             return View(channelLists);
         }
 
-        [Route("/channel")]
-        public IActionResult Channel()
+        [Route("/channel/{name}")]
+        public IActionResult ChannelRedirect(string name)
         {
-            return Redirect("/");
+            return Redirect($"/{name}");
         }
 
-        [Route("/channel/{name}")]
+        [Route("/{name}")]
         public async Task<IActionResult> Channel(string name)
         {
             ChannelProjection channel = await _service.Get(name);
@@ -48,12 +48,6 @@ namespace TwitchOverlap.Controllers
                 return View("NoData", name);
             }
             return View(channel);
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel {RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier});
         }
     }
 }
