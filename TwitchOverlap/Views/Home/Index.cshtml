@@ -2,18 +2,18 @@
 @model List<ChannelSummary>
 
 @{
-    ViewData["Title"] = "Twitch Community Overlap";
+    ViewData["Title"] = "Twitch Overlap";
 }
 
 @section metatags
 {
-    <meta property="og:title" content="Twitch Community Overlap">
-    <meta property="og:description" content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently cross-chatting in the channel. The site is open source on GitHub."/>
+    <meta property="og:title" content="Twitch Overlap">
+    <meta property="og:description" content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currenlty chat hopping. The site is open source on GitHub."/>
 }
 
 <div class="px-2 md:px-4 pt-4">
     <h1 class="font-medium tracking-tighter text-5xl text-center mb-4">Twitch Community Overlap</h1>
-    <p class="mb-2">The site shows stats about the overlap of chatters from different channels. You can find out who your favorite streamer shares viewers with, or how many people are currently cross-chatting in the channel.</p>
+    <p class="mb-2">The site shows stats about the overlap of chatters from different channels. You can find out who your favorite streamer shares viewers with, or how many people are currently cross-chatting in the channel. You could also interpret the overlap as chat hoppers.</p>
     <p class="mb-2">Currently tracks all channels over 1,500 viewers. Data updates every 30 minutes (for now).</p>
     <p class="mb-4">Click a channel below or use the search box above.</p>
 </div>

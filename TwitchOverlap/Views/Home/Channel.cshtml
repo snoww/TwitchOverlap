@@ -1,13 +1,13 @@
 ﻿@model ChannelProjection
 
 @{
-    ViewData["Title"] = $"{Model.DisplayName} - Twitch Community Overlap";
+    ViewData["Title"] = $"{Model.DisplayName} - Twitch Overlap";
 }
 
 @section metatags
 {
     <meta property="og:title" content="@Model.DisplayName - Twitch Community Overlap">
-    <meta property="og:description" content="Channel overlap stats for @Model.DisplayName. Currently sharing @Model.Overlaps.ToString("N0") total viewers. Find out in detail who's viewers are cross-chatting in @Model.DisplayName's channel. The site is open source on GitHub."/>
+    <meta property="og:description" content="Chat hopper stats for @Model.DisplayName. Currently sharing @Model.Overlaps.ToString("N0") total viewers. Find out in detail who's viewers are channel hopping to @Model.DisplayName. The site is open source on GitHub."/>
     <meta property="og:image" content="@Model.Avatar">
 }
 
@@ -35,40 +35,40 @@
                 TimeSpan ts = DateTime.UtcNow - Model.Timestamp;
                 if (ts.TotalMinutes <= 60)
                 {
-                    <div title="@Model.Timestamp.ToString("g")Z">@(ts.Minutes == 1 ? $"{ts.Minutes} minute" : $"{ts.Minutes} minutes") ago</div>
+                    <div title="@Model.Timestamp.ToString("u")">@(ts.Minutes == 1 ? $"{ts.Minutes} minute" : $"{ts.Minutes} minutes") ago</div>
                 }
                 else if (ts.TotalHours <= 24)
                 {
-                    <div title="@Model.Timestamp.ToString("g")Z">@(ts.Hours == 1 ? $"{ts.Hours} hour" : $"{ts.Hours} hours") ago</div>
+                    <div title="@Model.Timestamp.ToString("u")">@(ts.Hours == 1 ? $"{ts.Hours} hour" : $"{ts.Hours} hours") ago</div>
                 }
                 else if (ts.TotalDays <= 7)
                 {
-                    <div title="@Model.Timestamp.ToString("g")Z">@(ts.Days == 1 ? $"{ts.Days} day" : $"{ts.Days} days") ago</div>
+                    <div title="@Model.Timestamp.ToString("u")">@(ts.Days == 1 ? $"{ts.Days} day" : $"{ts.Days} days") ago</div>
                 }
                 else
                 {
-                    <div class="card-text">@Model.Timestamp.ToString("g")Z</div>
+                    <div class="card-text">@Model.Timestamp.ToString("u")</div>
                 }
             }
         </div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md">
+    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Total viewers in stream, includes embedded viewers">
         <div class="font-medium mb-1">Viewers</div>
         <div>@Model.Viewers.ToString("N0")</div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md">
+    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Total chatters in stream, excludes embedded viewers">
         <div class="font-medium mb-1">Chatters</div>
         <div>@Model.Chatters.ToString("N0")</div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md">
+    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Ratio of chatters to viewers, higher is better">
         <div class="font-medium mb-1">Chatter Ratio</div>
         <div>@(((double) Model.Chatters / Model.Viewers).ToString("N2"))</div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md">
+    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Percentage of total viewers that are watching another stream">
         <div class="font-medium mb-1">Overlap Percentage</div>
         <div>@(((double) Model.Overlaps / Model.Viewers).ToString("P"))</div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md">
+    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Total number of viewers watching another stream">
         <div class="font-medium mb-1">Total Shared</div>
         <div>@Model.Overlaps.ToString("N0")</div>
     </div>
@@ -111,7 +111,7 @@
 </style>
 
 <script>
-const chartStyle = document.createElement('style');
+const chartStyle = document.createElement("style");
 
 window.addEventListener("load", () => {
     const root = document.querySelector("html");
@@ -145,9 +145,10 @@ document.getElementById("toggle-dark").addEventListener("click", () => {
     }
     
     let data = [];
-    let timeSet = ['date'];
+    let timeSet = ["date"];
     for(let i = 0; i < arr.length; i++) {
         let date;
+        // temp cus i messed up db
         if (arr[i] <= 2000000000) {
             date = new Date(arr[i] * 1000);
         } else {
@@ -161,25 +162,41 @@ document.getElementById("toggle-dark").addEventListener("click", () => {
     }
     data.push(timeSet);
     
+    const stringToRGB = function(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        let colour = "#";
+        for (let i = 0; i < 3; i++) {
+            let value = (hash >> (i * 8)) & 0xFF;
+            colour += ("00" + value.toString(16)).substr(-2);
+        }
+        return colour;
+    };
+    
     const rawdata = @Html.Raw(Json.Serialize(Model.OverlapPoints));
+    const channelColors = {};
     for (const channel in rawdata) {
+        channelColors[channel] = stringToRGB(channel);
         data.push([channel, ...rawdata[channel]]);
     }
-
+    
     c3.generate({
-        bindto: '#chart',
+        bindto: "#chart",
         data: {
             columns: data,
-            x: 'date',
+            x: "date",
+            colors: channelColors
         },
         axis: {
             x: {
-                type: 'category',
+                type: "category",
                 tick: {
                     culling: {
                         max: 18
                     },
-                    rotate: 45,
+                    rotate: 20,
                     multiline: false
                 }
             }
