@@ -5,7 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <UpToDateCheckBuilt Include="wwwroot/css/t.css" Set="Css" />
         <UpToDateCheckBuilt Include="postcss.config.js" Set="Css" />
         <UpToDateCheckBuilt Include="tailwind.config.js" Set="Css" />
     </ItemGroup>
