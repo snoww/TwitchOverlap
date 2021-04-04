@@ -28,7 +28,7 @@
     </div>
 </div>
 <div class="pt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 px-4 text-center">
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md">
+    <div class="stats-card">
         <div class="font-medium mb-1">Last Updated</div>
         <div>
             @{
@@ -52,23 +52,23 @@
             }
         </div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Total viewers in stream, includes embedded viewers">
+    <div class="stats-card" title="Total viewers in stream, includes embedded viewers">
         <div class="font-medium mb-1">Viewers</div>
         <div>@Model.Viewers.ToString("N0")</div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Total chatters in stream, excludes embedded viewers">
+    <div class="stats-card" title="Total chatters in stream, excludes embedded viewers">
         <div class="font-medium mb-1">Chatters</div>
         <div>@Model.Chatters.ToString("N0")</div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Ratio of chatters to viewers, higher is better">
+    <div class="stats-card" title="Ratio of chatters to viewers, higher is better">
         <div class="font-medium mb-1">Chatter Ratio</div>
         <div>@(((double) Model.Chatters / Model.Viewers).ToString("N2"))</div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Percentage of total viewers that are watching another stream">
+    <div class="stats-card" title="Percentage of total viewers that are watching another stream">
         <div class="font-medium mb-1">Overlap Percentage</div>
         <div>@(((double) Model.Overlaps / Model.Viewers).ToString("P"))</div>
     </div>
-    <div class="rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md" title="Total number of viewers watching another stream">
+    <div class="stats-card" title="Total number of viewers watching another stream">
         <div class="font-medium mb-1">Total Shared</div>
         <div>@Model.Overlaps.ToString("N0")</div>
     </div>
@@ -89,13 +89,13 @@
         @foreach ((string channel, Data data) in Model.Data.OrderByDescending(x => x.Value.Shared))
         {
             <tr class="border-b border-gray-300">
-                <td class="px-2 md:px-4 py-1 md:py-2 hover:underline hover:text-pink-500 truncate">
+                <td class="table-channel-col">
                     <a asp-controller="Home" asp-action="Channel" asp-route-name=@channel>@channel</a>
                 </td>
-                <td class="px-2 md:px-4 py-2">@(((double) data.Shared / Model.Overlaps).ToString("P"))</td>
-                <td class="px-2 md:px-4 py-2">@(data.Shared.ToString("N0"))</td>
-                <td class="px-2 md:px-4 py-2">@(((double) data.Shared / Model.Chatters).ToString("P"))</td>
-                <td class="px-2 md:px-4 py-2 hover:underline hover:text-pink-500 truncate">
+                <td class="table-stats-col">@(((double) data.Shared / Model.Overlaps).ToString("P"))</td>
+                <td class="table-stats-col">@(data.Shared.ToString("N0"))</td>
+                <td class="table-stats-col">@(((double) data.Shared / Model.Chatters).ToString("P"))</td>
+                <td class="table-stats-col hover:underline hover:text-pink-500 truncate">
                     <a href="https://www.twitch.tv/directory/game/@Model.Game" target="_blank" rel="noopener noreferrer">@data.Game</a>
                 </td>
             </tr>

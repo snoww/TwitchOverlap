@@ -21,7 +21,7 @@
 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 mx-2 sm:mx-4">
     @foreach (ChannelSummary summary in Model)
     {
-        <div class="rounded-md dark:bg-gray-700 border border-gray-300 dark:border-gray-800 hover:bg-gray-400 dark:hover:bg-gray-900 shadow-lg p-2 sm:p-3">
+        <div class="channel-card">
             <a href="/@summary.Id">
                 <div class="flex justify-start items-center">
                     <img src="@summary.Avatar" class="rounded-full" alt="@summary.Id" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'" width="50">
