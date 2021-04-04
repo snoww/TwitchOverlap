@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -53,7 +54,8 @@ namespace ChannelIntersection
             sw.Start();
 
             List<ChannelModel> channels = await GetTopChannels();
-            
+            await GetChannelAvatar(channels);
+
             Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
@@ -63,7 +65,12 @@ namespace ChannelIntersection
             
             IEnumerable<Task> processTasks = channels.Select(async channel =>
             {
-                channelChatters.TryAdd(channel, await GetChatters(channel));
+                HashSet<string> chatters = await GetChatters(channel);
+                if (chatters == null)
+                {
+                    return;
+                }
+                channelChatters.TryAdd(channel, chatters);
                 processed.TryAdd(channel, new ConcurrentDictionary<string, int>());
                 totalIntersectionCount.TryAdd(channel, new ConcurrentDictionary<string, byte>());
             });
@@ -127,7 +134,7 @@ namespace ChannelIntersection
                 Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
                 if (dbChannel == null)
                 {
-                    channelAddBag.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp));
+                    channelAddBag.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp, ch.Avatar, ch.DisplayName));
                 }
                 else
                 {
@@ -163,6 +170,10 @@ namespace ChannelIntersection
                 await Http.GetStreamAsync($"http://tmi.twitch.tv/group/user/{channelName.Id}/chatters"));
             
             int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
+            if (chatters < 100)
+            {
+                return null;
+            }
             channelName.Chatters = chatters;
             var chatterList = new HashSet<string>(chatters);
             JsonElement.ObjectEnumerator viewerTypes = response.RootElement.GetProperty("chatters").EnumerateObject();
@@ -217,22 +228,11 @@ namespace ChannelIntersection
                             pageToken = null;
                             break;
                         }
-
-                        string username = channel.GetProperty("user_name").GetString()?.ToLower();
-                        if (!Regex.IsMatch(username!, "^[a-zA-Z0-9_]*$"))
-                        {
-                            using var userRequest = new HttpRequestMessage();
-                            userRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
-                            userRequest.Headers.Add("Client-Id", _twitchClient);
-                            userRequest.RequestUri = new Uri($"https://api.twitch.tv/helix/users?id={channel.GetProperty("user_id").GetString()}");
-                            using HttpResponseMessage userResponse = await Http.SendAsync(userRequest);
-                            JsonDocument userJson = await JsonDocument.ParseAsync(await userResponse.Content.ReadAsStreamAsync());
-                            username = userJson.RootElement.GetProperty("data")[0].GetProperty("login").GetString()?.ToLower();
-                        }
                         
                         channels.Add(new ChannelModel
                         {
-                            Id = username,
+                            Id = channel.GetProperty("user_login").GetString()?.ToLower(),
+                            DisplayName = channel.GetProperty("user_name").GetString(),
                             Game = channel.GetProperty("game_name").GetString(),
                             Viewers = viewerCount
                         });
@@ -242,6 +242,43 @@ namespace ChannelIntersection
 
             return channels;
         }
+        
+        private static async Task GetChannelAvatar(IReadOnlyCollection<ChannelModel> channels)
+        {
+            using var http = new HttpClient();
+            foreach (string reqString in RequestBuilder(channels))
+            {
+                using var request = new HttpRequestMessage();
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
+                request.Headers.Add("Client-Id", _twitchClient);
+                request.RequestUri = new Uri($"https://api.twitch.tv/helix/users?{reqString}");
+                using HttpResponseMessage response = await http.SendAsync(request);
+                using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
+                foreach (JsonElement channel in data)
+                {
+                    ChannelModel model = channels.Single(x => x.Id.Equals(channel.GetProperty("login").GetString(), StringComparison.Ordinal));
+                    model.Avatar = channel.GetProperty("profile_image_url").GetString()?.Replace("-300x300", "-70x70")[47..];
+                }
+            }
+        }
+        
+        private static IEnumerable<string> RequestBuilder(IReadOnlyCollection<ChannelModel> channels)
+        {
+            var shards = (int) Math.Ceiling(channels.Count / 100.0);
+            var list = new List<string>(shards);
+            for (int i = 0; i < shards; i++)
+            {
+                var request = new StringBuilder();
+                foreach (ChannelModel channel in channels.Skip(i * 100).Take(100))
+                {
+                    request.Append("&login=").Append(channel.Id);
+                }
+                list.Add(request.ToString()[1..]);
+            }
+
+            return list;
+        } 
 
         private static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
         {

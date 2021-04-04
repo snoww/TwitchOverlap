@@ -32,6 +32,8 @@ namespace ChannelIntersection.Models
             {
                 entity.ToTable("channel");
                 entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.DisplayName).HasColumnName("display_name");
+                entity.Property(e => e.Avatar).HasColumnName("avatar");
                 entity.Property(e => e.Chatters).HasColumnName("chatters");
                 entity.Property(e => e.Game).HasColumnName("game");
                 entity.Property(e => e.LastUpdate).HasColumnName("last_update");

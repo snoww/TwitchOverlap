@@ -1,11 +1,13 @@
 create table if not exists channel
 (
-    id          text primary key,
-    game        text      not null,
-    viewers     int       not null,
-    chatters    int       not null,
-    shared      int       not null,
-    last_update timestamp not null
+    id           text primary key,
+    display_name text unique,
+    avatar       text unique,
+    game         text      not null,
+    viewers      int       not null,
+    chatters     int       not null,
+    shared       int       not null,
+    last_update  timestamp not null
 );
 
 create table if not exists overlap
@@ -17,4 +19,4 @@ create table if not exists overlap
 );
 
 create unique index if not exists overlap_id_timestamp_uindex
-	on overlap (id asc, timestamp desc);
+    on overlap (id asc, timestamp desc);

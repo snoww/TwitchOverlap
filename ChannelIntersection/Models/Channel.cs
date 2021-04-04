@@ -8,6 +8,8 @@ namespace ChannelIntersection.Models
     public class Channel
     {
         public string Id { get; set; }
+        public string DisplayName { get; set; }
+        public string Avatar { get; set; }
         public string Game { get; set; }
         public int Viewers { get; set; }
         public int Chatters { get; set; }
@@ -16,7 +18,7 @@ namespace ChannelIntersection.Models
 
         public virtual ICollection<Overlap> Histories { get; set; } = new List<Overlap>();
 
-        public Channel(string id, string game, int viewers, int chatters, int shared, DateTime lastUpdate)
+        public Channel(string id, string game, int viewers, int chatters, int shared, DateTime lastUpdate, string avatar, string displayName)
         {
             Id = id;
             Game = game;
@@ -24,6 +26,8 @@ namespace ChannelIntersection.Models
             Chatters = chatters;
             Shared = shared;
             LastUpdate = lastUpdate;
+            Avatar = avatar;
+            DisplayName = displayName;
         }
     }
 }
