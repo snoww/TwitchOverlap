@@ -18,8 +18,8 @@ Motivation from [Subreddit User-Overlap](https://subredditstats.com/subreddit-us
 
 This project does the actual overlap calculation.
 
-It fetches all channels above 1000 viewers on twitch, and then fetches all the chatters in their channel and stored in a hashset.
+It fetches all channels above 1500 viewers on twitch, and then fetches all the chatters in their channel and stored in a hashset.
 
 It then gets all the combinations of channel pairs, and then compares their chatters to find the number of intersections.
 
-The final data is pushed into the database where it can be fetched by the api.
+The processed data is stored in a Postgres database, where it stores the overlap data for 14 days.
