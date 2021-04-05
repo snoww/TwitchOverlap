@@ -80,10 +80,13 @@ namespace TwitchOverlap.Controllers
             }
 
             var channelData = new ChannelData(channel.Channel);
+            List<string> channels = channel.Data.Keys.ToList();
+
+            var games = await _context.Channels.AsNoTracking().Where(x => channels.Contains(x.Id)).Select(x => new {x.Id, x.Game}).ToListAsync();
 
             foreach ((string ch, int shared) in channel.Data.OrderByDescending(x => x.Value))
             {
-                channelData.Data[ch] = new Data(await _context.Channels.AsNoTracking().Where(x => x.Id == ch).Select(x => x.Game).SingleOrDefaultAsync(), shared);
+                channelData.Data[ch] = new Data(games.First(x => x.Id == ch).Game, shared);
             }
             
             await _cache.StringSetAsync(ChannelDataCacheKey + name.ToLowerInvariant(), JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
