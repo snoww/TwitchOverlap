@@ -1,4 +1,5 @@
-﻿@model ChannelData
+﻿@using System.Globalization
+@model ChannelData
 
 @{
     ViewData["Title"] = $"{Model.Channel.DisplayName} - Twitch Overlap";
@@ -16,6 +17,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/c3@0.7.20/c3.min.css">
     <script src="https://cdn.jsdelivr.net/npm/c3@0.7.20/c3.min.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
+}
+
+@{
+    var numberInfo = new NumberFormatInfo {PercentPositivePattern = 1};
 }
 
 <div class="flex items-center pt-4 px-4">
@@ -66,7 +71,7 @@
     </div>
     <div class="stats-card" title="Percentage of total viewers that are watching another stream">
         <div class="font-medium mb-1">Overlap Percentage</div>
-        <div>@(((double) Model.Channel.Shared / Model.Channel.Viewers).ToString("P"))</div>
+        <div>@(((double) Model.Channel.Shared / Model.Channel.Viewers).ToString("P", numberInfo))</div>
     </div>
     <div class="stats-card" title="Total number of viewers watching another stream">
         <div class="font-medium mb-1">Total Shared</div>
@@ -92,9 +97,9 @@
                 <td class="table-channel-col">
                     <a asp-controller="Home" asp-action="Channel" asp-route-name=@channel>@channel</a>
                 </td>
-                <td class="table-stats-col">@(((double) data.Shared / Model.Channel.Shared).ToString("P"))</td>
+                <td class="table-stats-col">@(((double) data.Shared / Model.Channel.Shared).ToString("P", numberInfo))</td>
                 <td class="table-stats-col">@(data.Shared.ToString("N0"))</td>
-                <td class="table-stats-col">@(((double) data.Shared / Model.Channel.Chatters).ToString("P"))</td>
+                <td class="table-stats-col">@(((double) data.Shared / Model.Channel.Chatters).ToString("P", numberInfo))</td>
                 <td class="table-stats-col hover:underline hover:text-pink-500 truncate">
                     <a href="https://www.twitch.tv/directory/game/@data.Game" target="_blank" rel="noopener noreferrer">@data.Game</a>
                 </td>
