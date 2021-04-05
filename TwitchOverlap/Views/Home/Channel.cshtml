@@ -20,7 +20,7 @@
 
 <div class="flex items-center pt-4 px-4">
     <a href="https://www.twitch.tv/@Model.Channel.Id" target="_blank" rel="noopener noreferrer">
-        <img src="@Model.Channel.Avatar" class="rounded-full" alt="twitch-avatar" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'">
+        <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/@Model.Channel.Avatar" class="rounded-full" alt="twitch-avatar" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'">
     </a>
     <div class="pl-3 flex flex-col">
         <a class="text-2xl hover:underline hover:text-pink-500" href="https://www.twitch.tv/@Model.Channel.Id" target="_blank" rel="noopener noreferrer">@Model.Channel.DisplayName</a>
@@ -137,31 +137,7 @@ document.getElementById("toggle-dark").addEventListener("click", () => {
     }
 });
 
-(function () {
-    const arr = [@(Model.History != null ? string.Join(',', Model.History) : null)];
-    if (arr.length === 0) {
-    	document.getElementById("channel-trend-chart").outerHTML = "";
-    	return;
-    }
-    
-    let data = [];
-    let timeSet = ["date"];
-    for(let i = 0; i < arr.length; i++) {
-        let date;
-        // temp cus i messed up db
-        if (arr[i] <= 2000000000) {
-            date = new Date(arr[i] * 1000);
-        } else {
-            date = new Date(arr[i]);
-        }
-        const month = new Intl.DateTimeFormat("default", { month: "short" }).format(date);
-        const day = new Intl.DateTimeFormat("default", { day: "2-digit" }).format(date);
-        const time = new Intl.DateTimeFormat("default", { hour: "numeric", minute: "numeric", hour12: false }).format(date);
-        const dt = `${month} ${day} ${time}`;
-        timeSet.push(dt);
-    }
-    data.push(timeSet);
-    
+(async function () {
     const stringToRGB = function(str) {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -175,18 +151,34 @@ document.getElementById("toggle-dark").addEventListener("click", () => {
         return colour;
     };
     
-    const rawdata = @Html.Raw(Json.Serialize(Model.OverlapPoints));
-    const channelColors = {};
-    for (const channel in rawdata) {
-        channelColors[channel] = stringToRGB(channel);
-        data.push([channel, ...rawdata[channel]]);
+    async function fetchData() {
+        try {
+            const response = await fetch(`/api/history${window.location.pathname}`);
+            return response.json();
+        } catch (error) {
+            console.error(error);
+            return null;
+        }
     }
+
+    const data = await fetchData();
+    if (data == null){
+        return;
+    }
+    
+    const channelColors = {};
+    data.channels.forEach(channel => {
+       channelColors[channel] = stringToRGB(channel); 
+    });
     
     c3.generate({
         bindto: "#chart",
         data: {
-            columns: data,
-            x: "date",
+            json: data.history,
+            keys: {
+                x: "date",
+                value: data.channels
+            },
             colors: channelColors
         },
         axis: {
@@ -194,7 +186,7 @@ document.getElementById("toggle-dark").addEventListener("click", () => {
                 type: "category",
                 tick: {
                     culling: {
-                        max: 18
+                        max: 12
                     },
                     rotate: 20,
                     multiline: false

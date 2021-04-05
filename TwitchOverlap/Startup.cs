@@ -1,19 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using TwitchOverlap.Models;
 using TwitchOverlap.Services;
-using TwitchOverlapApi.Models;
 
 namespace TwitchOverlap
 {
@@ -34,9 +27,6 @@ namespace TwitchOverlap
             services.AddControllersWithViews();
             services.AddHttpClient();
             services.AddDbContext<TwitchContext>(options => options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
-            services.Configure<TwitchDatabaseSettings>(Configuration.GetSection(nameof(TwitchDatabaseSettings)));
-            services.AddSingleton<ITwitchDatabaseSettings>(sp => sp.GetRequiredService<IOptions<TwitchDatabaseSettings>>().Value);
-            services.AddSingleton<TwitchService>();
             services.AddRouting(options => options.LowercaseUrls = true);
             services.AddControllers();
             services.AddSingleton(Cache);

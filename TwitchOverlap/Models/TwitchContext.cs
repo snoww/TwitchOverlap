@@ -6,23 +6,12 @@ namespace TwitchOverlap.Models
 {
     public class TwitchContext : DbContext
     {
-        private readonly string _connectionString;
-
-        public TwitchContext(string connectionString)
+        public TwitchContext(DbContextOptions options) : base(options)
         {
-            _connectionString = connectionString;
         }
 
         public virtual DbSet<Channel> Channels { get; set; }
         public virtual DbSet<Overlap> Overlaps { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseNpgsql(_connectionString);
-            }
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
