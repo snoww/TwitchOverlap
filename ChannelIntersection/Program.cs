@@ -40,7 +40,7 @@ namespace ChannelIntersection
             var sw = new Stopwatch();
             sw.Start();
 
-            HashSet<ChannelModel> channels = await GetTopChannels();
+            Dictionary<string, ChannelModel> channels = await GetTopChannels();
             await GetChannelAvatar(channels);
 
             Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
@@ -52,15 +52,16 @@ namespace ChannelIntersection
 
             IEnumerable<Task> processTasks = channels.Select(async channel =>
             {
-                HashSet<string> chatters = await GetChatters(channel);
+                (_, ChannelModel ch) = channel;
+                HashSet<string> chatters = await GetChatters(ch);
                 if (chatters == null)
                 {
                     return;
                 }
 
-                channelChatters.TryAdd(channel, chatters);
-                processed.TryAdd(channel, new ConcurrentDictionary<string, int>());
-                totalIntersectionCount.TryAdd(channel, new ConcurrentDictionary<string, byte>());
+                channelChatters.TryAdd(ch, chatters);
+                processed.TryAdd(ch, new ConcurrentDictionary<string, int>());
+                totalIntersectionCount.TryAdd(ch, new ConcurrentDictionary<string, byte>());
             });
 
             await Task.WhenAll(processTasks);
@@ -160,9 +161,9 @@ namespace ChannelIntersection
             return chatterList;
         }
 
-        private static async Task<HashSet<ChannelModel>> GetTopChannels()
+        private static async Task<Dictionary<string, ChannelModel>> GetTopChannels()
         {
-            var channels = new HashSet<ChannelModel>();
+            var channels = new Dictionary<string, ChannelModel>();
 
             var pageToken = string.Empty;
             do
@@ -195,9 +196,11 @@ namespace ChannelIntersection
                             break;
                         }
 
-                        channels.Add(new ChannelModel
+                        string id = channel.GetProperty("user_login").GetString()?.ToLowerInvariant();
+
+                        channels.TryAdd(id, new ChannelModel
                         {
-                            Id = channel.GetProperty("user_login").GetString()?.ToLowerInvariant(),
+                            Id = id,
                             DisplayName = channel.GetProperty("user_name").GetString(),
                             Game = channel.GetProperty("game_name").GetString(),
                             Viewers = viewerCount
@@ -209,10 +212,10 @@ namespace ChannelIntersection
             return channels;
         }
 
-        private static async Task GetChannelAvatar(IReadOnlyCollection<ChannelModel> channels)
+        private static async Task GetChannelAvatar(Dictionary<string, ChannelModel> channels)
         {
             using var http = new HttpClient();
-            foreach (string reqString in RequestBuilder(channels))
+            foreach (string reqString in RequestBuilder(channels.Keys.ToList()))
             {
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
@@ -223,22 +226,22 @@ namespace ChannelIntersection
                 JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
                 foreach (JsonElement channel in data)
                 {
-                    ChannelModel model = channels.FirstOrDefault(x => x.Id.Equals(channel.GetProperty("login").GetString()?.ToLowerInvariant(), StringComparison.Ordinal));
+                    ChannelModel model = channels[channel.GetProperty("login").GetString()!.ToLowerInvariant()];
                     if (model != null) model.Avatar = channel.GetProperty("profile_image_url").GetString()?.Replace("-300x300", "-70x70").Split('/')[4];
                 }
             }
         }
 
-        private static IEnumerable<string> RequestBuilder(IReadOnlyCollection<ChannelModel> channels)
+        private static IEnumerable<string> RequestBuilder(IReadOnlyCollection<string> channels)
         {
             var shards = (int) Math.Ceiling(channels.Count / 100.0);
             var list = new List<string>(shards);
             for (int i = 0; i < shards; i++)
             {
                 var request = new StringBuilder();
-                foreach (ChannelModel channel in channels.Skip(i * 100).Take(100))
+                foreach (string channel in channels.Skip(i * 100).Take(100))
                 {
-                    request.Append("&login=").Append(channel.Id);
+                    request.Append("&login=").Append(channel);
                 }
 
                 list.Add(request.ToString()[1..]);
