@@ -117,7 +117,7 @@ namespace ChannelIntersection
             dbContext.Channels.UpdateRange(channelUpdateBag);
             await dbContext.Overlaps.AddRangeAsync(dataBag);
 
-            await dbContext.SaveChangesAsync();
+            // await dbContext.SaveChangesAsync();
 
             DateTime thirtyDays = timestamp.AddDays(-14);
             await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
@@ -224,7 +224,7 @@ namespace ChannelIntersection
                 foreach (JsonElement channel in data)
                 {
                     ChannelModel model = channels.FirstOrDefault(x => x.Id.Equals(channel.GetProperty("login").GetString()?.ToLowerInvariant(), StringComparison.Ordinal));
-                    if (model != null) model.Avatar = channel.GetProperty("profile_image_url").GetString()?.Replace("-300x300", "-70x70")[47..];
+                    if (model != null) model.Avatar = channel.GetProperty("profile_image_url").GetString()?.Replace("-300x300", "-70x70").Split('/')[4];
                 }
             }
         }
