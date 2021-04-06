@@ -93,7 +93,7 @@ namespace ChannelIntersection
             var channelUpdateBag = new ConcurrentBag<Channel>();
             var dataBag = new ConcurrentBag<Overlap>();
             
-            foreach ((ChannelModel ch, ConcurrentDictionary<string, int> _) in processed)
+            foreach ((ChannelModel ch, ConcurrentDictionary<string, int> value) in processed)
             {
                 Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
                 if (dbChannel == null)
@@ -110,7 +110,7 @@ namespace ChannelIntersection
                     channelUpdateBag.Add(dbChannel);
                 }
 
-                dataBag.Add(new Overlap(ch.Id, timestamp, ch.Data));
+                dataBag.Add(new Overlap(ch.Id, timestamp, new Dictionary<string, int>(value)));
             }
 
             await dbContext.Channels.AddRangeAsync(channelAddBag);
