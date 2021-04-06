@@ -1,18 +1,12 @@
 using System;
 using System.Collections.Generic;
-using MongoDB.Bson.Serialization.Attributes;
 
 namespace ChannelIntersection
 {
     public class ChannelModel : IComparable
     {
-        [BsonId]
         public string Id { get; set; }
-
-        [BsonIgnore]
         public string DisplayName { get; set; }
-
-        [BsonIgnore]
         public string Avatar { get; set; }
         public DateTime Timestamp { get; set; }
         public string Game { get; set; }
