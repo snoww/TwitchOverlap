@@ -35,7 +35,7 @@ namespace ChannelIntersection
 
             var dbContext = new TwitchContext(_psqlConnection);
 
-            Console.WriteLine("connected to database");
+            Console.WriteLine($"connected to database at {timestamp:u}");
 
             var sw = new Stopwatch();
             sw.Start();

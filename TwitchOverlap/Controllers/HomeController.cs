@@ -47,10 +47,33 @@ namespace TwitchOverlap.Controllers
                 .OrderByDescending(x => x.Chatters)
                 .Select(x => new ChannelSummary(x.Id, x.DisplayName, x.Avatar, x.Chatters))
                 .ToListAsync();
+
+            // something went wrong with last ChannelIntersection run, data was not updated
+            if (channelLists.Count == 0)
+            {
+                // try to find latest update time
+                DateTime lastUpdate = await _context.Channels.AsNoTracking()
+                    .OrderByDescending(x => x.LastUpdate)
+                    .Take(1)
+                    .Select(x => x.LastUpdate)
+                    .SingleAsync();
+                
+                // use latest update time
+                channelLists = await _context.Channels.AsNoTracking()
+                    .Where(x => x.LastUpdate >= lastUpdate)
+                    .OrderByDescending(x => x.Chatters)
+                    .Select(x => new ChannelSummary(x.Id, x.DisplayName, x.Avatar, x.Chatters))
+                    .ToListAsync();
+            }
+
+            if (channelLists.Count == 0)
+            {
+                return View("NoSummary");
+            }
             
             await _cache.StringSetAsync(ChannelSummaryCacheKey, JsonSerializer.Serialize(channelLists), TimeSpan.FromMinutes(5));
 
-            return channelLists == null ? View("NoSummary") : View(channelLists);
+            return View(channelLists);
         }
 
         [Route("/channel/{name}")]
