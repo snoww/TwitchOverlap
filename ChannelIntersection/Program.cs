@@ -117,7 +117,7 @@ namespace ChannelIntersection
             dbContext.Channels.UpdateRange(channelUpdateBag);
             await dbContext.Overlaps.AddRangeAsync(dataBag);
 
-            // await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
 
             DateTime thirtyDays = timestamp.AddDays(-14);
             await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
