@@ -133,7 +133,7 @@ namespace ChannelIntersection
         private static async Task<HashSet<string>> GetChatters(ChannelModel channelName)
         {
             using JsonDocument response = await JsonDocument.ParseAsync(
-                await Http.GetStreamAsync($"http://tmi.twitch.tv/group/user/{channelName.Id}/chatters"));
+                await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channelName.Id}/chatters"));
 
             int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
             if (chatters < 100)
