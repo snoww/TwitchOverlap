@@ -55,7 +55,7 @@
 <script>
 const rootElement = document.querySelector("html");
 const darkIcon = document.getElementById("dark-icon");
-window.addEventListener("load", () => {
+window.addEventListener("DOMContentLoaded", () => {
     if (rootElement.classList.contains("dark")) {
         darkIcon.classList.replace("fa-moon", "fa-sun");
     } else {
