@@ -66,7 +66,7 @@ namespace ChannelIntersection
 
             await Task.WhenAll(processTasks);
 
-            Console.WriteLine($"retrieved chatters in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
             Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
@@ -130,10 +130,21 @@ namespace ChannelIntersection
             Console.WriteLine($"time taken: {(endTime - timestamp).Seconds}s");
         }
 
-        private static async Task<HashSet<string>> GetChatters(ChannelModel channelName)
+        private static async Task<HashSet<string>> GetChatters(ChannelModel channel)
         {
-            using JsonDocument response = await JsonDocument.ParseAsync(
-                await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channelName.Id}/chatters"));
+            Stream stream;
+            try
+            {
+                stream = await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channel.Id}/chatters");
+            }
+            catch
+            {
+                Console.WriteLine($"Could not retrieve chatters for {channel.Id}");
+                return null;
+            }
+            
+            using JsonDocument response = await JsonDocument.ParseAsync(stream);
+            await stream.DisposeAsync();
 
             int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
             if (chatters < 100)
@@ -141,7 +152,7 @@ namespace ChannelIntersection
                 return null;
             }
 
-            channelName.Chatters = chatters;
+            channel.Chatters = chatters;
             var chatterList = new HashSet<string>(chatters);
             JsonElement.ObjectEnumerator viewerTypes = response.RootElement.GetProperty("chatters").EnumerateObject();
             foreach (JsonProperty viewerType in viewerTypes)
@@ -171,15 +182,7 @@ namespace ChannelIntersection
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
                 request.Headers.Add("Client-Id", _twitchClient);
-
-                if (string.IsNullOrWhiteSpace(pageToken))
-                {
-                    request.RequestUri = new Uri("https://api.twitch.tv/helix/streams?first=100");
-                }
-                else
-                {
-                    request.RequestUri = new Uri($"https://api.twitch.tv/helix/streams?first=100&after={pageToken}");
-                }
+                request.RequestUri = string.IsNullOrWhiteSpace(pageToken) ? new Uri("https://api.twitch.tv/helix/streams?first=100") : new Uri($"https://api.twitch.tv/helix/streams?first=100&after={pageToken}");
 
                 using HttpResponseMessage response = await Http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
