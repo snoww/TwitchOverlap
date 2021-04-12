@@ -103,6 +103,8 @@ namespace ChannelIntersection
                 }
                 else
                 {
+                    dbChannel.Avatar = ch.Avatar;
+                    dbChannel.DisplayName = ch.DisplayName;
                     dbChannel.Game = ch.Game;
                     dbChannel.Viewers = ch.Viewers;
                     dbChannel.Chatters = ch.Chatters;
