@@ -122,7 +122,7 @@ namespace ChannelIntersection
 
             await dbContext.SaveChangesAsync();
 
-            DateTime thirtyDays = timestamp.AddDays(-14);
+            DateTime thirtyDays = timestamp.AddDays(-30);
             await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
 
             Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
