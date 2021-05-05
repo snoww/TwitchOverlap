@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChannelIntersection", "Chan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchOverlap", "TwitchOverlap\TwitchOverlap.csproj", "{88481136-6D01-477A-9220-0F3036771882}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchGraph", "TwitchGraph\TwitchGraph.csproj", "{70A58735-5F2A-49A8-AB2D-02828EBA775D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{88481136-6D01-477A-9220-0F3036771882}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88481136-6D01-477A-9220-0F3036771882}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88481136-6D01-477A-9220-0F3036771882}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70A58735-5F2A-49A8-AB2D-02828EBA775D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70A58735-5F2A-49A8-AB2D-02828EBA775D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70A58735-5F2A-49A8-AB2D-02828EBA775D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70A58735-5F2A-49A8-AB2D-02828EBA775D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
