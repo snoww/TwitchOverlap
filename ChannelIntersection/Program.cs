@@ -68,11 +68,14 @@ namespace ChannelIntersection
 
             Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
+
+            var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
+            Directory.CreateDirectory(rootPath);
             
             IEnumerable<Task> ccTasks = channelChatters.Select(async cc =>
             {
                 (ChannelModel channel, HashSet<string> chatters) = cc;
-                var path = $"./channel-chatters/{timestamp.Month}/{channel.Id}.txt";
+                var path = $"{rootPath}/{channel.Id}.txt";
                 if (!File.Exists(path))
                 {
                     await File.WriteAllLinesAsync(path, chatters);
@@ -140,10 +143,10 @@ namespace ChannelIntersection
             dbContext.Channels.UpdateRange(channelUpdateBag);
             await dbContext.Overlaps.AddRangeAsync(dataBag);
 
-            await dbContext.SaveChangesAsync();
+            // await dbContext.SaveChangesAsync();
 
             DateTime thirtyDays = timestamp.AddDays(-30);
-            await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
+            // await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
 
             Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
             sw.Stop();
