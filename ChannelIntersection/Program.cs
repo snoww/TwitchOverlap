@@ -68,6 +68,26 @@ namespace ChannelIntersection
 
             Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
+            
+            IEnumerable<Task> ccTasks = channelChatters.Select(async cc =>
+            {
+                (ChannelModel channel, HashSet<string> chatters) = cc;
+                var path = $"./channel-chatters/{timestamp.Month}/{channel.Id}.txt";
+                if (!File.Exists(path))
+                {
+                    await File.WriteAllLinesAsync(path, chatters);
+                    return;
+                }
+                
+                var existingChatters = new HashSet<string>(await File.ReadAllLinesAsync(path));
+                existingChatters.UnionWith(chatters);
+                await File.WriteAllLinesAsync(path, existingChatters);
+            });
+
+            await Task.WhenAll(ccTasks);
+            
+            Console.WriteLine($"union completed in {sw.ElapsedMilliseconds}ms");
+            sw.Restart();
 
             Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
             {
