@@ -32,6 +32,8 @@ namespace ChannelIntersection
             }
 
             DateTime timestamp = DateTime.UtcNow;
+            var timer = new Stopwatch();
+            timer.Start();
 
             var dbContext = new TwitchContext(_psqlConnection);
 
@@ -151,8 +153,7 @@ namespace ChannelIntersection
             Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
             sw.Stop();
 
-            DateTime endTime = DateTime.UtcNow;
-            Console.WriteLine($"time taken: {(endTime - timestamp).Seconds}s");
+            Console.WriteLine($"time taken: {timer.Elapsed.TotalSeconds}s");
         }
 
         private static async Task<HashSet<string>> GetChatters(ChannelModel channel)
