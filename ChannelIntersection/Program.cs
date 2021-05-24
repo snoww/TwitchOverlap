@@ -143,10 +143,10 @@ namespace ChannelIntersection
             dbContext.Channels.UpdateRange(channelUpdateBag);
             await dbContext.Overlaps.AddRangeAsync(dataBag);
 
-            // await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
 
             DateTime thirtyDays = timestamp.AddDays(-30);
-            // await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
+            await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
 
             Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
             sw.Stop();
