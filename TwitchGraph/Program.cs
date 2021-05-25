@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,6 @@ namespace TwitchGraph
         private static readonly HttpClient Http = new();
         private static string _twitchToken;
         private static string _twitchClient;
-        private static string _psqlConnection;
 
         public static async Task Main()
         {
@@ -26,190 +26,129 @@ namespace TwitchGraph
             {
                 _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
                 _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
-                _psqlConnection = json.RootElement.GetProperty("POSTGRES").GetString();
             }
 
             DateTime timestamp = DateTime.UtcNow;
-
-            var dbContext = new TwitchContext(_psqlConnection);
-
-            Console.WriteLine($"connected to database at {timestamp:u}");
-
+            Console.WriteLine($"importing channel chatters at {timestamp:u}");
+            
             var sw = new Stopwatch();
+            var sw2 = new Stopwatch();
             sw.Start();
+            sw2.Start();
 
-            Dictionary<string, Channel> channels = await GetTopChannels();
-
-            Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
-            sw.Restart();
-
-            var channelChatters = new ConcurrentDictionary<Channel, HashSet<string>>();
-            var processed = new ConcurrentDictionary<Channel, ConcurrentDictionary<string, int>>();
-            var totalIntersectionCount = new ConcurrentDictionary<Channel, ConcurrentDictionary<string, byte>>();
-
-            IEnumerable<Task> processTasks = channels.Select(async channel =>
+            var channelChatters = new ConcurrentDictionary<string, HashSet<string>>();
+            var processed = new ConcurrentDictionary<string, ConcurrentDictionary<string, int>>();
+            var channels = new ConcurrentDictionary<string, Channel>();
+            var totalCount = 0;
+            
+            IEnumerable<Task> importTasks = Directory.EnumerateFiles("./data/5-2021").Select(async file =>
             {
-                (_, Channel ch) = channel;
-                HashSet<string> chatters = await GetChatters(ch);
-                if (chatters == null)
+                string ch = Path.GetFileNameWithoutExtension(file);
+                string[] chatters = await File.ReadAllLinesAsync(file);
+                totalCount++;
+                if (chatters.Length < 5000)
                 {
                     return;
                 }
-
-                channelChatters.TryAdd(ch, chatters);
+                
+                channelChatters.TryAdd(ch, new HashSet<string>(chatters));
                 processed.TryAdd(ch, new ConcurrentDictionary<string, int>());
-                totalIntersectionCount.TryAdd(ch, new ConcurrentDictionary<string, byte>());
+                channels.TryAdd(ch, new Channel(ch, string.Empty, chatters.Length));
             });
 
-            await Task.WhenAll(processTasks);
-
-            Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.ElapsedMilliseconds}ms");
+            await Task.WhenAll(importTasks);
+            
+            Console.WriteLine($"imported {channelChatters.Count}/{totalCount} channels in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            Parallel.ForEach(GetKCombs(new List<Channel>(channelChatters.Keys), 2), x =>
+            Parallel.ForEach(GetKCombs(new List<string>(channelChatters.Keys), 2), x =>
             {
-                Channel[] pair = x.ToArray();
-                int count = channelChatters[pair[0]].Count(y =>
+                string[] pair = x.ToArray();
+                int count = channelChatters[pair[0]].Count(y => channelChatters[pair[1]].Contains(y));
+                if (count >= 100)
                 {
-                    if (channelChatters[pair[1]].Contains(y))
-                    {
-                        totalIntersectionCount[pair[0]].TryAdd(y, byte.MaxValue);
-                        totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
-                        return true;
-                    }
-
-                    return false;
-                });
-                processed[pair[0]].TryAdd(pair[1].Id, count);
-                processed[pair[1]].TryAdd(pair[0].Id, count);
+                    processed[pair[0]].TryAdd(pair[1], count);
+                }
             });
 
             Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            var nodesAdd = new List<Node>();
-            var nodesUpdate = new List<Node>();
-            var edgesAdd = new List<Edge>();
-            var edgesUpdate = new List<Edge>();
+            Directory.CreateDirectory("./data/5-2021/processed");
+            StreamWriter nodesStream = File.CreateText("./data/5-2021/processed/nodes.csv");
+            await nodesStream.WriteLineAsync("id,label,size");
             
-            foreach ((Channel ch, ConcurrentDictionary<string, int> value) in processed)
+            await GetChannelDisplayName(channels);
+            
+            Console.WriteLine($"fetched display names in {sw.ElapsedMilliseconds}ms");
+            sw.Restart();
+            
+            foreach ((string _, Channel channel) in channels)
             {
-                Node node = await dbContext.Nodes.SingleOrDefaultAsync(x => x.Id == ch.Id);
-                if (node == null)
+                if (string.IsNullOrEmpty(channel.DisplayName) || channel.DisplayName.Any(c => c > 255))
                 {
-                    nodesAdd.Add(new Node(ch.Id, ch.DisplayName, ch.Chatters));
+                    await nodesStream.WriteLineAsync($"{channel.Id},{channel.Id},{channel.Size}");
                 }
                 else
                 {
-                    node.Size += ch.Chatters;
-                    nodesUpdate.Add(node);
+                    await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
                 }
+            }
+            nodesStream.Close();
+            Console.WriteLine($"saved nodes in {sw.ElapsedMilliseconds}ms");
+            sw.Restart();
+            
+            await using StreamWriter edgesStream = File.CreateText("./data/5-2021/processed/edges.csv");
+            await edgesStream.WriteLineAsync("source,target,weight");
 
-                foreach ((string channel2, int overlap) in value)
+            foreach ((string ch1, ConcurrentDictionary<string, int> intersection) in processed)
+            {
+                foreach ((string ch2, int weight) in intersection)
                 {
-                    Edge edge = await dbContext.Edges.SingleOrDefaultAsync(x => x.Source == ch.Id && x.Target == channel2);
-                    if (edge == null)
-                    {
-                        edgesAdd.Add(new Edge(ch.Id, channel2, overlap));
-                    }
-                    else
-                    {
-                        edge.Weight += overlap;
-                        edgesUpdate.Add(edge);
-                    }
+                    await edgesStream.WriteLineAsync($"{ch1},{ch2},{weight}");
                 }
-            }
-
-            await dbContext.Nodes.AddRangeAsync(nodesAdd);
-            dbContext.Nodes.UpdateRange(nodesUpdate);
-            await dbContext.Edges.AddRangeAsync(edgesAdd);
-            dbContext.Edges.UpdateRange(edgesUpdate);
-
-            await dbContext.SaveChangesAsync();
-
-            Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
-            sw.Stop();
-
-            DateTime endTime = DateTime.UtcNow;
-            Console.WriteLine($"time taken: {(endTime - timestamp).Seconds}s");
-        }
-
-        private static async Task<HashSet<string>> GetChatters(Channel channel)
-        {
-            Stream stream;
-            try
-            {
-                stream = await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channel.Id}/chatters");
-            }
-            catch
-            {
-                Console.WriteLine($"Could not retrieve chatters for {channel.Id}");
-                return null;
             }
             
-            using JsonDocument response = await JsonDocument.ParseAsync(stream);
-            await stream.DisposeAsync();
-
-            int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
-            if (chatters < 100)
-            {
-                return null;
-            }
-
-            channel.Chatters = chatters;
-            var chatterList = new HashSet<string>(chatters);
-            JsonElement.ObjectEnumerator viewerTypes = response.RootElement.GetProperty("chatters").EnumerateObject();
-            foreach (JsonProperty viewerType in viewerTypes)
-            {
-                foreach (JsonElement viewer in viewerType.Value.EnumerateArray())
-                {
-                    string username = viewer.GetString()?.ToLower();
-                    if (username == null || username.EndsWith("bot", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    chatterList.Add(username);
-                }
-            }
-
-            return chatterList;
+            Console.WriteLine($"saved edges in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"total time taken: {sw2.Elapsed.TotalSeconds}s");
         }
-
-        private static async Task<Dictionary<string, Channel>> GetTopChannels()
+        
+        private static async Task GetChannelDisplayName(ConcurrentDictionary<string, Channel> channels)
         {
-            var channels = new Dictionary<string, Channel>();
-
-            var pageToken = string.Empty;
-            do
+            using var http = new HttpClient();
+            foreach (string reqString in RequestBuilder(channels.Keys.ToList()))
             {
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
                 request.Headers.Add("Client-Id", _twitchClient);
-                request.RequestUri = string.IsNullOrWhiteSpace(pageToken) ? new Uri("https://api.twitch.tv/helix/streams?first=100") : new Uri($"https://api.twitch.tv/helix/streams?first=100&after={pageToken}");
-
-                using HttpResponseMessage response = await Http.SendAsync(request);
-                if (response.IsSuccessStatusCode)
+                request.RequestUri = new Uri($"https://api.twitch.tv/helix/users?{reqString}");
+                using HttpResponseMessage response = await http.SendAsync(request);
+                using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
+                foreach (JsonElement channel in data)
                 {
-                    using JsonDocument json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-                    pageToken = json.RootElement.GetProperty("pagination").GetProperty("cursor").GetString();
-                    JsonElement.ArrayEnumerator channelEnumerator = json.RootElement.GetProperty("data").EnumerateArray();
-                    foreach (JsonElement channel in channelEnumerator)
-                    {
-                        int viewerCount = channel.GetProperty("viewer_count").GetInt32();
-                        if (viewerCount < 1500)
-                        {
-                            pageToken = null;
-                            break;
-                        }
-
-                        string id = channel.GetProperty("user_login").GetString()?.ToLowerInvariant();
-                        channels.TryAdd(id, new Channel(id, channel.GetProperty("user_name").GetString()));
-                    }
+                    string login = channel.GetProperty("login").GetString()!.ToLowerInvariant();
+                    channels[login].DisplayName = channel.GetProperty("display_name").GetString();
                 }
-            } while (pageToken != null);
+            }
+        }
 
-            return channels;
+        private static IEnumerable<string> RequestBuilder(IReadOnlyCollection<string> channels)
+        {
+            var shards = (int) Math.Ceiling(channels.Count / 100.0);
+            var list = new List<string>(shards);
+            for (int i = 0; i < shards; i++)
+            {
+                var request = new StringBuilder();
+                foreach (string channel in channels.Skip(i * 100).Take(100))
+                {
+                    request.Append("&login=").Append(channel);
+                }
+
+                list.Add(request.ToString()[1..]);
+            }
+
+            return list;
         }
 
         private static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
