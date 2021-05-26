@@ -77,11 +77,6 @@ namespace ChannelIntersection
             IEnumerable<Task> ccTasks = channelChatters.Select(async cc =>
             {
                 (ChannelModel channel, HashSet<string> chatters) = cc;
-                // temp so it doesn't crash
-                if (chatters.Count > 500000)
-                {
-                    return;
-                }
 
                 var path = $"{rootPath}/{channel.Id}.txt";
                 if (!File.Exists(path))
@@ -89,8 +84,9 @@ namespace ChannelIntersection
                     await File.WriteAllLinesAsync(path, chatters);
                     return;
                 }
-
-                var existingChatters = new HashSet<string>(await File.ReadAllLinesAsync(path));
+                
+                var existingChatters = new HashSet<string>(File.ReadLines(path));
+                existingChatters.EnsureCapacity(existingChatters.Count + chatters.Count);
                 existingChatters.UnionWith(chatters);
                 await File.WriteAllLinesAsync(path, existingChatters);
             });
@@ -100,61 +96,61 @@ namespace ChannelIntersection
             Console.WriteLine($"union completed in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
-            Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
-            {
-                ChannelModel[] pair = x.ToArray();
-                int count = channelChatters[pair[0]].Count(y =>
-                {
-                    if (channelChatters[pair[1]].Contains(y))
-                    {
-                        totalIntersectionCount[pair[0]].TryAdd(y, byte.MaxValue);
-                        totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
-                        return true;
-                    }
-
-                    return false;
-                });
-                processed[pair[0]].TryAdd(pair[1].Id, count);
-                processed[pair[1]].TryAdd(pair[0].Id, count);
-            });
-
-            Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
-            sw.Restart();
-
-            var channelAddBag = new ConcurrentBag<Channel>();
-            var channelUpdateBag = new ConcurrentBag<Channel>();
-            var dataBag = new ConcurrentBag<Overlap>();
-
-            foreach ((ChannelModel ch, ConcurrentDictionary<string, int> value) in processed)
-            {
-                Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
-                if (dbChannel == null)
-                {
-                    channelAddBag.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp, ch.Avatar, ch.DisplayName));
-                }
-                else
-                {
-                    dbChannel.Avatar = ch.Avatar;
-                    dbChannel.DisplayName = ch.DisplayName;
-                    dbChannel.Game = ch.Game;
-                    dbChannel.Viewers = ch.Viewers;
-                    dbChannel.Chatters = ch.Chatters;
-                    dbChannel.Shared = totalIntersectionCount[ch].Count;
-                    dbChannel.LastUpdate = timestamp;
-                    channelUpdateBag.Add(dbChannel);
-                }
-
-                dataBag.Add(new Overlap(ch.Id, timestamp, new Dictionary<string, int>(value)));
-            }
-
-            await dbContext.Channels.AddRangeAsync(channelAddBag);
-            dbContext.Channels.UpdateRange(channelUpdateBag);
-            await dbContext.Overlaps.AddRangeAsync(dataBag);
-
-            await dbContext.SaveChangesAsync();
-
-            DateTime thirtyDays = timestamp.AddDays(-30);
-            await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
+            // Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
+            // {
+            //     ChannelModel[] pair = x.ToArray();
+            //     int count = channelChatters[pair[0]].Count(y =>
+            //     {
+            //         if (channelChatters[pair[1]].Contains(y))
+            //         {
+            //             totalIntersectionCount[pair[0]].TryAdd(y, byte.MaxValue);
+            //             totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
+            //             return true;
+            //         }
+            //
+            //         return false;
+            //     });
+            //     processed[pair[0]].TryAdd(pair[1].Id, count);
+            //     processed[pair[1]].TryAdd(pair[0].Id, count);
+            // });
+            //
+            // Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
+            // sw.Restart();
+            //
+            // var channelAddBag = new ConcurrentBag<Channel>();
+            // var channelUpdateBag = new ConcurrentBag<Channel>();
+            // var dataBag = new ConcurrentBag<Overlap>();
+            //
+            // foreach ((ChannelModel ch, ConcurrentDictionary<string, int> value) in processed)
+            // {
+            //     Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
+            //     if (dbChannel == null)
+            //     {
+            //         channelAddBag.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp, ch.Avatar, ch.DisplayName));
+            //     }
+            //     else
+            //     {
+            //         dbChannel.Avatar = ch.Avatar;
+            //         dbChannel.DisplayName = ch.DisplayName;
+            //         dbChannel.Game = ch.Game;
+            //         dbChannel.Viewers = ch.Viewers;
+            //         dbChannel.Chatters = ch.Chatters;
+            //         dbChannel.Shared = totalIntersectionCount[ch].Count;
+            //         dbChannel.LastUpdate = timestamp;
+            //         channelUpdateBag.Add(dbChannel);
+            //     }
+            //
+            //     dataBag.Add(new Overlap(ch.Id, timestamp, new Dictionary<string, int>(value)));
+            // }
+            //
+            // await dbContext.Channels.AddRangeAsync(channelAddBag);
+            // dbContext.Channels.UpdateRange(channelUpdateBag);
+            // await dbContext.Overlaps.AddRangeAsync(dataBag);
+            //
+            // await dbContext.SaveChangesAsync();
+            //
+            // DateTime thirtyDays = timestamp.AddDays(-30);
+            // await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
 
             Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
             sw.Stop();
