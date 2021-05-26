@@ -73,24 +73,30 @@ namespace ChannelIntersection
 
             var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
             Directory.CreateDirectory(rootPath);
-            
+
             IEnumerable<Task> ccTasks = channelChatters.Select(async cc =>
             {
                 (ChannelModel channel, HashSet<string> chatters) = cc;
+                // temp so it doesn't crash
+                if (chatters.Count > 500000)
+                {
+                    return;
+                }
+
                 var path = $"{rootPath}/{channel.Id}.txt";
                 if (!File.Exists(path))
                 {
                     await File.WriteAllLinesAsync(path, chatters);
                     return;
                 }
-                
+
                 var existingChatters = new HashSet<string>(await File.ReadAllLinesAsync(path));
                 existingChatters.UnionWith(chatters);
                 await File.WriteAllLinesAsync(path, existingChatters);
             });
 
             await Task.WhenAll(ccTasks);
-            
+
             Console.WriteLine($"union completed in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
 
@@ -118,7 +124,7 @@ namespace ChannelIntersection
             var channelAddBag = new ConcurrentBag<Channel>();
             var channelUpdateBag = new ConcurrentBag<Channel>();
             var dataBag = new ConcurrentBag<Overlap>();
-            
+
             foreach ((ChannelModel ch, ConcurrentDictionary<string, int> value) in processed)
             {
                 Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
@@ -168,7 +174,7 @@ namespace ChannelIntersection
                 Console.WriteLine($"Could not retrieve chatters for {channel.Id}");
                 return null;
             }
-            
+
             using JsonDocument response = await JsonDocument.ParseAsync(stream);
             await stream.DisposeAsync();
 
@@ -208,7 +214,9 @@ namespace ChannelIntersection
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
                 request.Headers.Add("Client-Id", _twitchClient);
-                request.RequestUri = string.IsNullOrWhiteSpace(pageToken) ? new Uri("https://api.twitch.tv/helix/streams?first=100") : new Uri($"https://api.twitch.tv/helix/streams?first=100&after={pageToken}");
+                request.RequestUri = string.IsNullOrWhiteSpace(pageToken)
+                    ? new Uri("https://api.twitch.tv/helix/streams?first=100")
+                    : new Uri($"https://api.twitch.tv/helix/streams?first=100&after={pageToken}");
 
                 using HttpResponseMessage response = await Http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
