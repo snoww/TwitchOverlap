@@ -45,7 +45,7 @@ namespace ChannelIntersection
             Dictionary<string, ChannelModel> channels = await GetTopChannels();
             await GetChannelAvatar(channels);
 
-            Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"retrieved {channels.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
             var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
@@ -68,7 +68,7 @@ namespace ChannelIntersection
 
             await Task.WhenAll(processTasks);
 
-            Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
             Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
@@ -89,7 +89,7 @@ namespace ChannelIntersection
                 processed[pair[1]].TryAdd(pair[0].Id, count);
             });
             
-            Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
             
             var channelAddBag = new ConcurrentBag<Channel>();
@@ -127,30 +127,34 @@ namespace ChannelIntersection
             DateTime thirtyDays = timestamp.AddDays(-30);
             await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
 
-            Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-            
-            var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
-            Directory.CreateDirectory(rootPath);
-            
-            Console.WriteLine("beginning unique chatter merge");
 
-            foreach ((ChannelModel channel, HashSet<string> chatters) in channelChatters)
+            if (timestamp.Minute >= 30) // only calculate union every hour
             {
-                var path = $"{rootPath}/{channel.Id}.txt";
-                if (!File.Exists(path))
-                {
-                    await File.WriteAllLinesAsync(path, chatters);
-                    continue;
-                }
+                var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
+                Directory.CreateDirectory(rootPath);
                 
-                var existingChatters = new HashSet<string>(File.ReadLines(path));
-                existingChatters.EnsureCapacity(existingChatters.Count + chatters.Count);
-                existingChatters.UnionWith(chatters);
-                await File.WriteAllLinesAsync(path, existingChatters);
-            }
+                Console.WriteLine("beginning unique chatter merge");
 
-            Console.WriteLine($"union completed in {sw.ElapsedMilliseconds}ms");
+                foreach ((ChannelModel channel, HashSet<string> chatters) in channelChatters)
+                {
+                    var path = $"{rootPath}/{channel.Id}.txt";
+                    if (!File.Exists(path))
+                    {
+                        await File.WriteAllLinesAsync(path, chatters);
+                        continue;
+                    }
+                    
+                    var existingChatters = new HashSet<string>(File.ReadLines(path));
+                    existingChatters.EnsureCapacity(existingChatters.Count + chatters.Count);
+                    existingChatters.UnionWith(chatters);
+                    await File.WriteAllLinesAsync(path, existingChatters);
+                }
+
+                Console.WriteLine($"union completed in {sw.Elapsed.TotalSeconds}s");
+            }
+            
             Console.WriteLine($"total time taken: {timer.Elapsed.TotalSeconds}s");
         }
 
