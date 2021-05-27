@@ -41,7 +41,7 @@ namespace TwitchGraph
             var channels = new ConcurrentDictionary<string, Channel>();
             var totalCount = 0;
             
-            IEnumerable<Task> importTasks = Directory.EnumerateFiles("./data/5-2021").Select(async file =>
+            IEnumerable<Task> importTasks = Directory.EnumerateFiles("C:\\Users\\Snow\\Documents\\projects\\TwitchGraphData\\5-2021").Select(async file =>
             {
                 string ch = Path.GetFileNameWithoutExtension(file);
                 string[] chatters = await File.ReadAllLinesAsync(file);
@@ -58,57 +58,82 @@ namespace TwitchGraph
 
             await Task.WhenAll(importTasks);
             
-            Console.WriteLine($"imported {channelChatters.Count}/{totalCount} channels in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"imported {channelChatters.Count}/{totalCount} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
             Parallel.ForEach(GetKCombs(new List<string>(channelChatters.Keys), 2), x =>
             {
                 string[] pair = x.ToArray();
-                int count = channelChatters[pair[0]].Count(y => channelChatters[pair[1]].Contains(y));
-                if (count >= 100)
+                int count = channelChatters[pair[0]].Intersect(channelChatters[pair[1]]).Count();
+                if (count >= 500)
                 {
                     processed[pair[0]].TryAdd(pair[1], count);
                 }
             });
-
-            Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
+            
+            Console.WriteLine($"processed {processed.Count} channels");
+            Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            Directory.CreateDirectory("./data/5-2021/processed");
-            StreamWriter nodesStream = File.CreateText("./data/5-2021/processed/nodes.csv");
-            await nodesStream.WriteLineAsync("id,label,size");
+            Directory.CreateDirectory("./data/5-2021/");
+            // StreamWriter nodesStream = File.CreateText("./data/5-2021/processed/nodes.csv");
+            // await nodesStream.WriteLineAsync("id,label,size");
             
             await GetChannelDisplayName(channels);
             
             Console.WriteLine($"fetched display names in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
             
+            // foreach ((string _, Channel channel) in channels)
+            // {
+            //     if (string.IsNullOrEmpty(channel.DisplayName) || channel.DisplayName.Any(c => c > 255))
+            //     {
+            //         await nodesStream.WriteLineAsync($"{channel.Id},{channel.Id},{channel.Size}");
+            //     }
+            //     else
+            //     {
+            //         await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
+            //     }
+            // }
+            // nodesStream.Close();
+
+            FileStream nodesStream = File.OpenWrite("./data/5-2021/nodes.json");
+            List<Node> nodes = new List<Node>();
             foreach ((string _, Channel channel) in channels)
             {
-                if (string.IsNullOrEmpty(channel.DisplayName) || channel.DisplayName.Any(c => c > 255))
-                {
-                    await nodesStream.WriteLineAsync($"{channel.Id},{channel.Id},{channel.Size}");
-                }
-                else
-                {
-                    await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
-                }
+                nodes.Add(new Node {name = channel.DisplayName, value = channel.Size});
             }
-            nodesStream.Close();
+
+            await JsonSerializer.SerializeAsync(nodesStream, nodes);
+            
             Console.WriteLine($"saved nodes in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
             
-            await using StreamWriter edgesStream = File.CreateText("./data/5-2021/processed/edges.csv");
-            await edgesStream.WriteLineAsync("source,target,weight");
+            // await using StreamWriter edgesStream = File.CreateText("./data/5-2021/processed/edges.csv");
+            // await edgesStream.WriteLineAsync("source,target,weight");
+            //
+            // foreach ((string ch1, ConcurrentDictionary<string, int> intersection) in processed)
+            // {
+            //     foreach ((string ch2, int weight) in intersection)
+            //     {
+            //         await edgesStream.WriteLineAsync($"{ch1},{ch2},{weight}");
+            //     }
+            // }
+            
+            FileStream edgesStream = File.OpenWrite("./data/5-2021/edges.json");
+
+            var edges = new List<Edge>();
 
             foreach ((string ch1, ConcurrentDictionary<string, int> intersection) in processed)
             {
-                foreach ((string ch2, int weight) in intersection)
+                foreach ((string ch2, int _) in intersection)
                 {
-                    await edgesStream.WriteLineAsync($"{ch1},{ch2},{weight}");
+                    edges.Add(new Edge{source = ch1, target = ch2});
                 }
             }
-            
+
+            await JsonSerializer.SerializeAsync(edgesStream, edges);
+
             Console.WriteLine($"saved edges in {sw.ElapsedMilliseconds}ms");
             Console.WriteLine($"total time taken: {sw2.Elapsed.TotalSeconds}s");
         }
