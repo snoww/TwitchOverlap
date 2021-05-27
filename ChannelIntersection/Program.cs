@@ -171,7 +171,7 @@ namespace ChannelIntersection
             await stream.DisposeAsync();
 
             int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
-            if (chatters < 100)
+            if (chatters < 500)
             {
                 return null;
             }
