@@ -19,6 +19,7 @@ namespace TwitchGraph
         private static readonly HttpClient Http = new();
         private static string _twitchToken;
         private static string _twitchClient;
+        private static readonly object WriteLock = new();
 
         public static async Task Main()
         {
@@ -36,41 +37,40 @@ namespace TwitchGraph
             sw.Start();
             sw2.Start();
 
-            var channelChatters = new ConcurrentDictionary<string, HashSet<string>>();
+            var channelChatters = new Dictionary<string, HashSet<string>>();
             var processed = new ConcurrentDictionary<string, ConcurrentDictionary<string, int>>();
-            var channels = new ConcurrentDictionary<string, Channel>();
-            var totalCount = 0;
+            var channels = new Dictionary<string, Channel>();
             
-            IEnumerable<Task> importTasks = Directory.EnumerateFiles("C:\\Users\\Snow\\Documents\\projects\\TwitchGraphData\\5-2021").Select(async file =>
-            {
-                string ch = Path.GetFileNameWithoutExtension(file);
-                string[] chatters = await File.ReadAllLinesAsync(file);
-                totalCount++;
-                if (chatters.Length < 5000)
-                {
-                    return;
-                }
-                
-                channelChatters.TryAdd(ch, new HashSet<string>(chatters));
-                processed.TryAdd(ch, new ConcurrentDictionary<string, int>());
-                channels.TryAdd(ch, new Channel(ch, string.Empty, chatters.Length));
-            });
+            var info = new DirectoryInfo("C:\\Users\\Snow\\Documents\\projects\\TwitchGraphData\\5-2021");
 
-            await Task.WhenAll(importTasks);
-            
-            Console.WriteLine($"imported {channelChatters.Count}/{totalCount} channels in {sw.Elapsed.TotalSeconds}s");
+            int totalCount = 0;
+            foreach (FileInfo file in info.GetFiles().OrderByDescending(p => p.Length))
+            {
+                if (++totalCount > 1000)
+                {
+                    break;
+                }
+
+                string ch = Path.GetFileNameWithoutExtension(file.Name);
+                var chatters = new HashSet<string>(File.ReadLines(file.FullName));
+                channelChatters.TryAdd(ch, chatters);
+                processed.TryAdd(ch, new ConcurrentDictionary<string, int>());
+                channels.TryAdd(ch, new Channel(ch, string.Empty, chatters.Count));
+            }
+
+            Console.WriteLine($"imported {channelChatters.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
             Parallel.ForEach(GetKCombs(new List<string>(channelChatters.Keys), 2), x =>
             {
                 string[] pair = x.ToArray();
-                int count = channelChatters[pair[0]].Intersect(channelChatters[pair[1]]).Count();
+                int count = channelChatters[pair[0]].Count(y => channelChatters[pair[1]].Contains(y));
                 if (count >= 500)
                 {
                     processed[pair[0]].TryAdd(pair[1], count);
                 }
             });
-            
+
             Console.WriteLine($"processed {processed.Count} channels");
             Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
@@ -98,7 +98,7 @@ namespace TwitchGraph
             // nodesStream.Close();
 
             FileStream nodesStream = File.OpenWrite("./data/5-2021/nodes.json");
-            List<Node> nodes = new List<Node>();
+            var nodes = new List<Node>();
             foreach ((string _, Channel channel) in channels)
             {
                 nodes.Add(new Node {name = channel.DisplayName, value = channel.Size});
@@ -138,22 +138,21 @@ namespace TwitchGraph
             Console.WriteLine($"total time taken: {sw2.Elapsed.TotalSeconds}s");
         }
         
-        private static async Task GetChannelDisplayName(ConcurrentDictionary<string, Channel> channels)
+        private static async Task GetChannelDisplayName(Dictionary<string, Channel> channels)
         {
-            using var http = new HttpClient();
             foreach (string reqString in RequestBuilder(channels.Keys.ToList()))
             {
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
                 request.Headers.Add("Client-Id", _twitchClient);
                 request.RequestUri = new Uri($"https://api.twitch.tv/helix/users?{reqString}");
-                using HttpResponseMessage response = await http.SendAsync(request);
+                using HttpResponseMessage response = await Http.SendAsync(request);
                 using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
                 JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
                 foreach (JsonElement channel in data)
                 {
-                    string login = channel.GetProperty("login").GetString()!.ToLowerInvariant();
-                    channels[login].DisplayName = channel.GetProperty("display_name").GetString();
+                    string login = channel.GetProperty("login").GetString();
+                    channels[login!].DisplayName = channel.GetProperty("display_name").GetString();
                 }
             }
         }
