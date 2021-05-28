@@ -49,7 +49,6 @@ namespace ChannelIntersection
             sw.Restart();
 
             var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
-            var processed = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, int>>();
             var totalIntersectionCount = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, byte>>();
 
             IEnumerable<Task> processTasks = channels.Select(async channel =>
@@ -62,7 +61,6 @@ namespace ChannelIntersection
                 }
 
                 channelChatters.TryAdd(ch, chatters);
-                processed.TryAdd(ch, new ConcurrentDictionary<string, int>());
                 totalIntersectionCount.TryAdd(ch, new ConcurrentDictionary<string, byte>());
             });
 
@@ -70,38 +68,35 @@ namespace ChannelIntersection
 
             Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
+            
+            var data = new ConcurrentBag<Overlap>();
 
             Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
             {
                 ChannelModel[] pair = x.ToArray();
                 int count = channelChatters[pair[0]].Count(y =>
                 {
-                    if (channelChatters[pair[1]].Contains(y))
-                    {
-                        totalIntersectionCount[pair[0]].TryAdd(y, byte.MaxValue);
-                        totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
-                        return true;
-                    }
-            
-                    return false;
+                    if (!channelChatters[pair[1]].Contains(y)) return false;
+                    totalIntersectionCount[pair[0]].TryAdd(y, byte.MaxValue);
+                    totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
+                    return true;
                 });
-                processed[pair[0]].TryAdd(pair[1].Id, count);
-                processed[pair[1]].TryAdd(pair[0].Id, count);
+
+                data.Add(new Overlap(timestamp, pair[0].Id, pair[1].Id, count));
             });
             
             Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
             
-            var channelAddBag = new ConcurrentBag<Channel>();
-            var channelUpdateBag = new ConcurrentBag<Channel>();
-            var dataBag = new ConcurrentBag<Overlap>();
+            var channelAdd = new List<Channel>();
+            var channelUpdate = new List<Channel>();
             
-            foreach ((ChannelModel ch, ConcurrentDictionary<string, int> value) in processed)
+            foreach ((ChannelModel ch, _) in channelChatters)
             {
                 Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
                 if (dbChannel == null)
                 {
-                    channelAddBag.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp, ch.Avatar, ch.DisplayName));
+                    channelAdd.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp, ch.Avatar, ch.DisplayName));
                 }
                 else
                 {
@@ -112,15 +107,13 @@ namespace ChannelIntersection
                     dbChannel.Chatters = ch.Chatters;
                     dbChannel.Shared = totalIntersectionCount[ch].Count;
                     dbChannel.LastUpdate = timestamp;
-                    channelUpdateBag.Add(dbChannel);
+                    channelUpdate.Add(dbChannel);
                 }
-            
-                dataBag.Add(new Overlap(ch.Id, timestamp, new Dictionary<string, int>(value)));
             }
             
-            await dbContext.Channels.AddRangeAsync(channelAddBag);
-            dbContext.Channels.UpdateRange(channelUpdateBag);
-            await dbContext.Overlaps.AddRangeAsync(dataBag);
+            await dbContext.Channels.AddRangeAsync(channelAdd);
+            dbContext.Channels.UpdateRange(channelUpdate);
+            await dbContext.Overlaps.AddRangeAsync(data);
             
             await dbContext.SaveChangesAsync();
             
@@ -129,31 +122,31 @@ namespace ChannelIntersection
 
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-
-            if (timestamp.Minute >= 30) // only calculate union every hour
-            {
-                var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
-                Directory.CreateDirectory(rootPath);
-                
-                Console.WriteLine("beginning unique chatter merge");
-
-                foreach ((ChannelModel channel, HashSet<string> chatters) in channelChatters)
-                {
-                    var path = $"{rootPath}/{channel.Id}.txt";
-                    if (!File.Exists(path))
-                    {
-                        await File.WriteAllLinesAsync(path, chatters);
-                        continue;
-                    }
-                    
-                    var existingChatters = new HashSet<string>(File.ReadLines(path));
-                    existingChatters.EnsureCapacity(existingChatters.Count + chatters.Count);
-                    existingChatters.UnionWith(chatters);
-                    await File.WriteAllLinesAsync(path, existingChatters);
-                }
-
-                Console.WriteLine($"union completed in {sw.Elapsed.TotalSeconds}s");
-            }
+            
+            // if (timestamp.Minute >= 30) // only calculate union every hour
+            // {
+            //     var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
+            //     Directory.CreateDirectory(rootPath);
+            //     
+            //     Console.WriteLine("beginning unique chatter merge");
+            //
+            //     foreach ((ChannelModel channel, HashSet<string> chatters) in channelChatters)
+            //     {
+            //         var path = $"{rootPath}/{channel.Id}.txt";
+            //         if (!File.Exists(path))
+            //         {
+            //             await File.WriteAllLinesAsync(path, chatters);
+            //             continue;
+            //         }
+            //         
+            //         var existingChatters = new HashSet<string>(File.ReadLines(path));
+            //         existingChatters.EnsureCapacity(existingChatters.Count + chatters.Count);
+            //         existingChatters.UnionWith(chatters);
+            //         await File.WriteAllLinesAsync(path, existingChatters);
+            //     }
+            //
+            //     Console.WriteLine($"union completed in {sw.Elapsed.TotalSeconds}s");
+            // }
             
             Console.WriteLine($"total time taken: {timer.Elapsed.TotalSeconds}s");
         }
