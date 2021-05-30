@@ -23,7 +23,7 @@ namespace ChannelIntersection.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseNpgsql(_connectionString).EnableSensitiveDataLogging().LogTo(Console.WriteLine);
+                optionsBuilder.UseNpgsql(_connectionString);
             }
         }
 

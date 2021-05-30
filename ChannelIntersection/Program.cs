@@ -36,34 +36,7 @@ namespace ChannelIntersection
             var dbContext = new TwitchContext(_psqlConnection);
 
             Console.WriteLine($"connected to database at {timestamp:u}");
-
-            const string search = "forsen";
-
-            List<Overlap> l = await dbContext.Overlaps.AsNoTracking()
-                .Where(x => (x.Source == search || x.Target == search) && x.Timestamp == dbContext.Overlaps.AsNoTracking()
-                    .Where(y => y.Source == search)
-                    .Max(y => y.Timestamp))
-                .OrderByDescending(x => x.Overlapped)
-                .ToListAsync();
             
-            Console.WriteLine(l.Count);
-
-            const int take = 10;
-
-            List<Overlap> w = await dbContext.Overlaps.FromSqlInterpolated($@"select *
-            from (
-                select *, dense_rank() over (partition by ""timestamp"" order by ""overlap"" desc) as rank
-                from overlap
-                where source = {search}
-                or target = {search}) r
-            where rank <= {take}
-            order by timestamp desc, rank
-            limit {take*2}").AsNoTracking().ToListAsync();
-            
-            Console.WriteLine(w.Count);
-
-            Environment.Exit(1);
-
             var sw = new Stopwatch();
             sw.Start();
             var timer = new Stopwatch();
@@ -141,39 +114,39 @@ namespace ChannelIntersection
             await dbContext.Channels.AddRangeAsync(channelAdd);
             dbContext.Channels.UpdateRange(channelUpdate);
             await dbContext.Overlaps.AddRangeAsync(data);
-
-            await dbContext.SaveChangesAsync();
-
+            
             DateTime thirtyDays = timestamp.AddDays(-30);
             await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
+
+            await dbContext.SaveChangesAsync();
 
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            // if (timestamp.Minute >= 30) // only calculate union every hour
-            // {
-            //     var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
-            //     Directory.CreateDirectory(rootPath);
-            //     
-            //     Console.WriteLine("beginning unique chatter merge");
-            //
-            //     foreach ((ChannelModel channel, HashSet<string> chatters) in channelChatters)
-            //     {
-            //         var path = $"{rootPath}/{channel.Id}.txt";
-            //         if (!File.Exists(path))
-            //         {
-            //             await File.WriteAllLinesAsync(path, chatters);
-            //             continue;
-            //         }
-            //         
-            //         var existingChatters = new HashSet<string>(File.ReadLines(path));
-            //         existingChatters.EnsureCapacity(existingChatters.Count + chatters.Count);
-            //         existingChatters.UnionWith(chatters);
-            //         await File.WriteAllLinesAsync(path, existingChatters);
-            //     }
-            //
-            //     Console.WriteLine($"union completed in {sw.Elapsed.TotalSeconds}s");
-            // }
+            if (timestamp.Minute >= 30) // only calculate union every hour
+            {
+                var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
+                Directory.CreateDirectory(rootPath);
+                
+                Console.WriteLine("beginning unique chatter merge");
+            
+                foreach ((ChannelModel channel, HashSet<string> chatters) in channelChatters)
+                {
+                    var path = $"{rootPath}/{channel.Id}.txt";
+                    if (!File.Exists(path))
+                    {
+                        await File.WriteAllLinesAsync(path, chatters);
+                        continue;
+                    }
+                    
+                    var existingChatters = new HashSet<string>(File.ReadLines(path));
+                    existingChatters.EnsureCapacity(existingChatters.Count + chatters.Count);
+                    existingChatters.UnionWith(chatters);
+                    await File.WriteAllLinesAsync(path, existingChatters);
+                }
+            
+                Console.WriteLine($"union completed in {sw.Elapsed.TotalSeconds}s");
+            }
 
             Console.WriteLine($"total time taken: {timer.Elapsed.TotalSeconds}s");
         }

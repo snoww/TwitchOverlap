@@ -40,32 +40,16 @@ namespace TwitchOverlap.Controllers
                 return View(JsonSerializer.Deserialize<List<ChannelSummary>>(channelSummaries));
             }
 
-            DateTime latestHalfHour = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(35));
 
-            List<ChannelSummary> channelLists = await _context.Channels.AsNoTracking()
-                .Where(x => x.LastUpdate >= latestHalfHour)
-                .OrderByDescending(x => x.Chatters)
+            List<ChannelSummary> channelLists = await _context.Channels.FromSqlInterpolated($@"select *
+            from channel
+            where last_update = (
+                select max(last_update)
+                from channel)
+            order by chatters desc").AsNoTracking()
                 .Select(x => new ChannelSummary(x.Id, x.DisplayName, x.Avatar, x.Chatters))
                 .ToListAsync();
-
-            // something went wrong with last ChannelIntersection run, data was not updated
-            if (channelLists.Count == 0)
-            {
-                // try to find latest update time
-                DateTime lastUpdate = await _context.Channels.AsNoTracking()
-                    .OrderByDescending(x => x.LastUpdate)
-                    .Take(1)
-                    .Select(x => x.LastUpdate)
-                    .SingleAsync();
-
-                // use latest update time
-                channelLists = await _context.Channels.AsNoTracking()
-                    .Where(x => x.LastUpdate >= lastUpdate)
-                    .OrderByDescending(x => x.Chatters)
-                    .Select(x => new ChannelSummary(x.Id, x.DisplayName, x.Avatar, x.Chatters))
-                    .ToListAsync();
-            }
-
+            
             if (channelLists.Count == 0)
             {
                 return View("NoSummary");
@@ -133,11 +117,11 @@ namespace TwitchOverlap.Controllers
             name = name.ToLowerInvariant();
             const int top = 6;
             const int points = 24*7;
-            // string cachedHistory = await _cache.StringGetAsync(ChannelHistoryCacheKey + name);
-            // if (!string.IsNullOrEmpty(cachedHistory))
-            // {
-            //     return Ok(cachedHistory);
-            // }
+            string cachedHistory = await _cache.StringGetAsync(ChannelHistoryCacheKey + name);
+            if (!string.IsNullOrEmpty(cachedHistory))
+            {
+                return Ok(cachedHistory);
+            }
 
             List<Overlap> w = await _context.Overlaps.FromSqlInterpolated($@"select *
             from (
@@ -177,43 +161,10 @@ namespace TwitchOverlap.Controllers
             }
 
             var history = new {channels = values, history = data.Values.ToList()};
-
-            // await _cache.StringSetAsync(ChannelHistoryCacheKey + name.ToLowerInvariant(), JsonSerializer.Serialize(history), TimeSpan.FromMinutes(5));
+            
+            await _cache.StringSetAsync(ChannelHistoryCacheKey + name.ToLowerInvariant(), JsonSerializer.Serialize(history), TimeSpan.FromMinutes(5));
 
             return Ok(history);
-            // List<Overlap> rawHistory = await _context.Overlaps.AsNoTracking().Include(x => x.Channel)
-            //     .Where(x => x.Id == name.ToLowerInvariant())
-            //     .OrderByDescending(x => x.Timestamp)
-            //     .Take(24)
-            //     .ToListAsync();
-
-            // if (rawHistory.Count == 0)
-            // {
-            //     return NotFound($"No data for channel: {name}");
-            // }
-            //
-            // rawHistory.Reverse();
-            //
-            // var channels = new HashSet<string>();
-            // var history = new List<Dictionary<string, object>>();
-            //
-            // foreach (Overlap overlap in rawHistory)
-            // {
-            //     var data = new Dictionary<string, object> {{"date", overlap.Timestamp.ToString("MMM dd HH:mm")}};
-            //     
-            //     foreach ((string ch, int ov) in overlap.Data.OrderByDescending(x => x.Value).Take(6))
-            //     {
-            //         data.Add(ch, ov);
-            //         channels.Add(ch);
-            //     }
-            //
-            //     history.Add(data);
-            // }
-            //
-            // var ret = new {channels, history};
-            //
-            //
-            // return Ok(ret);
         }
     }
 }
