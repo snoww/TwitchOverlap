@@ -75,6 +75,12 @@ namespace TwitchOverlap.Controllers
             {
                 return View(JsonSerializer.Deserialize<ChannelData>(cachedChannelData));
             }
+            
+            Channel channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.Id == name);
+            if (channel == null)
+            {
+                return View("NoData", name);
+            }
 
             List<Overlap> overlaps = await _context.Overlaps.FromSqlInterpolated($@"select *
             from overlap
@@ -85,14 +91,13 @@ namespace TwitchOverlap.Controllers
                 from overlap
                 where source = {name}
                    or target = {name})
-            order by overlap desc;").AsNoTracking().ToListAsync();
+            order by overlap desc").AsNoTracking().ToListAsync();
 
             if (overlaps.Count == 0)
             {
                 return View("NoData", name);
             }
 
-            Channel channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.Id == name);
             var games = await _context.Channels.AsNoTracking()
                 .Where(x => overlaps.Select(y => y.Source == name ? y.Target : y.Source).Contains(x.Id))
                 .Select(x => new {x.Id, x.Game})
@@ -106,7 +111,7 @@ namespace TwitchOverlap.Controllers
                 channelData.Data[channelName] = new Data(games[channelName].Game, overlap.Overlapped);
             }
 
-            await _cache.StringSetAsync(ChannelDataCacheKey + name.ToLowerInvariant(), JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
+            await _cache.StringSetAsync(ChannelDataCacheKey + name, JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
 
             return View(channelData);
         }
@@ -162,7 +167,7 @@ namespace TwitchOverlap.Controllers
 
             var history = new {channels = values, history = data.Values.ToList()};
             
-            await _cache.StringSetAsync(ChannelHistoryCacheKey + name.ToLowerInvariant(), JsonSerializer.Serialize(history), TimeSpan.FromMinutes(5));
+            await _cache.StringSetAsync(ChannelHistoryCacheKey + name, JsonSerializer.Serialize(history), TimeSpan.FromMinutes(5));
 
             return Ok(history);
         }
