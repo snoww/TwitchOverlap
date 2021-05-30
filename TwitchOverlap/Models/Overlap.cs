@@ -8,18 +8,17 @@ namespace TwitchOverlap.Models
 {
     public class Overlap
     {
-        public string Id { get; set; }
         public DateTime Timestamp { get; set; }
-        public Dictionary<string, int> Data { get; set; }
+        public string Source { get; set; }
+        public string Target { get; set; }
+        public int Overlapped { get; set; }
 
-        [JsonIgnore]
-        public virtual Channel Channel { get; set; }
-
-        public Overlap(string id, DateTime timestamp, Dictionary<string, int> data)
+        public Overlap(DateTime timestamp, string source, string target, int overlapped)
         {
-            Id = id;
             Timestamp = timestamp;
-            Data = data;
+            Source = source;
+            Target = target;
+            Overlapped = overlapped;
         }
     }
 

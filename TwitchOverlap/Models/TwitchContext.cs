@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -30,19 +31,19 @@ namespace TwitchOverlap.Models
 
             modelBuilder.Entity<Overlap>(entity =>
             {
-                entity.HasKey(e => new { e.Id, e.Timestamp })
+                entity.HasKey(e => new { e.Timestamp, e.Source, e.Target })
                     .HasName("overlap_pkey");
+
                 entity.ToTable("overlap");
-                entity.Property(e => e.Id).HasColumnName("id");
+                
+                entity.HasIndex(e => e.Timestamp, "overlap_timestamp_index").HasSortOrder(SortOrder.Descending);
+                entity.HasIndex(e => new {e.Source, e.Overlapped}, "overlap_source_overlap_index").HasSortOrder(SortOrder.Ascending, SortOrder.Descending);
+                entity.HasIndex(e => new {e.Target, e.Overlapped}, "overlap_target_overlap_index").HasSortOrder(SortOrder.Ascending, SortOrder.Descending);
+                
                 entity.Property(e => e.Timestamp).HasColumnName("timestamp");
-                entity.Property(e => e.Data)
-                    .HasColumnType("jsonb")
-                    .HasColumnName("data");
-                entity.HasOne(d => d.Channel)
-                    .WithMany(p => p.Histories)
-                    .HasForeignKey(d => d.Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("overlap_id_fkey");
+                entity.Property(e => e.Source).HasColumnName("source");
+                entity.Property(e => e.Target).HasColumnName("target");
+                entity.Property(e => e.Overlapped).HasColumnName("overlap");
             });
         }
     }

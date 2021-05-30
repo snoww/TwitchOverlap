@@ -30,5 +30,6 @@ create table if not exists overlap
     primary key (timestamp, source, target)
 );
 
-create index if not exists overlap_timestamp_index on overlap (timestamp);
-create unique index if not exists overlap_timestamp_source_target_overlap_uindex on overlap (timestamp desc, source, target, overlap desc);
+create index if not exists overlap_timestamp_desc_index on overlap (timestamp desc);
+create index if not exists overlap_source_overlap_index on overlap (source, overlap desc);
+create index if not exists overlap_target_overlap_index on overlap (target, overlap desc);

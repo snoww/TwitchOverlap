@@ -32,10 +32,37 @@ namespace ChannelIntersection
             }
 
             DateTime timestamp = DateTime.UtcNow;
-            
+
             var dbContext = new TwitchContext(_psqlConnection);
 
             Console.WriteLine($"connected to database at {timestamp:u}");
+
+            const string search = "forsen";
+
+            List<Overlap> l = await dbContext.Overlaps.AsNoTracking()
+                .Where(x => (x.Source == search || x.Target == search) && x.Timestamp == dbContext.Overlaps.AsNoTracking()
+                    .Where(y => y.Source == search)
+                    .Max(y => y.Timestamp))
+                .OrderByDescending(x => x.Overlapped)
+                .ToListAsync();
+            
+            Console.WriteLine(l.Count);
+
+            const int take = 10;
+
+            List<Overlap> w = await dbContext.Overlaps.FromSqlInterpolated($@"select *
+            from (
+                select *, dense_rank() over (partition by ""timestamp"" order by ""overlap"" desc) as rank
+                from overlap
+                where source = {search}
+                or target = {search}) r
+            where rank <= {take}
+            order by timestamp desc, rank
+            limit {take*2}").AsNoTracking().ToListAsync();
+            
+            Console.WriteLine(w.Count);
+
+            Environment.Exit(1);
 
             var sw = new Stopwatch();
             sw.Start();
@@ -68,7 +95,7 @@ namespace ChannelIntersection
 
             Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-            
+
             var data = new ConcurrentBag<Overlap>();
 
             Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
@@ -84,13 +111,13 @@ namespace ChannelIntersection
 
                 data.Add(new Overlap(timestamp, pair[0].Id, pair[1].Id, count));
             });
-            
+
             Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-            
+
             var channelAdd = new List<Channel>();
             var channelUpdate = new List<Channel>();
-            
+
             foreach ((ChannelModel ch, _) in channelChatters)
             {
                 Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
@@ -110,19 +137,19 @@ namespace ChannelIntersection
                     channelUpdate.Add(dbChannel);
                 }
             }
-            
+
             await dbContext.Channels.AddRangeAsync(channelAdd);
             dbContext.Channels.UpdateRange(channelUpdate);
             await dbContext.Overlaps.AddRangeAsync(data);
-            
+
             await dbContext.SaveChangesAsync();
-            
+
             DateTime thirtyDays = timestamp.AddDays(-30);
             await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
 
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-            
+
             // if (timestamp.Minute >= 30) // only calculate union every hour
             // {
             //     var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
@@ -147,7 +174,7 @@ namespace ChannelIntersection
             //
             //     Console.WriteLine($"union completed in {sw.Elapsed.TotalSeconds}s");
             // }
-            
+
             Console.WriteLine($"total time taken: {timer.Elapsed.TotalSeconds}s");
         }
 

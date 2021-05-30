@@ -27,8 +27,5 @@ namespace ChannelIntersection.Models
             Avatar = avatar;
             DisplayName = displayName;
         }
-        
-        public virtual ICollection<Overlap> OverlapSourceNavigations { get; set; } = new HashSet<Overlap>();
-        public virtual ICollection<Overlap> OverlapTargetNavigations { get; set; } = new HashSet<Overlap>();
     }
 }

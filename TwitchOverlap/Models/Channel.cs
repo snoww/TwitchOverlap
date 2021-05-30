@@ -17,9 +17,6 @@ namespace TwitchOverlap.Models
         public int Shared { get; set; }
         public DateTime LastUpdate { get; set; }
 
-        [JsonIgnore]
-        public virtual ICollection<Overlap> Histories { get; set; } = new List<Overlap>();
-
         public Channel(string id, string game, int viewers, int chatters, int shared, DateTime lastUpdate)
         {
             Id = id;
