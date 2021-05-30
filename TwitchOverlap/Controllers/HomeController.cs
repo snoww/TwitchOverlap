@@ -130,7 +130,7 @@ namespace TwitchOverlap.Controllers
 
             List<Overlap> w = await _context.Overlaps.FromSqlInterpolated($@"select *
             from (
-                select *, dense_rank() over (partition by ""timestamp"" order by ""overlap"" desc) as rank
+                select *, rank() over (partition by ""timestamp"" order by ""overlap"" desc) as rank
                 from overlap
                 where source = {name}
                 or target = {name}) r

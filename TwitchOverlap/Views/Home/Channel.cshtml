@@ -110,6 +110,11 @@
 <script>
 const myChart = echarts.init(document.getElementById("chart"));
 const root = document.querySelector("html");
+if (root.classList.contains("dark")) {
+    myChart.showLoading({textColor: "#fff",maskColor: "rgba(255, 255, 255, 0)"});
+} else {
+    myChart.showLoading({maskColor: "rgba(255, 255, 255, 0)"});    
+}
 let legendData;
 
 const changeTheme = () => {
@@ -176,10 +181,11 @@ window.addEventListener("resize", () => {
     }
 
     const data = await fetchData();
-    myChart.hideLoading();
     if (data == null || data.channels.length === 0) {
         return;
     }
+    
+    myChart.hideLoading();
 
     const stringToRGB = function(str) {
         let hash = 0;
