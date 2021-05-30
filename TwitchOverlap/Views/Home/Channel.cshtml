@@ -117,7 +117,7 @@ const changeTheme = () => {
         myChart.setOption({
             legend: {
                 textStyle: {
-                    color:  "#fff"
+                    color: "#fff"
                 },
                 inactiveColor: "#5b5b5b",
                 type: "scroll",
@@ -129,14 +129,14 @@ const changeTheme = () => {
                 data: legendData
             },
             textStyle: {
-                color:  "#fff"
+                color: "#fff"
             }
         });
     } else {
         myChart.setOption({
             legend: {
                 textStyle: {
-                    color:  "#000"
+                    color: "#000"
                 },
                 inactiveColor: "#d3d3d3",
                 type: "scroll",
@@ -148,23 +148,23 @@ const changeTheme = () => {
                 data: legendData
             },
             textStyle: {
-                color:  "#000"
+                color: "#000"
             }
         });
     }
 };
 
 window.addEventListener("load", () => {
-   changeTheme();   
+    changeTheme();
 });
 document.getElementById("toggle-dark").addEventListener("click", () => {
     changeTheme();
 });
-window.addEventListener("resize",() => {
-  myChart.resize();
+window.addEventListener("resize", () => {
+    myChart.resize();
 });
 
-(async function () {
+(async function() {
     async function fetchData() {
         try {
             const response = await fetch(`/api/history${window.location.pathname}`);
@@ -174,13 +174,13 @@ window.addEventListener("resize",() => {
             return null;
         }
     }
-    
+
     const data = await fetchData();
     myChart.hideLoading();
-    if (data == null || data.channels.length === 0){
+    if (data == null || data.channels.length === 0) {
         return;
     }
-    
+
     const stringToRGB = function(str) {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -193,14 +193,14 @@ window.addEventListener("resize",() => {
         }
         return colour;
     };
-    
+
     const lines = [];
-    for (let i = 1; i < data.channels.length; i++){
+    for (let i = 1; i < data.channels.length; i++) {
         const color = stringToRGB(data.channels[i]);
         lines.push({
             type: "line",
             itemStyle: {
-              color: color  
+                color: color
             },
             lineStyle: {
                 color: color
@@ -220,14 +220,12 @@ window.addEventListener("resize",() => {
             left: "7%",
             right: "5%"
         },
-        dataZoom: [
-            {
-                type: 'slider',
-                startValue: data.history.length > 24 ? data.history.length - 24 : 0,
-                end: 100,
-                rangeMode: ["value", "percent"]
-            }
-        ],
+        dataZoom: [{
+            type: 'slider',
+            startValue: data.history.length > 24 ? data.history.length - 24 : 0,
+            end: 100,
+            rangeMode: ["value", "percent"]
+        }],
         tooltip: {
             trigger: "axis",
             formatter: function(params) {
@@ -253,7 +251,7 @@ window.addEventListener("resize",() => {
         yAxis: {
             type: "value",
             splitLine: {
-               show: false
+                show: false
             },
             axisLine: {
                 show: true
@@ -263,21 +261,19 @@ window.addEventListener("resize",() => {
             }
         },
         series: lines,
-        media: [
-            {
-                query: {
-                    maxWidth: 600
-                },
-                option: {
-                    grid: {
-                        left: "12%",
-                        right: "6%"
-                    },
-                }
+        media: [{
+            query: {
+                maxWidth: 600
             },
-        ]
+            option: {
+                grid: {
+                    left: "12%",
+                    right: "6%"
+                },
+            }
+        }, ]
     };
-    
+
     option && myChart.setOption(option);
 })();
 </script>
