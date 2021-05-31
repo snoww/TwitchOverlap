@@ -235,7 +235,7 @@ window.addEventListener("resize", () => {
         tooltip: {
             trigger: "axis",
             formatter: function(params) {
-                let output = "<div class=\"mb-2\"><b>" + params[0].name + "</b></div>";
+                let output = "<div class=\"mb-2\"><b>" + params[0].name + " UTC</b></div>";
                 const values = Object.entries(params[0].value).filter(x => x[0] !== "timestamp");
                 for (let i = 0; i < values.length; i++) {
                     let param = params.find(x => x.seriesName === values[i][0]);
