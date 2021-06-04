@@ -24,6 +24,8 @@ namespace ChannelIntersection
         private static string _psqlConnection;
         private static TwitchContext _context;
         private static readonly DateTime Timestamp = DateTime.UtcNow;
+        private const int MinChatters = 500;
+        private const int MinViewers = 1500;
 
         public static async Task Main()
         {
@@ -73,7 +75,7 @@ namespace ChannelIntersection
 
             var data = new ConcurrentBag<Overlap>();
 
-            Parallel.ForEach(GetKCombs(new List<Channel>(channelChatters.Keys), 2), x =>
+            Parallel.ForEach(GetKCombs(channelChatters.Keys.Where(x => x.Chatters >= MinChatters), 2), x =>
             {
                 Channel[] pair = x.ToArray();
                 int count = channelChatters[pair[0]].Count(y =>
@@ -99,10 +101,12 @@ namespace ChannelIntersection
             await dbContext.Overlaps.AddRangeAsync(data);
             
             DateTime twoWeeks = Timestamp.AddDays(-14);
-            await dbContext.Overlaps.Where(x => x.Timestamp <= twoWeeks).DeleteAsync();
 
             await dbContext.SaveChangesAsync();
             await trans.CommitAsync();
+            
+            await dbContext.Overlaps.Where(x => x.Timestamp <= twoWeeks).DeleteAsync();
+            await dbContext.Channels.Where(x => x.Chatters <= MinChatters).DeleteAsync();
 
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
@@ -152,7 +156,7 @@ namespace ChannelIntersection
             await stream.DisposeAsync();
 
             int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
-            if (chatters < 500)
+            if (chatters < MinChatters)
             {
                 return null;
             }
@@ -200,7 +204,7 @@ namespace ChannelIntersection
                     foreach (JsonElement channel in channelEnumerator)
                     {
                         int viewerCount = channel.GetProperty("viewer_count").GetInt32();
-                        if (viewerCount < 1500)
+                        if (viewerCount < MinViewers)
                         {
                             pageToken = null;
                             break;
