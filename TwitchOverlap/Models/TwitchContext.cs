@@ -20,6 +20,7 @@ namespace TwitchOverlap.Models
             {
                 entity.ToTable("channel");
                 entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.LoginName).HasColumnName("login_name");
                 entity.Property(e => e.DisplayName).HasColumnName("display_name");
                 entity.Property(e => e.Avatar).HasColumnName("avatar");
                 entity.Property(e => e.Chatters).HasColumnName("chatters");
@@ -44,6 +45,18 @@ namespace TwitchOverlap.Models
                 entity.Property(e => e.Source).HasColumnName("source");
                 entity.Property(e => e.Target).HasColumnName("target");
                 entity.Property(e => e.Overlapped).HasColumnName("overlap");
+                
+                entity.HasOne(d => d.SourceNavigation)
+                    .WithMany(p => p.OverlapSourceNavigations)
+                    .HasForeignKey(d => d.Source)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("overlap_source_fkey");
+
+                entity.HasOne(d => d.TargetNavigation)
+                    .WithMany(p => p.OverlapTargetNavigations)
+                    .HasForeignKey(d => d.Target)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("overlap_target_fkey");
             });
         }
     }

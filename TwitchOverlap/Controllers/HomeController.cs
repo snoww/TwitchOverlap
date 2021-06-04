@@ -40,14 +40,13 @@ namespace TwitchOverlap.Controllers
                 return View(JsonSerializer.Deserialize<List<ChannelSummary>>(channelSummaries));
             }
 
-
             List<ChannelSummary> channelLists = await _context.Channels.FromSqlInterpolated($@"select *
             from channel
             where last_update = (
                 select max(last_update)
                 from channel)
             order by chatters desc").AsNoTracking()
-                .Select(x => new ChannelSummary(x.Id, x.DisplayName, x.Avatar, x.Chatters))
+                .Select(x => new ChannelSummary(x.LoginName, x.DisplayName, x.Avatar, x.Chatters))
                 .ToListAsync();
             
             if (channelLists.Count == 0)
@@ -76,39 +75,50 @@ namespace TwitchOverlap.Controllers
                 return View(JsonSerializer.Deserialize<ChannelData>(cachedChannelData));
             }
             
-            Channel channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.Id == name);
+            Channel channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.LoginName == name);
             if (channel == null)
             {
                 return View("NoData", name);
             }
 
-            List<Overlap> overlaps = await _context.Overlaps.FromSqlInterpolated($@"select *
+            var overlaps = await _context.Overlaps.FromSqlInterpolated($@"select *
             from overlap
-            where (source = {name}
-                or target = {name})
+            where (source = {channel.Id}
+                or target = {channel.Id})
               and timestamp = (
                 select max(timestamp)
                 from overlap
-                where source = {name}
-                   or target = {name})
-            order by overlap desc").AsNoTracking().ToListAsync();
+                where source = {channel.Id}
+                   or target = {channel.Id})").AsNoTracking()
+                .Include(x => x.SourceNavigation)
+                .Include(x => x.TargetNavigation)
+                .OrderByDescending(x => x.Overlapped)
+                .Select(x => new { 
+                    Source = x.SourceNavigation.LoginName, 
+                    SourceGame = x.SourceNavigation.Game, 
+                    Target = x.TargetNavigation.LoginName,
+                    TargetGame = x.TargetNavigation.Game,
+                    x.Overlapped
+                })
+                .ToListAsync();
 
             if (overlaps.Count == 0)
             {
                 return View("NoData", name);
             }
 
-            var games = await _context.Channels.AsNoTracking()
-                .Where(x => overlaps.Select(y => y.Source == name ? y.Target : y.Source).Contains(x.Id))
-                .Select(x => new {x.Id, x.Game})
-                .ToDictionaryAsync(x => x.Id);
-
             var channelData = new ChannelData(channel);
 
-            foreach (Overlap overlap in overlaps)
+            foreach (var overlap in overlaps)
             {
-                string channelName = overlap.Source == name ? overlap.Target : overlap.Source;
-                channelData.Data[channelName] = new Data(games[channelName].Game, overlap.Overlapped);
+                if (overlap.Source == name)
+                {
+                    channelData.Data[overlap.Target] = new Data(overlap.Target, overlap.Overlapped);
+                }
+                else
+                {
+                    channelData.Data[overlap.Source] = new Data(overlap.Source, overlap.Overlapped);
+                }
             }
 
             await _cache.StringSetAsync(ChannelDataCacheKey + name, JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
@@ -127,39 +137,49 @@ namespace TwitchOverlap.Controllers
             {
                 return Ok(cachedHistory);
             }
+            
+            Channel channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.LoginName == name);
+            if (channel == null)
+            {
+                return NotFound($"data for '{name}' not found");
+            }
 
-            List<Overlap> w = await _context.Overlaps.FromSqlInterpolated($@"select *
+            var overlapHistory = await _context.Overlaps.FromSqlInterpolated($@"select *
             from (
                 select *, rank() over (partition by ""timestamp"" order by ""overlap"" desc) as rank
                 from overlap
-                where source = {name}
-                or target = {name}) r
+                where source = {channel.Id}
+                or target = {channel.Id}) r
             where rank <= {top}
             order by timestamp desc, rank
-            limit {top * points}").AsNoTracking().ToListAsync();
+            limit {top * points}").AsNoTracking()
+                .Include(x => x.SourceNavigation)
+                .Include(x => x.TargetNavigation)
+                .Select(x =>  new {x.Timestamp, Source = x.SourceNavigation.LoginName, Target = x.TargetNavigation.LoginName, x.Overlapped})
+                .ToListAsync();
 
             var values = new HashSet<string>{"timestamp"};
             var data = new Dictionary<string, Dictionary<string, object>>();
             
-            for (int i = 0; i < w.Count / top; i++)
+            for (int i = 0; i < overlapHistory.Count / top; i++)
             {
                 for (int j = 0; j < top; j++)
                 {
                     int index = i * top + j;
-                    string channelName = w[index].Source == name ? w[index].Target : w[index].Source;
-                    string time = w[index].Timestamp.ToString("MMM dd HH:mm");
+                    string channelName = overlapHistory[index].Source == name ? overlapHistory[index].Target : overlapHistory[index].Source;
+                    string time = overlapHistory[index].Timestamp.ToString("MMM dd HH:mm");
                     values.Add(channelName);
                     
                     if (data.ContainsKey(time))
                     {
-                        data[time][channelName] = w[index].Overlapped;
+                        data[time][channelName] = overlapHistory[index].Overlapped;
                     }
                     else
                     {
                         data[time] = new Dictionary<string, object>
                         {
                             {"timestamp", time},
-                            {channelName,w[index].Overlapped}
+                            {channelName,overlapHistory[index].Overlapped}
                         };
                     }
                 }

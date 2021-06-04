@@ -2,7 +2,7 @@ create table if not exists channel
 (
     id           serial primary key,
     login_name   text not null unique,
-    display_name text not null,
+    display_name text not null unique,
     avatar       text,
     game         text,
     viewers      int,
@@ -22,7 +22,6 @@ create table if not exists overlap
 
 
 create index if not exists channel_timestamp_index on channel (last_update desc);
-create unique index if not exists channel_login_name on channel (login_name);
 
 create index if not exists overlap_timestamp_desc_index on overlap (timestamp desc);
 create index if not exists overlap_source_overlap_index on overlap (source, overlap desc);

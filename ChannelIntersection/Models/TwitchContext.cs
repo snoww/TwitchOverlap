@@ -39,10 +39,10 @@ namespace ChannelIntersection.Models
                     .HasSortOrder(SortOrder.Descending);
 
                 entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.LoginName).HasColumnName("login_name");
+                entity.Property(e => e.DisplayName).HasColumnName("display_name");
                 entity.Property(e => e.Avatar).HasColumnName("avatar");
                 entity.Property(e => e.Chatters).HasColumnName("chatters");
-                entity.Property(e => e.DisplayName).HasColumnName("display_name");
-                entity.Property(e => e.LoginName).HasColumnName("login_name");
                 entity.Property(e => e.Game)
                     .IsRequired()
                     .HasColumnName("game");
