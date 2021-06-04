@@ -23,7 +23,7 @@ namespace ChannelIntersection.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseNpgsql(_connectionString);
+                optionsBuilder.UseNpgsql(_connectionString).EnableSensitiveDataLogging();
             }
         }
 
@@ -32,14 +32,17 @@ namespace ChannelIntersection.Models
             modelBuilder.Entity<Channel>(entity =>
             {
                 entity.ToTable("channel");
-
-                entity.HasIndex(e => e.DisplayName, "channel_display_name_key")
+                
+                entity.HasIndex(e => e.LoginName, "channel_login_name")
                     .IsUnique();
+                entity.HasIndex(e => e.LastUpdate, "channel_timestamp_index")
+                    .HasSortOrder(SortOrder.Descending);
 
                 entity.Property(e => e.Id).HasColumnName("id");
                 entity.Property(e => e.Avatar).HasColumnName("avatar");
                 entity.Property(e => e.Chatters).HasColumnName("chatters");
                 entity.Property(e => e.DisplayName).HasColumnName("display_name");
+                entity.Property(e => e.LoginName).HasColumnName("login_name");
                 entity.Property(e => e.Game)
                     .IsRequired()
                     .HasColumnName("game");

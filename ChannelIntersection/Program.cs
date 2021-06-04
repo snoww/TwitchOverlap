@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ChannelIntersection.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Z.EntityFramework.Plus;
 
 namespace ChannelIntersection
@@ -21,6 +22,8 @@ namespace ChannelIntersection
         private static string _twitchToken;
         private static string _twitchClient;
         private static string _psqlConnection;
+        private static TwitchContext _context;
+        private static readonly DateTime Timestamp = DateTime.UtcNow;
 
         public static async Task Main()
         {
@@ -30,30 +33,29 @@ namespace ChannelIntersection
                 _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
                 _psqlConnection = json.RootElement.GetProperty("POSTGRES").GetString();
             }
-
-            DateTime timestamp = DateTime.UtcNow;
-
-            var dbContext = new TwitchContext(_psqlConnection);
-
-            Console.WriteLine($"connected to database at {timestamp:u}");
+            
+            await using var dbContext = new TwitchContext(_psqlConnection);
+            _context = dbContext;
+            await using IDbContextTransaction trans = await dbContext.Database.BeginTransactionAsync();
+            Console.WriteLine($"connected to database at {Timestamp:u}");
             
             var sw = new Stopwatch();
             sw.Start();
             var timer = new Stopwatch();
             timer.Start();
 
-            Dictionary<string, ChannelModel> channels = await GetTopChannels();
+            Dictionary<string, Channel> channels = await GetTopChannels();
             await GetChannelAvatar(channels);
 
             Console.WriteLine($"retrieved {channels.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
-            var totalIntersectionCount = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, byte>>();
+            var channelChatters = new ConcurrentDictionary<Channel, HashSet<string>>();
+            var totalIntersectionCount = new ConcurrentDictionary<Channel, ConcurrentDictionary<string, byte>>();
 
             IEnumerable<Task> processTasks = channels.Select(async channel =>
             {
-                (_, ChannelModel ch) = channel;
+                (_, Channel ch) = channel;
                 HashSet<string> chatters = await GetChatters(ch);
                 if (chatters == null)
                 {
@@ -71,9 +73,9 @@ namespace ChannelIntersection
 
             var data = new ConcurrentBag<Overlap>();
 
-            Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
+            Parallel.ForEach(GetKCombs(new List<Channel>(channelChatters.Keys), 2), x =>
             {
-                ChannelModel[] pair = x.ToArray();
+                Channel[] pair = x.ToArray();
                 int count = channelChatters[pair[0]].Count(y =>
                 {
                     if (!channelChatters[pair[1]].Contains(y)) return false;
@@ -82,55 +84,37 @@ namespace ChannelIntersection
                     return true;
                 });
 
-                data.Add(new Overlap(timestamp, pair[0].Id, pair[1].Id, count));
+                data.Add(new Overlap(Timestamp, pair[0].Id, pair[1].Id, count));
             });
 
             Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            var channelAdd = new List<Channel>();
-            var channelUpdate = new List<Channel>();
-
-            foreach ((ChannelModel ch, _) in channelChatters)
+            foreach ((Channel ch, _) in channelChatters)
             {
-                Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
-                if (dbChannel == null)
-                {
-                    channelAdd.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp, ch.Avatar, ch.DisplayName));
-                }
-                else
-                {
-                    dbChannel.Avatar = ch.Avatar;
-                    dbChannel.DisplayName = ch.DisplayName;
-                    dbChannel.Game = ch.Game;
-                    dbChannel.Viewers = ch.Viewers;
-                    dbChannel.Chatters = ch.Chatters;
-                    dbChannel.Shared = totalIntersectionCount[ch].Count;
-                    dbChannel.LastUpdate = timestamp;
-                    channelUpdate.Add(dbChannel);
-                }
+                ch.Shared = totalIntersectionCount[ch].Count;
             }
 
-            await dbContext.Channels.AddRangeAsync(channelAdd);
-            dbContext.Channels.UpdateRange(channelUpdate);
+            dbContext.Channels.UpdateRange(channels.Values.ToList());
             await dbContext.Overlaps.AddRangeAsync(data);
             
-            DateTime thirtyDays = timestamp.AddDays(-30);
-            await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
+            DateTime twoWeeks = Timestamp.AddDays(-14);
+            await dbContext.Overlaps.Where(x => x.Timestamp <= twoWeeks).DeleteAsync();
 
             await dbContext.SaveChangesAsync();
+            await trans.CommitAsync();
 
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            if (timestamp.Minute >= 30) // only calculate union every hour
+            if (Timestamp.Minute >= 30) // only calculate union every hour
             {
-                var rootPath = $"./channel-chatters/{timestamp.Month}-{timestamp.Year}";
+                var rootPath = $"./channel-chatters/{Timestamp.Month}-{Timestamp.Year}";
                 Directory.CreateDirectory(rootPath);
                 
                 Console.WriteLine("beginning unique chatter merge");
             
-                foreach ((ChannelModel channel, HashSet<string> chatters) in channelChatters)
+                foreach ((Channel channel, HashSet<string> chatters) in channelChatters)
                 {
                     var path = $"{rootPath}/{channel.Id}.txt";
                     if (!File.Exists(path))
@@ -151,16 +135,16 @@ namespace ChannelIntersection
             Console.WriteLine($"total time taken: {timer.Elapsed.TotalSeconds}s");
         }
 
-        private static async Task<HashSet<string>> GetChatters(ChannelModel channel)
+        private static async Task<HashSet<string>> GetChatters(Channel channel)
         {
             Stream stream;
             try
             {
-                stream = await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channel.Id}/chatters");
+                stream = await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channel.LoginName}/chatters");
             }
             catch
             {
-                Console.WriteLine($"Could not retrieve chatters for {channel.Id}");
+                Console.WriteLine($"Could not retrieve chatters for {channel.LoginName}");
                 return null;
             }
 
@@ -193,10 +177,10 @@ namespace ChannelIntersection
             return chatterList;
         }
 
-        private static async Task<Dictionary<string, ChannelModel>> GetTopChannels()
+        private static async Task<Dictionary<string, Channel>> GetTopChannels()
         {
-            var channels = new Dictionary<string, ChannelModel>();
-
+            var channels = new Dictionary<string, Channel>();
+            var newChannels = new List<Channel>();
             var pageToken = string.Empty;
             do
             {
@@ -221,24 +205,32 @@ namespace ChannelIntersection
                             pageToken = null;
                             break;
                         }
-
-                        string id = channel.GetProperty("user_login").GetString()?.ToLowerInvariant();
-
-                        channels.TryAdd(id, new ChannelModel
+                        string login = channel.GetProperty("user_login").GetString()?.ToLowerInvariant();
+                        Channel dbChannel = await _context.Channels.SingleOrDefaultAsync(x => x.LoginName == login);
+                        if (dbChannel == null)
                         {
-                            Id = id,
-                            DisplayName = channel.GetProperty("user_name").GetString(),
-                            Game = channel.GetProperty("game_name").GetString(),
-                            Viewers = viewerCount
-                        });
+                            dbChannel = new Channel(login, channel.GetProperty("user_name").GetString(), channel.GetProperty("game_name").GetString(), viewerCount, Timestamp);
+                            newChannels.Add(dbChannel);
+                        }
+                        else
+                        {
+                            dbChannel.DisplayName = channel.GetProperty("user_name").GetString();
+                            dbChannel.Game = channel.GetProperty("game_name").GetString();
+                            dbChannel.Viewers = viewerCount;
+                            dbChannel.LastUpdate = Timestamp;
+                        }
+
+                        channels.TryAdd(login, dbChannel);
                     }
                 }
             } while (pageToken != null);
 
+            await _context.AddRangeAsync(newChannels);
+            await _context.SaveChangesAsync();
             return channels;
         }
 
-        private static async Task GetChannelAvatar(Dictionary<string, ChannelModel> channels)
+        private static async Task GetChannelAvatar(Dictionary<string, Channel> channels)
         {
             using var http = new HttpClient();
             foreach (string reqString in RequestBuilder(channels.Keys.ToList()))
@@ -252,7 +244,7 @@ namespace ChannelIntersection
                 JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
                 foreach (JsonElement channel in data)
                 {
-                    ChannelModel model = channels[channel.GetProperty("login").GetString()!.ToLowerInvariant()];
+                    Channel model = channels[channel.GetProperty("login").GetString()!.ToLowerInvariant()];
                     if (model != null) model.Avatar = channel.GetProperty("profile_image_url").GetString()?.Replace("-300x300", "-70x70").Split('/')[4];
                 }
             }
