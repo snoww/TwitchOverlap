@@ -107,7 +107,7 @@ namespace ChannelIntersection
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            if (Timestamp.Minute >= 30) // only calculate union every hour
+            /*if (Timestamp.Minute >= 30) // only calculate union every hour
             {
                 var rootPath = $"./channel-chatters/{Timestamp.Month}-{Timestamp.Year}";
                 Directory.CreateDirectory(rootPath);
@@ -130,7 +130,7 @@ namespace ChannelIntersection
                 }
             
                 Console.WriteLine($"union completed in {sw.Elapsed.TotalSeconds}s");
-            }
+            }*/
 
             Console.WriteLine($"total time taken: {timer.Elapsed.TotalSeconds}s");
         }
