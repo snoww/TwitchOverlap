@@ -18,10 +18,17 @@ namespace TwitchOverlap.Models
         public int Shared { get; set; }
         public DateTime LastUpdate { get; set; }
 
+        [JsonIgnore]
         public virtual ICollection<Overlap> OverlapSourceNavigations { get; set; } = new HashSet<Overlap>();
-        public virtual ICollection<Overlap> OverlapTargetNavigations { get; set; } = new HashSet<Overlap>();
         
-        public Channel(int id, string loginName, string game, int viewers, int chatters, int shared, DateTime lastUpdate, string avatar, string displayName)
+        [JsonIgnore]
+        public virtual ICollection<Overlap> OverlapTargetNavigations { get; set; } = new HashSet<Overlap>();
+
+        public Channel()
+        {
+        }
+        
+        public Channel(int id, string game, int viewers, int chatters, int shared, DateTime lastUpdate, string avatar, string displayName)
         {
             Id = id;
             Game = game;

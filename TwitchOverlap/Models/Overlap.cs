@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace TwitchOverlap.Models
 {
@@ -10,7 +11,9 @@ namespace TwitchOverlap.Models
         public int Target { get; set; }
         public int Overlapped { get; set; }
         
+        [JsonIgnore]
         public virtual Channel SourceNavigation { get; set; }
+        [JsonIgnore]
         public virtual Channel TargetNavigation { get; set; }
 
         public Overlap(DateTime timestamp, int source, int target, int overlapped)
