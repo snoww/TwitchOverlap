@@ -113,7 +113,7 @@ namespace TwitchOverlap.Controllers
             {
                 if (overlap.Source == name)
                 {
-                    channelData.Data[overlap.Target] = new Data(overlap.TargetGame, overlap.Overlapped);
+                    channelData.Data[overlap.Target] = new Data(overlap.SourceGame, overlap.Overlapped);
                 }
                 else
                 {
