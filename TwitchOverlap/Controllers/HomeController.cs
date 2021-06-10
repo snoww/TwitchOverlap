@@ -131,7 +131,7 @@ namespace TwitchOverlap.Controllers
         {
             name = name.ToLowerInvariant();
             const int top = 6;
-            const int points = 24*7;
+            const int points = 24*5;
             string cachedHistory = await _cache.StringGetAsync(ChannelHistoryCacheKey + name);
             if (!string.IsNullOrEmpty(cachedHistory))
             {
