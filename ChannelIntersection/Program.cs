@@ -40,6 +40,26 @@ namespace ChannelIntersection
             _context = dbContext;
             await using IDbContextTransaction trans = await dbContext.Database.BeginTransactionAsync();
             Console.WriteLine($"connected to database at {Timestamp:u}");
+
+            // this is ued to check on aws instance if the update occured or not.
+            // if it did not update locally, it would run it on the server
+            if (Timestamp.Minute is 5 or 35)
+            {
+                Channel latestChannel = await dbContext.Channels.FromSqlRaw(@"select *
+            from channel
+            where last_update = (
+                select max(last_update)
+                from channel)
+              and chatters > 0
+            limit 1").AsNoTracking()
+                    .SingleOrDefaultAsync();
+                
+                if (latestChannel != null && Timestamp - latestChannel.LastUpdate <= TimeSpan.FromMinutes(10))
+                {
+                    Console.WriteLine("intersection already calculated, exiting.");
+                    return;
+                }
+            }
             
             var sw = new Stopwatch();
             sw.Start();
