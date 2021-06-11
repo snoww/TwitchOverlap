@@ -45,6 +45,7 @@ namespace TwitchOverlap.Controllers
             where last_update = (
                 select max(last_update)
                 from channel)
+              and chatters > 0
             order by chatters desc").AsNoTracking()
                 .Select(x => new ChannelSummary(x.LoginName, x.DisplayName, x.Avatar, x.Chatters))
                 .ToListAsync();
