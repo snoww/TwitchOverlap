@@ -37,5 +37,3 @@ create table if not exists overlap
     shared    jsonb,
     primary key (timestamp, channel)
 );
-
-create index if not exists overlap_timestamp_desc_channel_index on overlap (timestamp desc, channel);

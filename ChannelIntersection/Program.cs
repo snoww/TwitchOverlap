@@ -76,7 +76,7 @@ namespace ChannelIntersection
 
             var channelChatters = new ConcurrentDictionary<Channel, HashSet<string>>();
             var totalIntersectionCount = new ConcurrentDictionary<Channel, ConcurrentDictionary<string, byte>>();
-            var data2 = new Dictionary<string, List<ChannelOverlap>>();
+            var data2 = new ConcurrentDictionary<string, List<ChannelOverlap>>();
 
             IEnumerable<Task> processTasks = channels.Select(async channel =>
             {
