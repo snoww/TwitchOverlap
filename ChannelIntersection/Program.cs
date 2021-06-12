@@ -27,6 +27,8 @@ namespace ChannelIntersection
         private const int MinChatters = 500;
         private const int MinViewers = 1500;
 
+        private static readonly object WriteLock = new();
+
         public static async Task Main()
         {
             using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
@@ -74,6 +76,7 @@ namespace ChannelIntersection
 
             var channelChatters = new ConcurrentDictionary<Channel, HashSet<string>>();
             var totalIntersectionCount = new ConcurrentDictionary<Channel, ConcurrentDictionary<string, byte>>();
+            var data2 = new Dictionary<string, List<ChannelOverlap>>();
 
             IEnumerable<Task> processTasks = channels.Select(async channel =>
             {
@@ -86,15 +89,14 @@ namespace ChannelIntersection
 
                 channelChatters.TryAdd(ch, chatters);
                 totalIntersectionCount.TryAdd(ch, new ConcurrentDictionary<string, byte>());
+                data2.TryAdd(ch.LoginName, new List<ChannelOverlap>());
             });
 
             await Task.WhenAll(processTasks);
 
             Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-
-            var data = new ConcurrentBag<Overlap>();
-
+            
             Parallel.ForEach(GetKCombs(channelChatters.Keys.Where(x => x.Chatters >= MinChatters), 2), x =>
             {
                 Channel[] pair = x.ToArray();
@@ -105,27 +107,34 @@ namespace ChannelIntersection
                     totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
                     return true;
                 });
-
-                data.Add(new Overlap(Timestamp, pair[0].Id, pair[1].Id, count));
+                
+                lock (WriteLock)
+                {
+                    data2[pair[0].LoginName].Add(new ChannelOverlap{Name = pair[1].LoginName, Shared = count});
+                    data2[pair[1].LoginName].Add(new ChannelOverlap{Name = pair[0].LoginName, Shared = count});
+                }
             });
 
             Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            foreach ((Channel ch, _) in channelChatters)
+            var overlapData = new ConcurrentBag<Overlap>();
+
+            Parallel.ForEach(channelChatters, (x) =>
             {
+                (Channel ch, _) = x;
                 ch.Shared = totalIntersectionCount[ch].Count;
-            }
-
-            dbContext.Channels.UpdateRange(channels.Values.ToList());
-            await dbContext.Overlaps.AddRangeAsync(data);
+                overlapData.Add(new Overlap {Timestamp = Timestamp, Channel = ch.Id, Shared = data2[ch.LoginName].OrderByDescending(y => y.Shared).ToList()});
+            });
             
-            DateTime twoWeeks = Timestamp.AddDays(-14);
-
+            dbContext.Channels.UpdateRange(channels.Values.ToList());
+            await dbContext.Overlaps.AddRangeAsync(overlapData);
+            
             await dbContext.SaveChangesAsync();
             await trans.CommitAsync();
             
-            await dbContext.Overlaps.Where(x => x.Timestamp <= twoWeeks).DeleteAsync();
+            // DateTime month = Timestamp.AddDays(-30);
+            // await dbContext.Overlaps.Where(x => x.Timestamp <= month).DeleteAsync();
 
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();

@@ -26,3 +26,16 @@ create index if not exists channel_timestamp_index on channel (last_update desc)
 create index if not exists overlap_timestamp_desc_index on overlap (timestamp desc);
 create index if not exists overlap_source_overlap_index on overlap (source, overlap desc);
 create index if not exists overlap_target_overlap_index on overlap (target, overlap desc);
+
+
+---- new 
+
+create table if not exists overlap
+(
+    timestamp timestamp not null,
+    channel   int references channel (id),
+    shared    jsonb,
+    primary key (timestamp, channel)
+);
+
+create index if not exists overlap_timestamp_desc_channel_index on overlap (timestamp desc, channel);

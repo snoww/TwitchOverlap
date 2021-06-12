@@ -8,16 +8,13 @@ namespace ChannelIntersection.Models
     public class Overlap
     {
         public DateTime Timestamp { get; set; }
-        public int Source { get; set; }
-        public int Target { get; set; }
-        public int Overlapped { get; set; }
-
-        public Overlap(DateTime timestamp, int source, int target, int overlapped)
-        {
-            Timestamp = timestamp;
-            Source = source;
-            Target = target;
-            Overlapped = overlapped;
-        }
+        public int Channel { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
+    }
+    
+    public class ChannelOverlap
+    {
+        public string Name { get; set; }
+        public int Shared { get; set; }
     }
 }
