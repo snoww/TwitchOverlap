@@ -139,7 +139,7 @@ namespace ChannelIntersection
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            if (Timestamp.Minute >= 30) // only calculate union every hour
+            if (Timestamp.Minute is >= 30 and < 35) // only calculate union every hour, make sure aws doesn't run this section
             {
                 var rootPath = $"./channel-chatters/{Timestamp.Month}-{Timestamp.Year}";
                 Directory.CreateDirectory(rootPath);
