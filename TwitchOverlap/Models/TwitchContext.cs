@@ -32,31 +32,22 @@ namespace TwitchOverlap.Models
 
             modelBuilder.Entity<Overlap>(entity =>
             {
-                entity.HasKey(e => new { e.Timestamp, e.Source, e.Target })
+                entity.HasKey(e => new { e.Timestamp, e.Channel })
                     .HasName("overlap_pkey");
 
                 entity.ToTable("overlap");
                 
-                entity.HasIndex(e => e.Timestamp, "overlap_timestamp_index").HasSortOrder(SortOrder.Descending);
-                entity.HasIndex(e => new {e.Source, e.Overlapped}, "overlap_source_overlap_index").HasSortOrder(SortOrder.Ascending, SortOrder.Descending);
-                entity.HasIndex(e => new {e.Target, e.Overlapped}, "overlap_target_overlap_index").HasSortOrder(SortOrder.Ascending, SortOrder.Descending);
+                entity.HasIndex(e => new {e.Timestamp, e.Channel}, "overlap_timestamp_desc_channel_index").HasSortOrder(SortOrder.Descending);
                 
                 entity.Property(e => e.Timestamp).HasColumnName("timestamp");
-                entity.Property(e => e.Source).HasColumnName("source");
-                entity.Property(e => e.Target).HasColumnName("target");
-                entity.Property(e => e.Overlapped).HasColumnName("overlap");
+                entity.Property(e => e.Channel).HasColumnName("channel");
+                entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
                 
-                entity.HasOne(d => d.SourceNavigation)
-                    .WithMany(p => p.OverlapSourceNavigations)
-                    .HasForeignKey(d => d.Source)
+                entity.HasOne(d => d.ChannelNavigation)
+                    .WithMany(p => p.OverlapChannelNavigations)
+                    .HasForeignKey(d => d.Channel)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("overlap_source_fkey");
-
-                entity.HasOne(d => d.TargetNavigation)
-                    .WithMany(p => p.OverlapTargetNavigations)
-                    .HasForeignKey(d => d.Target)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("overlap_target_fkey");
             });
         }
     }

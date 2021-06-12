@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -82,44 +83,30 @@ namespace TwitchOverlap.Controllers
                 return View("NoData", name);
             }
 
-            var overlaps = await _context.Overlaps.FromSqlInterpolated($@"select *
+            Overlap overlaps = await _context.Overlaps.FromSqlInterpolated($@"select *
             from overlap
-            where (source = {channel.Id}
-                or target = {channel.Id})
-              and timestamp = (
-                select max(timestamp)
-                from overlap
-                where source = {channel.Id}
-                   or target = {channel.Id})").AsNoTracking()
-                .Include(x => x.SourceNavigation)
-                .Include(x => x.TargetNavigation)
-                .OrderByDescending(x => x.Overlapped)
-                .Select(x => new { 
-                    Source = x.SourceNavigation.LoginName, 
-                    SourceGame = x.SourceNavigation.Game, 
-                    Target = x.TargetNavigation.LoginName,
-                    TargetGame = x.TargetNavigation.Game,
-                    x.Overlapped
-                })
-                .ToListAsync();
+            where channel = {channel.Id}
+              and timestamp = (select max(timestamp)
+                               from overlap
+                               where channel = {channel.Id})").AsNoTracking()
+                .Include(x => x.ChannelNavigation)
+                .SingleOrDefaultAsync();
 
-            if (overlaps.Count == 0)
+            if (overlaps == null)
             {
                 return View("NoData", name);
             }
+            
+            var overlappedChannelsData = await _context.Channels.AsNoTracking()
+                .Where(x => overlaps.Shared.Select(y => y.Name).Contains(x.LoginName))
+                .Select(x => new {x.LoginName, x.Game})
+                .ToDictionaryAsync(x => x.LoginName);
 
             var channelData = new ChannelData(channel);
 
-            foreach (var overlap in overlaps)
+            foreach (ChannelOverlap overlap in overlaps.Shared)
             {
-                if (overlap.Source == name)
-                {
-                    channelData.Data[overlap.Target] = new Data(overlap.TargetGame, overlap.Overlapped);
-                }
-                else
-                {
-                    channelData.Data[overlap.Source] = new Data(overlap.SourceGame, overlap.Overlapped);
-                }
+                channelData.Data[overlap.Name] = new Data(overlappedChannelsData[overlap.Name].Game, overlap.Shared);
             }
 
             await _cache.StringSetAsync(ChannelDataCacheKey + name, JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
@@ -131,8 +118,7 @@ namespace TwitchOverlap.Controllers
         public async Task<IActionResult> ChannelHistory(string name)
         {
             name = name.ToLowerInvariant();
-            const int top = 6;
-            const int points = 24*5;
+            const int points = 48*5;
             string cachedHistory = await _cache.StringGetAsync(ChannelHistoryCacheKey + name);
             if (!string.IsNullOrEmpty(cachedHistory))
             {
@@ -144,43 +130,33 @@ namespace TwitchOverlap.Controllers
             {
                 return NotFound($"data for '{name}' not found");
             }
-
-            var overlapHistory = await _context.Overlaps.FromSqlInterpolated($@"select *
-            from (
-                select *, rank() over (partition by ""timestamp"" order by ""overlap"" desc) as rank
-                from overlap
-                where source = {channel.Id}
-                or target = {channel.Id}) r
-            where rank <= {top}
-            order by timestamp desc, rank
-            limit {top * points}").AsNoTracking()
-                .Include(x => x.SourceNavigation)
-                .Include(x => x.TargetNavigation)
-                .Select(x =>  new {x.Timestamp, Source = x.SourceNavigation.LoginName, Target = x.TargetNavigation.LoginName, x.Overlapped})
+            
+            var rawHistory = await _context.Overlaps.AsNoTracking()
+                .Where(x => x.Channel == channel.Id)
+                .OrderByDescending(x => x.Timestamp)
+                .Take(points)
+                .Select(x => new {x.Timestamp, Shared = x.Shared.Take(6)})
                 .ToListAsync();
-
+            
             var values = new HashSet<string>{"timestamp"};
             var data = new Dictionary<string, Dictionary<string, object>>();
-            
-            for (int i = 0; i < overlapHistory.Count / top; i++)
+
+            foreach (var timestamp in rawHistory)
             {
-                for (int j = 0; j < top; j++)
+                var time = timestamp.Timestamp.ToString("MMM dd HH:mm");
+                foreach (ChannelOverlap overlap in timestamp.Shared)
                 {
-                    int index = i * top + j;
-                    string channelName = overlapHistory[index].Source == name ? overlapHistory[index].Target : overlapHistory[index].Source;
-                    string time = overlapHistory[index].Timestamp.ToString("MMM dd HH:mm");
-                    values.Add(channelName);
-                    
+                    values.Add(overlap.Name);
                     if (data.ContainsKey(time))
                     {
-                        data[time][channelName] = overlapHistory[index].Overlapped;
+                        data[time][overlap.Name] = overlap.Shared;
                     }
                     else
                     {
                         data[time] = new Dictionary<string, object>
                         {
                             {"timestamp", time},
-                            {channelName,overlapHistory[index].Overlapped}
+                            {overlap.Name,overlap.Shared}
                         };
                     }
                 }

@@ -7,22 +7,17 @@ namespace TwitchOverlap.Models
     public class Overlap
     {
         public DateTime Timestamp { get; set; }
-        public int Source { get; set; }
-        public int Target { get; set; }
-        public int Overlapped { get; set; }
+        public int Channel { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
         
         [JsonIgnore]
-        public virtual Channel SourceNavigation { get; set; }
-        [JsonIgnore]
-        public virtual Channel TargetNavigation { get; set; }
-
-        public Overlap(DateTime timestamp, int source, int target, int overlapped)
-        {
-            Timestamp = timestamp;
-            Source = source;
-            Target = target;
-            Overlapped = overlapped;
-        }
+        public virtual Channel ChannelNavigation { get; set; }
+    }
+    
+    public class ChannelOverlap
+    {
+        public string Name { get; set; }
+        public int Shared { get; set; }
     }
 
     public class ChannelData

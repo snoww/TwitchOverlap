@@ -19,10 +19,7 @@ namespace TwitchOverlap.Models
         public DateTime LastUpdate { get; set; }
 
         [JsonIgnore]
-        public virtual ICollection<Overlap> OverlapSourceNavigations { get; set; } = new HashSet<Overlap>();
-        
-        [JsonIgnore]
-        public virtual ICollection<Overlap> OverlapTargetNavigations { get; set; } = new HashSet<Overlap>();
+        public virtual ICollection<Overlap> OverlapChannelNavigations { get; set; } = new HashSet<Overlap>();
 
         public Channel()
         {
