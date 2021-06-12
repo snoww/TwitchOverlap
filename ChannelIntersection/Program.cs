@@ -212,7 +212,7 @@ namespace ChannelIntersection
         private static async Task<Dictionary<string, Channel>> GetTopChannels()
         {
             var channels = new Dictionary<string, Channel>();
-            var newChannels = new List<Channel>();
+            var newChannels = new HashSet<Channel>();
             var pageToken = string.Empty;
             do
             {
