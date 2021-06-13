@@ -78,7 +78,7 @@ namespace TwitchGraph
 
             Directory.CreateDirectory($"./data/{dirName}/");
             StreamWriter nodesStream = File.CreateText($"./data/{dirName}/nodes.csv");
-            await nodesStream.WriteLineAsync("id,label,size");
+            // await nodesStream.WriteLineAsync("id,label,size");
             
             await GetChannelDisplayName(channels);
             
@@ -87,14 +87,16 @@ namespace TwitchGraph
             
             foreach ((string _, Channel channel) in channels)
             {
-                if (string.IsNullOrEmpty(channel.DisplayName) || channel.DisplayName.Any(c => c > 255))
-                {
-                    await nodesStream.WriteLineAsync($"{channel.Id},{channel.Id},{channel.Size}");
-                }
-                else
-                {
-                    await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
-                }
+                // if (string.IsNullOrEmpty(channel.DisplayName) || channel.DisplayName.Any(c => c > 255))
+                // {
+                //     await nodesStream.WriteLineAsync($"{channel.Id},{channel.Id},{channel.Size}");
+                // }
+                // else
+                // {
+                //     await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
+                // }
+                
+                await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
             }
             nodesStream.Close();
 
@@ -111,7 +113,7 @@ namespace TwitchGraph
             sw.Restart();
             
             await using StreamWriter edgesStream = File.CreateText($"./data/{dirName}/edges.csv");
-            await edgesStream.WriteLineAsync("source,target,weight");
+            // await edgesStream.WriteLineAsync("source,target,weight");
             
             foreach ((string ch1, ConcurrentDictionary<string, int> intersection) in processed)
             {
