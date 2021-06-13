@@ -76,7 +76,7 @@ namespace ChannelIntersection
 
             var channelChatters = new ConcurrentDictionary<Channel, HashSet<string>>();
             var totalIntersectionCount = new ConcurrentDictionary<Channel, ConcurrentDictionary<string, byte>>();
-            var data2 = new ConcurrentDictionary<string, List<ChannelOverlap>>();
+            var channelOverlap = new ConcurrentDictionary<string, List<ChannelOverlap>>();
 
             IEnumerable<Task> processTasks = channels.Select(async channel =>
             {
@@ -89,7 +89,7 @@ namespace ChannelIntersection
 
                 channelChatters.TryAdd(ch, chatters);
                 totalIntersectionCount.TryAdd(ch, new ConcurrentDictionary<string, byte>());
-                data2.TryAdd(ch.LoginName, new List<ChannelOverlap>());
+                channelOverlap.TryAdd(ch.LoginName, new List<ChannelOverlap>());
             });
 
             await Task.WhenAll(processTasks);
@@ -110,8 +110,8 @@ namespace ChannelIntersection
                 
                 lock (WriteLock)
                 {
-                    data2[pair[0].LoginName].Add(new ChannelOverlap{Name = pair[1].LoginName, Shared = count});
-                    data2[pair[1].LoginName].Add(new ChannelOverlap{Name = pair[0].LoginName, Shared = count});
+                    channelOverlap[pair[0].LoginName].Add(new ChannelOverlap{Name = pair[1].LoginName, Shared = count});
+                    channelOverlap[pair[1].LoginName].Add(new ChannelOverlap{Name = pair[0].LoginName, Shared = count});
                 }
             });
 
@@ -124,7 +124,7 @@ namespace ChannelIntersection
             {
                 (Channel ch, _) = x;
                 ch.Shared = totalIntersectionCount[ch].Count;
-                overlapData.Add(new Overlap {Timestamp = Timestamp, Channel = ch.Id, Shared = data2[ch.LoginName].OrderByDescending(y => y.Shared).ToList()});
+                overlapData.Add(new Overlap {Timestamp = Timestamp, Channel = ch.Id, Shared = channelOverlap[ch.LoginName].OrderByDescending(y => y.Shared).ToList()});
             });
             
             dbContext.Channels.UpdateRange(channels.Values.ToList());
@@ -133,8 +133,8 @@ namespace ChannelIntersection
             await dbContext.SaveChangesAsync();
             await trans.CommitAsync();
             
-            // DateTime month = Timestamp.AddDays(-30);
-            // await dbContext.Overlaps.Where(x => x.Timestamp <= month).DeleteAsync();
+            DateTime month = Timestamp.AddDays(-30);
+            await dbContext.Overlaps.Where(x => x.Timestamp <= month).DeleteAsync();
 
             Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
@@ -286,15 +286,16 @@ namespace ChannelIntersection
         {
             var shards = (int) Math.Ceiling(channels.Count / 100.0);
             var list = new List<string>(shards);
+            var request = new StringBuilder();
             for (int i = 0; i < shards; i++)
             {
-                var request = new StringBuilder();
                 foreach (string channel in channels.Skip(i * 100).Take(100))
                 {
                     request.Append("&login=").Append(channel);
                 }
 
                 list.Add(request.ToString()[1..]);
+                request.Clear();
             }
 
             return list;
