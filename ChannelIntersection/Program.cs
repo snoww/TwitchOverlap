@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ChannelIntersection.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Z.EntityFramework.Plus;
 
 namespace ChannelIntersection
@@ -21,6 +22,12 @@ namespace ChannelIntersection
         private static string _twitchToken;
         private static string _twitchClient;
         private static string _psqlConnection;
+        private static TwitchContext _context;
+        private static readonly DateTime Timestamp = DateTime.UtcNow;
+        private const int MinChatters = 500;
+        private const int MinViewers = 1500;
+
+        private static readonly object WriteLock = new();
 
         public static async Task Main()
         {
@@ -30,29 +37,50 @@ namespace ChannelIntersection
                 _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
                 _psqlConnection = json.RootElement.GetProperty("POSTGRES").GetString();
             }
+            
+            await using var dbContext = new TwitchContext(_psqlConnection);
+            _context = dbContext;
+            await using IDbContextTransaction trans = await dbContext.Database.BeginTransactionAsync();
+            Console.WriteLine($"connected to database at {Timestamp:u}");
 
-            DateTime timestamp = DateTime.UtcNow;
-
-            var dbContext = new TwitchContext(_psqlConnection);
-
-            Console.WriteLine($"connected to database at {timestamp:u}");
-
+            // this is ued to check on aws instance if the update occured or not.
+            // if it did not update locally, it would run it on the server
+            if (Timestamp.Minute is 5 or 35)
+            {
+                Channel latestChannel = await dbContext.Channels.FromSqlRaw(@"select *
+            from channel
+            where last_update = (
+                select max(last_update)
+                from channel)
+              and chatters > 0
+            limit 1").AsNoTracking()
+                    .SingleOrDefaultAsync();
+                
+                if (latestChannel != null && Timestamp - latestChannel.LastUpdate <= TimeSpan.FromMinutes(10))
+                {
+                    Console.WriteLine("intersection already calculated, exiting.");
+                    return;
+                }
+            }
+            
             var sw = new Stopwatch();
             sw.Start();
+            var timer = new Stopwatch();
+            timer.Start();
 
-            Dictionary<string, ChannelModel> channels = await GetTopChannels();
+            Dictionary<string, Channel> channels = await GetTopChannels();
             await GetChannelAvatar(channels);
 
-            Console.WriteLine($"retrieved {channels.Count} channels in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"retrieved {channels.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            var channelChatters = new ConcurrentDictionary<ChannelModel, HashSet<string>>();
-            var processed = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, int>>();
-            var totalIntersectionCount = new ConcurrentDictionary<ChannelModel, ConcurrentDictionary<string, byte>>();
+            var channelChatters = new ConcurrentDictionary<Channel, HashSet<string>>();
+            var totalIntersectionCount = new ConcurrentDictionary<Channel, ConcurrentDictionary<string, byte>>();
+            var channelOverlap = new ConcurrentDictionary<string, List<ChannelOverlap>>();
 
             IEnumerable<Task> processTasks = channels.Select(async channel =>
             {
-                (_, ChannelModel ch) = channel;
+                (_, Channel ch) = channel;
                 HashSet<string> chatters = await GetChatters(ch);
                 if (chatters == null)
                 {
@@ -60,96 +88,103 @@ namespace ChannelIntersection
                 }
 
                 channelChatters.TryAdd(ch, chatters);
-                processed.TryAdd(ch, new ConcurrentDictionary<string, int>());
                 totalIntersectionCount.TryAdd(ch, new ConcurrentDictionary<string, byte>());
+                channelOverlap.TryAdd(ch.LoginName, new List<ChannelOverlap>());
             });
 
             await Task.WhenAll(processTasks);
 
-            Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"retrieved {channelChatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-
-            Parallel.ForEach(GetKCombs(new List<ChannelModel>(channelChatters.Keys), 2), x =>
+            
+            Parallel.ForEach(GetKCombs(channelChatters.Keys.Where(x => x.Chatters >= MinChatters), 2), x =>
             {
-                ChannelModel[] pair = x.ToArray();
+                Channel[] pair = x.ToArray();
                 int count = channelChatters[pair[0]].Count(y =>
                 {
-                    if (channelChatters[pair[1]].Contains(y))
-                    {
-                        totalIntersectionCount[pair[0]].TryAdd(y, byte.MaxValue);
-                        totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
-                        return true;
-                    }
-
-                    return false;
+                    if (!channelChatters[pair[1]].Contains(y)) return false;
+                    totalIntersectionCount[pair[0]].TryAdd(y, byte.MaxValue);
+                    totalIntersectionCount[pair[1]].TryAdd(y, byte.MaxValue);
+                    return true;
                 });
-                processed[pair[0]].TryAdd(pair[1].Id, count);
-                processed[pair[1]].TryAdd(pair[0].Id, count);
+                
+                lock (WriteLock)
+                {
+                    channelOverlap[pair[0].LoginName].Add(new ChannelOverlap{Name = pair[1].LoginName, Shared = count});
+                    channelOverlap[pair[1].LoginName].Add(new ChannelOverlap{Name = pair[0].LoginName, Shared = count});
+                }
             });
 
-            Console.WriteLine($"calculated intersection in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            var channelAddBag = new ConcurrentBag<Channel>();
-            var channelUpdateBag = new ConcurrentBag<Channel>();
-            var dataBag = new ConcurrentBag<Overlap>();
-            
-            foreach ((ChannelModel ch, ConcurrentDictionary<string, int> value) in processed)
-            {
-                Channel dbChannel = await dbContext.Channels.SingleOrDefaultAsync(x => x.Id == ch.Id);
-                if (dbChannel == null)
-                {
-                    channelAddBag.Add(new Channel(ch.Id, ch.Game, ch.Viewers, ch.Chatters, totalIntersectionCount[ch].Count, timestamp, ch.Avatar, ch.DisplayName));
-                }
-                else
-                {
-                    dbChannel.Avatar = ch.Avatar;
-                    dbChannel.DisplayName = ch.DisplayName;
-                    dbChannel.Game = ch.Game;
-                    dbChannel.Viewers = ch.Viewers;
-                    dbChannel.Chatters = ch.Chatters;
-                    dbChannel.Shared = totalIntersectionCount[ch].Count;
-                    dbChannel.LastUpdate = timestamp;
-                    channelUpdateBag.Add(dbChannel);
-                }
+            var overlapData = new ConcurrentBag<Overlap>();
 
-                dataBag.Add(new Overlap(ch.Id, timestamp, new Dictionary<string, int>(value)));
+            Parallel.ForEach(channelChatters, (x) =>
+            {
+                (Channel ch, _) = x;
+                ch.Shared = totalIntersectionCount[ch].Count;
+                overlapData.Add(new Overlap {Timestamp = Timestamp, Channel = ch.Id, Shared = channelOverlap[ch.LoginName].OrderByDescending(y => y.Shared).ToList()});
+            });
+            
+            dbContext.Channels.UpdateRange(channels.Values.ToList());
+            await dbContext.Overlaps.AddRangeAsync(overlapData);
+            
+            await dbContext.SaveChangesAsync();
+            await trans.CommitAsync();
+            
+            DateTime month = Timestamp.AddDays(-30);
+            await dbContext.Overlaps.Where(x => x.Timestamp <= month).DeleteAsync();
+
+            Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
+            sw.Restart();
+
+            if (Timestamp.Minute is >= 30 and < 35) // only calculate union every hour, make sure aws doesn't run this section
+            {
+                var rootPath = $"./channel-chatters/{Timestamp.Month}-{Timestamp.Year}";
+                Directory.CreateDirectory(rootPath);
+                
+                Console.WriteLine("beginning unique chatter merge");
+            
+                foreach ((Channel channel, HashSet<string> chatters) in channelChatters)
+                {
+                    var path = $"{rootPath}/{channel.LoginName}.txt";
+                    if (!File.Exists(path))
+                    {
+                        await File.WriteAllLinesAsync(path, chatters);
+                        continue;
+                    }
+                    
+                    var existingChatters = new HashSet<string>(File.ReadLines(path));
+                    existingChatters.EnsureCapacity(existingChatters.Count + chatters.Count);
+                    existingChatters.UnionWith(chatters);
+                    await File.WriteAllLinesAsync(path, existingChatters);
+                }
+            
+                Console.WriteLine($"union completed in {sw.Elapsed.TotalSeconds}s");
             }
 
-            await dbContext.Channels.AddRangeAsync(channelAddBag);
-            dbContext.Channels.UpdateRange(channelUpdateBag);
-            await dbContext.Overlaps.AddRangeAsync(dataBag);
-
-            await dbContext.SaveChangesAsync();
-
-            DateTime thirtyDays = timestamp.AddDays(-30);
-            await dbContext.Overlaps.Where(x => x.Timestamp <= thirtyDays).DeleteAsync();
-
-            Console.WriteLine($"inserted into database in {sw.ElapsedMilliseconds}ms");
-            sw.Stop();
-
-            DateTime endTime = DateTime.UtcNow;
-            Console.WriteLine($"time taken: {(endTime - timestamp).Seconds}s");
+            Console.WriteLine($"total time taken: {timer.Elapsed.TotalSeconds}s");
         }
 
-        private static async Task<HashSet<string>> GetChatters(ChannelModel channel)
+        private static async Task<HashSet<string>> GetChatters(Channel channel)
         {
             Stream stream;
             try
             {
-                stream = await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channel.Id}/chatters");
+                stream = await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channel.LoginName}/chatters");
             }
             catch
             {
-                Console.WriteLine($"Could not retrieve chatters for {channel.Id}");
+                Console.WriteLine($"Could not retrieve chatters for {channel.LoginName}");
                 return null;
             }
-            
+
             using JsonDocument response = await JsonDocument.ParseAsync(stream);
             await stream.DisposeAsync();
 
             int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
-            if (chatters < 100)
+            if (chatters < MinChatters)
             {
                 return null;
             }
@@ -174,17 +209,19 @@ namespace ChannelIntersection
             return chatterList;
         }
 
-        private static async Task<Dictionary<string, ChannelModel>> GetTopChannels()
+        private static async Task<Dictionary<string, Channel>> GetTopChannels()
         {
-            var channels = new Dictionary<string, ChannelModel>();
-
+            var channels = new Dictionary<string, Channel>();
+            var newChannels = new HashSet<Channel>();
             var pageToken = string.Empty;
             do
             {
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
                 request.Headers.Add("Client-Id", _twitchClient);
-                request.RequestUri = string.IsNullOrWhiteSpace(pageToken) ? new Uri("https://api.twitch.tv/helix/streams?first=100") : new Uri($"https://api.twitch.tv/helix/streams?first=100&after={pageToken}");
+                request.RequestUri = string.IsNullOrWhiteSpace(pageToken)
+                    ? new Uri("https://api.twitch.tv/helix/streams?first=100")
+                    : new Uri($"https://api.twitch.tv/helix/streams?first=100&after={pageToken}");
 
                 using HttpResponseMessage response = await Http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
@@ -195,29 +232,37 @@ namespace ChannelIntersection
                     foreach (JsonElement channel in channelEnumerator)
                     {
                         int viewerCount = channel.GetProperty("viewer_count").GetInt32();
-                        if (viewerCount < 1500)
+                        if (viewerCount < MinViewers)
                         {
                             pageToken = null;
                             break;
                         }
-
-                        string id = channel.GetProperty("user_login").GetString()?.ToLowerInvariant();
-
-                        channels.TryAdd(id, new ChannelModel
+                        string login = channel.GetProperty("user_login").GetString()?.ToLowerInvariant();
+                        Channel dbChannel = await _context.Channels.SingleOrDefaultAsync(x => x.LoginName == login);
+                        if (dbChannel == null)
                         {
-                            Id = id,
-                            DisplayName = channel.GetProperty("user_name").GetString(),
-                            Game = channel.GetProperty("game_name").GetString(),
-                            Viewers = viewerCount
-                        });
+                            dbChannel = new Channel(login, channel.GetProperty("user_name").GetString(), channel.GetProperty("game_name").GetString(), viewerCount, Timestamp);
+                            newChannels.Add(dbChannel);
+                        }
+                        else
+                        {
+                            dbChannel.DisplayName = channel.GetProperty("user_name").GetString();
+                            dbChannel.Game = channel.GetProperty("game_name").GetString();
+                            dbChannel.Viewers = viewerCount;
+                            dbChannel.LastUpdate = Timestamp;
+                        }
+
+                        channels.TryAdd(login, dbChannel);
                     }
                 }
             } while (pageToken != null);
 
+            await _context.AddRangeAsync(newChannels);
+            await _context.SaveChangesAsync();
             return channels;
         }
 
-        private static async Task GetChannelAvatar(Dictionary<string, ChannelModel> channels)
+        private static async Task GetChannelAvatar(Dictionary<string, Channel> channels)
         {
             using var http = new HttpClient();
             foreach (string reqString in RequestBuilder(channels.Keys.ToList()))
@@ -231,7 +276,7 @@ namespace ChannelIntersection
                 JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
                 foreach (JsonElement channel in data)
                 {
-                    ChannelModel model = channels[channel.GetProperty("login").GetString()!.ToLowerInvariant()];
+                    Channel model = channels[channel.GetProperty("login").GetString()!.ToLowerInvariant()];
                     if (model != null) model.Avatar = channel.GetProperty("profile_image_url").GetString()?.Replace("-300x300", "-70x70").Split('/')[4];
                 }
             }
@@ -241,15 +286,16 @@ namespace ChannelIntersection
         {
             var shards = (int) Math.Ceiling(channels.Count / 100.0);
             var list = new List<string>(shards);
+            var request = new StringBuilder();
             for (int i = 0; i < shards; i++)
             {
-                var request = new StringBuilder();
                 foreach (string channel in channels.Skip(i * 100).Take(100))
                 {
                     request.Append("&login=").Append(channel);
                 }
 
                 list.Add(request.ToString()[1..]);
+                request.Clear();
             }
 
             return list;

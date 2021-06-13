@@ -1,22 +1,39 @@
 create table if not exists channel
 (
-    id           text primary key,
-    display_name text unique,
-    avatar       text unique,
-    game         text      not null,
-    viewers      int       not null,
-    chatters     int       not null,
-    shared       int       not null,
-    last_update  timestamp not null
+    id           serial primary key,
+    login_name   text not null unique,
+    display_name text not null unique,
+    avatar       text,
+    game         text,
+    viewers      int,
+    chatters     int,
+    shared       int,
+    last_update  timestamp
 );
 
 create table if not exists overlap
 (
-    id        text references channel (id) on update cascade,
     timestamp timestamp not null,
-    data      jsonb     not null,
-    primary key (id, timestamp)
+    source    int references channel (id),
+    target    int references channel (id),
+    overlap   int       not null,
+    primary key (timestamp, source, target)
 );
 
-create unique index if not exists overlap_id_timestamp_uindex
-    on overlap (id asc, timestamp desc);
+
+create index if not exists channel_timestamp_index on channel (last_update desc);
+
+create index if not exists overlap_timestamp_desc_index on overlap (timestamp desc);
+create index if not exists overlap_source_overlap_index on overlap (source, overlap desc);
+create index if not exists overlap_target_overlap_index on overlap (target, overlap desc);
+
+
+---- new 
+
+create table if not exists overlap
+(
+    timestamp timestamp not null,
+    channel   int references channel (id),
+    shared    jsonb,
+    primary key (timestamp, channel)
+);

@@ -7,17 +7,14 @@ namespace ChannelIntersection.Models
 {
     public class Overlap
     {
-        public string Id { get; set; }
         public DateTime Timestamp { get; set; }
-        public Dictionary<string, int> Data { get; set; }
-
-        public virtual Channel Channel { get; set; }
-
-        public Overlap(string id, DateTime timestamp, Dictionary<string, int> data)
-        {
-            Id = id;
-            Timestamp = timestamp;
-            Data = data;
-        }
+        public int Channel { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
+    }
+    
+    public class ChannelOverlap
+    {
+        public string Name { get; set; }
+        public int Shared { get; set; }
     }
 }

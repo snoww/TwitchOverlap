@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -19,6 +20,7 @@ namespace TwitchOverlap.Models
             {
                 entity.ToTable("channel");
                 entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.LoginName).HasColumnName("login_name");
                 entity.Property(e => e.DisplayName).HasColumnName("display_name");
                 entity.Property(e => e.Avatar).HasColumnName("avatar");
                 entity.Property(e => e.Chatters).HasColumnName("chatters");
@@ -30,19 +32,22 @@ namespace TwitchOverlap.Models
 
             modelBuilder.Entity<Overlap>(entity =>
             {
-                entity.HasKey(e => new { e.Id, e.Timestamp })
+                entity.HasKey(e => new { e.Timestamp, e.Channel })
                     .HasName("overlap_pkey");
+
                 entity.ToTable("overlap");
-                entity.Property(e => e.Id).HasColumnName("id");
+                
+                entity.HasIndex(e => new {e.Timestamp, e.Channel}, "overlap_timestamp_desc_channel_index").HasSortOrder(SortOrder.Descending);
+                
                 entity.Property(e => e.Timestamp).HasColumnName("timestamp");
-                entity.Property(e => e.Data)
-                    .HasColumnType("jsonb")
-                    .HasColumnName("data");
-                entity.HasOne(d => d.Channel)
-                    .WithMany(p => p.Histories)
-                    .HasForeignKey(d => d.Id)
+                entity.Property(e => e.Channel).HasColumnName("channel");
+                entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
+                
+                entity.HasOne(d => d.ChannelNavigation)
+                    .WithMany(p => p.OverlapChannelNavigations)
+                    .HasForeignKey(d => d.Channel)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("overlap_id_fkey");
+                    .HasConstraintName("overlap_source_fkey");
             });
         }
     }

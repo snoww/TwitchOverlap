@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -22,7 +23,7 @@ namespace ChannelIntersection.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseNpgsql(_connectionString);
+                optionsBuilder.UseNpgsql(_connectionString).EnableSensitiveDataLogging();
             }
         }
 
@@ -31,11 +32,20 @@ namespace ChannelIntersection.Models
             modelBuilder.Entity<Channel>(entity =>
             {
                 entity.ToTable("channel");
+                
+                entity.HasIndex(e => e.LoginName, "channel_login_name")
+                    .IsUnique();
+                entity.HasIndex(e => e.LastUpdate, "channel_timestamp_index")
+                    .HasSortOrder(SortOrder.Descending);
+
                 entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.LoginName).HasColumnName("login_name");
                 entity.Property(e => e.DisplayName).HasColumnName("display_name");
                 entity.Property(e => e.Avatar).HasColumnName("avatar");
                 entity.Property(e => e.Chatters).HasColumnName("chatters");
-                entity.Property(e => e.Game).HasColumnName("game");
+                entity.Property(e => e.Game)
+                    .IsRequired()
+                    .HasColumnName("game");
                 entity.Property(e => e.LastUpdate).HasColumnName("last_update");
                 entity.Property(e => e.Shared).HasColumnName("shared");
                 entity.Property(e => e.Viewers).HasColumnName("viewers");
@@ -43,19 +53,16 @@ namespace ChannelIntersection.Models
 
             modelBuilder.Entity<Overlap>(entity =>
             {
-                entity.HasKey(e => new { e.Id, e.Timestamp })
+                entity.HasKey(e => new { e.Timestamp, e.Channel })
                     .HasName("overlap_pkey");
+
                 entity.ToTable("overlap");
-                entity.Property(e => e.Id).HasColumnName("id");
+                
+                entity.HasIndex(e => new {e.Timestamp, e.Channel}, "overlap_timestamp_desc_channel_index").HasSortOrder(SortOrder.Descending);
+                
                 entity.Property(e => e.Timestamp).HasColumnName("timestamp");
-                entity.Property(e => e.Data)
-                    .HasColumnType("jsonb")
-                    .HasColumnName("data");
-                entity.HasOne(d => d.Channel)
-                    .WithMany(p => p.Histories)
-                    .HasForeignKey(d => d.Id)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("overlap_id_fkey");
+                entity.Property(e => e.Channel).HasColumnName("channel");
+                entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
             });
         }
     }

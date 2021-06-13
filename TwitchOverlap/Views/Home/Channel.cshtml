@@ -14,9 +14,7 @@
 
 @section headers
 {
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/c3@0.7.20/c3.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/c3@0.7.20/c3.min.js"></script>
-    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.1.1/dist/echarts.min.js" integrity="sha256-Yhe8c0oOs2dPYVQKLAi1aBB9uhr7yMmh67ukoWBqDuU=" crossorigin="anonymous"></script>
 }
 
 @{
@@ -24,11 +22,11 @@
 }
 
 <div class="flex items-center pt-4 px-4">
-    <a href="https://www.twitch.tv/@Model.Channel.Id" target="_blank" rel="noopener noreferrer">
+    <a href="https://www.twitch.tv/@Model.Channel.LoginName" target="_blank" rel="noopener noreferrer">
         <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/@Model.Channel.Avatar" class="rounded-full" alt="twitch-avatar" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'">
     </a>
     <div class="pl-3 flex flex-col">
-        <a class="text-2xl hover:underline hover:text-pink-500" href="https://www.twitch.tv/@Model.Channel.Id" target="_blank" rel="noopener noreferrer">@Model.Channel.DisplayName</a>
+        <a class="text-2xl hover:underline hover:text-pink-500" href="https://www.twitch.tv/@Model.Channel.LoginName" target="_blank" rel="noopener noreferrer">@Model.Channel.DisplayName</a>
         <a class="hover:underline hover:text-pink-500" href="https://www.twitch.tv/directory/game/@Model.Channel.Game" target="_blank" rel="noopener noreferrer">@Model.Channel.Game</a>
     </div>
 </div>
@@ -78,7 +76,7 @@
         <div>@Model.Channel.Shared.ToString("N0")</div>
     </div>
 </div>
-<div id="chart" class="mt-4 mx-0 md:mx-8 text-black"></div>
+<div id="chart" class="mt-4" style="width: 100%;min-height:480px;"></div>
 <div class="overflow-x-auto">
     <table class="table-fixed mt-4 xl:mx-8">
         <thead class="text-left font-medium">
@@ -109,40 +107,86 @@
     </table>
 </div>
 
-<style>
-    .c3-line {
-        stroke-width: 2px;
-    }
-</style>
-
 <script>
-const chartStyle = document.createElement("style");
+const myChart = echarts.init(document.getElementById("chart"));
+const root = document.querySelector("html");
+if (root.classList.contains("dark")) {
+    myChart.showLoading({textColor: "#fff",maskColor: "rgba(255, 255, 255, 0)"});
+} else {
+    myChart.showLoading({maskColor: "rgba(255, 255, 255, 0)"});    
+}
+let legendData;
+
+const changeTheme = () => {
+    if (root.classList.contains("dark")) {
+        myChart.setOption({
+            legend: {
+                textStyle: {
+                    color: "#fff"
+                },
+                inactiveColor: "#5b5b5b",
+                type: "scroll",
+                pageTextStyle: {
+                    color: "#fff"
+                },
+                pageIconColor: "#aaa",
+                pageIconInactiveColor: "#2f4554",
+                data: legendData
+            },
+            textStyle: {
+                color: "#fff"
+            }
+        });
+    } else {
+        myChart.setOption({
+            legend: {
+                textStyle: {
+                    color: "#000"
+                },
+                inactiveColor: "#d3d3d3",
+                type: "scroll",
+                pageTextStyle: {
+                    color: "#000"
+                },
+                pageIconColor: "#2f4554",
+                pageIconInactiveColor: "#aaa",
+                data: legendData
+            },
+            textStyle: {
+                color: "#000"
+            }
+        });
+    }
+};
 
 window.addEventListener("load", () => {
-    const root = document.querySelector("html");
-
-    if (root.classList.contains("dark")) {
-        chartStyle.sheet.insertRule(".c3-legend-item, .c3-axis-y, .c3-axis-x { fill: #FFFFFF }", 0);
-    } else {
-        chartStyle.sheet.insertRule(".c3-legend-item, .c3-axis-y, .c3-axis-x { fill: #000000 }", 0);
-    }
+    changeTheme();
 });
-
-document.head.appendChild(chartStyle);
 document.getElementById("toggle-dark").addEventListener("click", () => {
-    const root = document.querySelector("html");
-
-    if (chartStyle.sheet.cssRules.length !== 0) {
-        chartStyle.sheet.deleteRule(0);
-    }
-    if (root.classList.contains("dark")) {
-        chartStyle.sheet.insertRule(".c3-legend-item, .c3-axis-y, .c3-axis-x { fill: #FFFFFF }", 0);
-    } else {
-        chartStyle.sheet.insertRule(".c3-legend-item, .c3-axis-y, .c3-axis-x { fill: #000000 }", 0);
-    }
+    changeTheme();
+});
+window.addEventListener("resize", () => {
+    myChart.resize();
 });
 
-(async function () {
+(async function() {
+    async function fetchData() {
+        try {
+            const response = await fetch(`/api/history${window.location.pathname}`);
+            return response.json();
+        } catch (error) {
+            console.error(error);
+            return null;
+        }
+    }
+
+    const data = await fetchData();
+    if (data == null || data.channels.length === 0) {
+        return;
+    }
+    
+    myChart.hideLoading();
+
     const stringToRGB = function(str) {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -155,56 +199,87 @@ document.getElementById("toggle-dark").addEventListener("click", () => {
         }
         return colour;
     };
-    
-    async function fetchData() {
-        try {
-            const response = await fetch(`/api/history${window.location.pathname}`);
-            return response.json();
-        } catch (error) {
-            console.error(error);
-            return null;
-        }
-    }
 
-    const data = await fetchData();
-    if (data == null){
-        return;
-    }
-    
-    const channelColors = {};
-    data.channels.forEach(channel => {
-       channelColors[channel] = stringToRGB(channel); 
-    });
-    
-    c3.generate({
-        bindto: "#chart",
-        data: {
-            json: data.history,
-            keys: {
-                x: "date",
-                value: data.channels
+    const lines = [];
+    for (let i = 1; i < data.channels.length; i++) {
+        const color = stringToRGB(data.channels[i]);
+        lines.push({
+            type: "line",
+            itemStyle: {
+                color: color
             },
-            colors: channelColors
+            lineStyle: {
+                color: color
+            },
+            emphasis: {
+                focus: "series"
+            },
+            animationDuration: 500
+        });
+    }
+    legendData = data.channels.slice(1).sort();
+    let option = {
+        legend: {
+            data: legendData
         },
-        axis: {
-            x: {
-                type: "category",
-                tick: {
-                    culling: {
-                        max: 12
-                    },
-                    rotate: 20,
-                    multiline: false
+        grid: {
+            left: "7%",
+            right: "5%"
+        },
+        dataZoom: [{
+            type: 'slider',
+            startValue: data.history.length > 24 ? data.history.length - 24 : 0,
+            end: 100,
+            rangeMode: ["value", "percent"]
+        }],
+        tooltip: {
+            trigger: "axis",
+            formatter: function(params) {
+                let output = "<div class=\"mb-2\"><b>" + params[0].name + " UTC</b></div>";
+                const values = Object.entries(params[0].value).filter(x => x[0] !== "timestamp");
+                for (let i = 0; i < values.length; i++) {
+                    let param = params.find(x => x.seriesName === values[i][0]);
+                    if (param == null) {
+                        continue;
+                    }
+                    output += "<div class=\"flex justify-between\"><div class=\"mr-4\">" + param.marker + values[i][0] + "</div><div class=\"font-bold\">" + values[i][1].toLocaleString() + "</div></div>";
                 }
+                return output;
             }
         },
-        size: {
-          height: 480
+        dataset: {
+            dimensions: data.channels,
+            source: data.history.reverse()
         },
-        padding: {
-          left: 40,
-          right: 20
-        }
-    });
+        xAxis: {
+            type: "category"
+        },
+        yAxis: {
+            type: "value",
+            splitLine: {
+                show: false
+            },
+            axisLine: {
+                show: true
+            },
+            axisTick: {
+                show: true
+            }
+        },
+        series: lines,
+        media: [{
+            query: {
+                maxWidth: 600
+            },
+            option: {
+                grid: {
+                    left: "12%",
+                    right: "6%"
+                },
+            }
+        }, ]
+    };
+
+    option && myChart.setOption(option);
 })();
 </script>

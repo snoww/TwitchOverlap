@@ -2,25 +2,22 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-#nullable disable
-
 namespace TwitchOverlap.Models
 {
     public class Overlap
     {
-        public string Id { get; set; }
         public DateTime Timestamp { get; set; }
-        public Dictionary<string, int> Data { get; set; }
-
+        public int Channel { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
+        
         [JsonIgnore]
-        public virtual Channel Channel { get; set; }
-
-        public Overlap(string id, DateTime timestamp, Dictionary<string, int> data)
-        {
-            Id = id;
-            Timestamp = timestamp;
-            Data = data;
-        }
+        public virtual Channel ChannelNavigation { get; set; }
+    }
+    
+    public class ChannelOverlap
+    {
+        public string Name { get; set; }
+        public int Shared { get; set; }
     }
 
     public class ChannelData

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -18,7 +19,7 @@ namespace TwitchOverlap.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly TwitchContext _context;
         private readonly IDatabase _cache;
-        
+
         private const string ChannelSummaryCacheKey = "twitch:summary";
         private const string ChannelDataCacheKey = "twitch:data:";
         private const string ChannelHistoryCacheKey = "twitch:history:";
@@ -39,38 +40,22 @@ namespace TwitchOverlap.Controllers
             {
                 return View(JsonSerializer.Deserialize<List<ChannelSummary>>(channelSummaries));
             }
-            
-            DateTime latestHalfHour = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(35));
 
-            List<ChannelSummary> channelLists = await _context.Channels.AsNoTracking()
-                .Where(x => x.LastUpdate >= latestHalfHour)
-                .OrderByDescending(x => x.Chatters)
-                .Select(x => new ChannelSummary(x.Id, x.DisplayName, x.Avatar, x.Chatters))
+            List<ChannelSummary> channelLists = await _context.Channels.FromSqlInterpolated($@"select *
+            from channel
+            where last_update = (
+                select max(last_update)
+                from channel)
+              and chatters > 0
+            order by chatters desc").AsNoTracking()
+                .Select(x => new ChannelSummary(x.LoginName, x.DisplayName, x.Avatar, x.Chatters))
                 .ToListAsync();
-
-            // something went wrong with last ChannelIntersection run, data was not updated
-            if (channelLists.Count == 0)
-            {
-                // try to find latest update time
-                DateTime lastUpdate = await _context.Channels.AsNoTracking()
-                    .OrderByDescending(x => x.LastUpdate)
-                    .Take(1)
-                    .Select(x => x.LastUpdate)
-                    .SingleAsync();
-                
-                // use latest update time
-                channelLists = await _context.Channels.AsNoTracking()
-                    .Where(x => x.LastUpdate >= lastUpdate)
-                    .OrderByDescending(x => x.Chatters)
-                    .Select(x => new ChannelSummary(x.Id, x.DisplayName, x.Avatar, x.Chatters))
-                    .ToListAsync();
-            }
-
+            
             if (channelLists.Count == 0)
             {
                 return View("NoSummary");
             }
-            
+
             await _cache.StringSetAsync(ChannelSummaryCacheKey, JsonSerializer.Serialize(channelLists), TimeSpan.FromMinutes(5));
 
             return View(channelLists);
@@ -85,81 +70,103 @@ namespace TwitchOverlap.Controllers
         [Route("/{name}")]
         public async Task<IActionResult> Channel(string name)
         {
-            string cachedChannelData = await _cache.StringGetAsync(ChannelDataCacheKey + name.ToLowerInvariant());
+            name = name.ToLowerInvariant();
+            string cachedChannelData = await _cache.StringGetAsync(ChannelDataCacheKey + name);
             if (!string.IsNullOrEmpty(cachedChannelData))
             {
                 return View(JsonSerializer.Deserialize<ChannelData>(cachedChannelData));
             }
             
-            Overlap channel = await _context.Overlaps.AsNoTracking().Include(x => x.Channel)
-                .Where(x => x.Id == name.ToLowerInvariant())
-                .OrderByDescending(x => x.Timestamp)
-                .Take(1)
-                .SingleOrDefaultAsync();
-
+            Channel channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.LoginName == name);
             if (channel == null)
             {
                 return View("NoData", name);
             }
 
-            var channelData = new ChannelData(channel.Channel);
-            List<string> channels = channel.Data.Keys.ToList();
+            Overlap overlaps = await _context.Overlaps.FromSqlInterpolated($@"select *
+            from overlap
+            where channel = {channel.Id}
+              and timestamp = (select max(timestamp)
+                               from overlap
+                               where channel = {channel.Id})").AsNoTracking()
+                .Include(x => x.ChannelNavigation)
+                .SingleOrDefaultAsync();
 
-            var games = await _context.Channels.AsNoTracking().Where(x => channels.Contains(x.Id)).Select(x => new {x.Id, x.Game}).ToListAsync();
-
-            foreach ((string ch, int shared) in channel.Data.OrderByDescending(x => x.Value))
+            if (overlaps == null)
             {
-                channelData.Data[ch] = new Data(games.First(x => x.Id == ch).Game, shared);
+                return View("NoData", name);
             }
             
-            await _cache.StringSetAsync(ChannelDataCacheKey + name.ToLowerInvariant(), JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
-            
+            var overlappedChannelsData = await _context.Channels.AsNoTracking()
+                .Where(x => overlaps.Shared.Select(y => y.Name).Contains(x.LoginName))
+                .Select(x => new {x.LoginName, x.Game})
+                .ToDictionaryAsync(x => x.LoginName);
+
+            var channelData = new ChannelData(channel);
+
+            foreach (ChannelOverlap overlap in overlaps.Shared)
+            {
+                channelData.Data[overlap.Name] = new Data(overlappedChannelsData[overlap.Name].Game, overlap.Shared);
+            }
+
+            await _cache.StringSetAsync(ChannelDataCacheKey + name, JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
+
             return View(channelData);
         }
 
         [Route("/api/history/{name}")]
         public async Task<IActionResult> ChannelHistory(string name)
         {
-            string channelHistory = await _cache.StringGetAsync(ChannelHistoryCacheKey + name.ToLowerInvariant());
-            if (!string.IsNullOrEmpty(channelHistory))
+            name = name.ToLowerInvariant();
+            const int points = 48*5;
+            string cachedHistory = await _cache.StringGetAsync(ChannelHistoryCacheKey + name);
+            if (!string.IsNullOrEmpty(cachedHistory))
             {
-                return Ok(channelHistory);
+                return Ok(cachedHistory);
             }
-
-            List<Overlap> rawHistory = await _context.Overlaps.AsNoTracking().Include(x => x.Channel)
-                .Where(x => x.Id == name.ToLowerInvariant())
+            
+            Channel channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.LoginName == name);
+            if (channel == null)
+            {
+                return NotFound($"data for '{name}' not found");
+            }
+            
+            var rawHistory = await _context.Overlaps.AsNoTracking()
+                .Where(x => x.Channel == channel.Id)
                 .OrderByDescending(x => x.Timestamp)
-                .Take(24)
+                .Take(points)
+                .Select(x => new {x.Timestamp, Shared = x.Shared.Take(6)})
                 .ToListAsync();
-
-            if (rawHistory.Count == 0)
-            {
-                return NotFound($"No data for channel: {name}");
-            }
-
-            rawHistory.Reverse();
             
-            var channels = new HashSet<string>();
-            var history = new List<Dictionary<string, object>>();
-            
-            foreach (Overlap overlap in rawHistory)
+            var values = new HashSet<string>{"timestamp"};
+            var data = new Dictionary<string, Dictionary<string, object>>();
+
+            foreach (var timestamp in rawHistory)
             {
-                var data = new Dictionary<string, object> {{"date", overlap.Timestamp.ToString("MMM dd HH:mm")}};
-                
-                foreach ((string ch, int ov) in overlap.Data.OrderByDescending(x => x.Value).Take(6))
+                var time = timestamp.Timestamp.ToString("MMM dd HH:mm");
+                foreach (ChannelOverlap overlap in timestamp.Shared)
                 {
-                    data.Add(ch, ov);
-                    channels.Add(ch);
+                    values.Add(overlap.Name);
+                    if (data.ContainsKey(time))
+                    {
+                        data[time][overlap.Name] = overlap.Shared;
+                    }
+                    else
+                    {
+                        data[time] = new Dictionary<string, object>
+                        {
+                            {"timestamp", time},
+                            {overlap.Name,overlap.Shared}
+                        };
+                    }
                 }
-
-                history.Add(data);
             }
 
-            var ret = new {channels, history};
+            var history = new {channels = values, history = data.Values.ToList()};
             
-            await _cache.StringSetAsync(ChannelHistoryCacheKey + name.ToLowerInvariant(), JsonSerializer.Serialize(ret), TimeSpan.FromMinutes(5));
+            await _cache.StringSetAsync(ChannelHistoryCacheKey + name, JsonSerializer.Serialize(history), TimeSpan.FromMinutes(5));
 
-            return Ok(ret);
+            return Ok(history);
         }
     }
 }

@@ -8,7 +8,8 @@ namespace TwitchOverlap.Models
 {
     public class Channel
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
+        public string LoginName { get; set; }
         public string DisplayName { get; set; }
         public string Avatar { get; set; }
         public string Game { get; set; }
@@ -18,15 +19,30 @@ namespace TwitchOverlap.Models
         public DateTime LastUpdate { get; set; }
 
         [JsonIgnore]
-        public virtual ICollection<Overlap> Histories { get; set; } = new List<Overlap>();
+        public virtual ICollection<Overlap> OverlapChannelNavigations { get; set; } = new HashSet<Overlap>();
 
-        public Channel(string id, string game, int viewers, int chatters, int shared, DateTime lastUpdate)
+        public Channel()
+        {
+        }
+        
+        public Channel(int id, string game, int viewers, int chatters, int shared, DateTime lastUpdate, string avatar, string displayName)
         {
             Id = id;
             Game = game;
             Viewers = viewers;
             Chatters = chatters;
             Shared = shared;
+            LastUpdate = lastUpdate;
+            Avatar = avatar;
+            DisplayName = displayName;
+        }
+
+        public Channel(string loginName, string displayName, string game, int viewers, DateTime lastUpdate)
+        {
+            LoginName = loginName;
+            DisplayName = displayName;
+            Game = game;
+            Viewers = viewers;
             LastUpdate = lastUpdate;
         }
     }
