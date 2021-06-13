@@ -148,7 +148,7 @@ namespace ChannelIntersection
             
                 foreach ((Channel channel, HashSet<string> chatters) in channelChatters)
                 {
-                    var path = $"{rootPath}/{channel.Id}.txt";
+                    var path = $"{rootPath}/{channel.LoginName}.txt";
                     if (!File.Exists(path))
                     {
                         await File.WriteAllLinesAsync(path, chatters);
