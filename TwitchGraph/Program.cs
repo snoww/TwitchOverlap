@@ -9,7 +9,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using TwitchGraph.Models;
 
 namespace TwitchGraph
@@ -19,7 +18,10 @@ namespace TwitchGraph
         private static readonly HttpClient Http = new();
         private static string _twitchToken;
         private static string _twitchClient;
-        private static readonly object WriteLock = new();
+
+        private const int MaxSearch = 1500;
+        private const int MaxChannels = 1000;
+        private const int MinOverlap = 1000;
 
         public static async Task Main()
         {
@@ -42,31 +44,32 @@ namespace TwitchGraph
             var processed = new ConcurrentDictionary<string, ConcurrentDictionary<string, int>>();
             var channels = new Dictionary<string, Channel>();
             
-            var info = new DirectoryInfo($"C:\\Users\\Snow\\Documents\\projects\\TwitchGraphData\\{dirName}");
+            var info = new DirectoryInfo($@"C:\Users\Snow\Documents\projects\TwitchGraphData\{dirName}");
 
-            int totalCount = 0;
-            foreach (FileInfo file in info.GetFiles().OrderByDescending(p => p.Length))
+            // only take the top `MaxSearch` # of channels, since its file size should some what correlate to the number of lines it contains
+            foreach (FileInfo file in info.GetFiles().OrderByDescending(p => p.Length).Take(MaxSearch))
             {
-                if (++totalCount > 500)
-                {
-                    break;
-                }
-
                 string ch = Path.GetFileNameWithoutExtension(file.Name);
-                var chatters = new HashSet<string>(File.ReadLines(file.FullName));
-                channelChatters.TryAdd(ch, chatters);
+                channelChatters.TryAdd(ch, new HashSet<string>(File.ReadLines(file.FullName)));
+            }
+
+            // then we sort the channels by unique chatter count, i.e. number of lines in the file
+            // and take the top 1000
+            Dictionary<string, HashSet<string>> filteredChannels = channelChatters.OrderByDescending(x => x.Value.Count).Take(MaxChannels).ToDictionary(x => x.Key, x => x.Value);
+            foreach ((string ch, HashSet<string> chatters) in filteredChannels)
+            {
                 processed.TryAdd(ch, new ConcurrentDictionary<string, int>());
                 channels.TryAdd(ch, new Channel(ch, string.Empty, chatters.Count));
             }
 
-            Console.WriteLine($"imported {channelChatters.Count} channels in {sw.Elapsed.TotalSeconds}s");
+            Console.WriteLine($"imported {filteredChannels.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            Parallel.ForEach(GetKCombs(new List<string>(channelChatters.Keys), 2), x =>
+            Parallel.ForEach(GetKCombs(filteredChannels.Keys, 2), x =>
             {
                 string[] pair = x.ToArray();
-                int count = channelChatters[pair[0]].Count(y => channelChatters[pair[1]].Contains(y));
-                if (count >= 500)
+                int count = filteredChannels[pair[0]].Count(y => filteredChannels[pair[1]].Contains(y));
+                if (count >= MinOverlap)
                 {
                     processed[pair[0]].TryAdd(pair[1], count);
                 }
@@ -77,37 +80,23 @@ namespace TwitchGraph
             sw.Restart();
 
             Directory.CreateDirectory($"./data/{dirName}/");
-            StreamWriter nodesStream = File.CreateText($"./data/{dirName}/nodes.csv");
-            // await nodesStream.WriteLineAsync("id,label,size");
-            
-            await GetChannelDisplayName(channels);
-            
-            Console.WriteLine($"fetched display names in {sw.ElapsedMilliseconds}ms");
-            sw.Restart();
-            
-            foreach ((string _, Channel channel) in channels)
+            await using (StreamWriter nodesStream = File.CreateText($"./data/{dirName}/nodes.csv"))
             {
-                // if (string.IsNullOrEmpty(channel.DisplayName) || channel.DisplayName.Any(c => c > 255))
-                // {
-                //     await nodesStream.WriteLineAsync($"{channel.Id},{channel.Id},{channel.Size}");
-                // }
-                // else
-                // {
-                //     await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
-                // }
-                
-                await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
-            }
-            nodesStream.Close();
+                // await nodesStream.WriteLineAsync("id,label,size");
 
-            // FileStream nodesStream = File.OpenWrite($"./data/{dirName}/nodes.json");
-            // var nodes = new List<Node>();
-            // foreach ((string _, Channel channel) in channels)
-            // {
-            //     nodes.Add(new Node {name = channel.DisplayName, value = channel.Size});
-            // }
-            //
-            // await JsonSerializer.SerializeAsync(nodesStream, nodes);
+                await GetChannelDisplayName(channels);
+
+                Console.WriteLine($"fetched display names in {sw.ElapsedMilliseconds}ms");
+                sw.Restart();
+
+                foreach ((string _, Channel channel) in channels)
+                {
+                    if (processed.ContainsKey(channel.Id))
+                    {
+                        await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
+                    }
+                }
+            }
             
             Console.WriteLine($"saved nodes in {sw.ElapsedMilliseconds}ms");
             sw.Restart();
@@ -123,20 +112,6 @@ namespace TwitchGraph
                 }
             }
             
-            // FileStream edgesStream = File.OpenWrite($"./data/{dirName}/edges.json");
-            //
-            // var edges = new List<Edge>();
-            //
-            // foreach ((string ch1, ConcurrentDictionary<string, int> intersection) in processed)
-            // {
-            //     foreach ((string ch2, int _) in intersection)
-            //     {
-            //         edges.Add(new Edge{source = ch1, target = ch2});
-            //     }
-            // }
-            //
-            // await JsonSerializer.SerializeAsync(edgesStream, edges);
-
             Console.WriteLine($"saved edges in {sw.ElapsedMilliseconds}ms");
             Console.WriteLine($"total time taken: {sw2.Elapsed.TotalSeconds}s");
         }
