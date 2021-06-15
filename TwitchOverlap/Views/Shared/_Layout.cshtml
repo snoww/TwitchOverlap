@@ -35,6 +35,10 @@
             <div class="pl-4 hidden sm:block">
                 <a class="text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 font-extrabold text-xl" href="/">Twitch Overlap</a>
             </div>
+            <div class="pl-8 hidden sm:flex items-center font-medium">
+                <div class="text-base text-xl mr-2 bg-gray-500 p-1 rounded-md text-white">New!</div>
+                <a class="text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 text-xl tracking-tighter" href="/atlas">Twitch Atlas</a>
+            </div>
         </div>
         <div class="flex-grow flex justify-center">
             <input type="text" id="search-channel" class="dark:bg-gray-700 focus:ring-pink-500 dark:focus:ring-pink-900 focus:border-pink-500 dark:focus:border-pink-900 border-gray-300 dark:border-gray-800 border block rounded-none rounded-l-md z-10 w-40 sm:w-full md:w-1/2" placeholder="channel">
@@ -48,9 +52,8 @@
         </div>
     </div>
 </nav>
-<div class="container w-full md:max-w-5xl xl:max-w-7xl mx-auto mx-2 tracking-tight mt-16 mb-20">
-    @RenderBody()
-</div>
+
+@RenderBody()
 
 <script>
 const rootElement = document.querySelector("html");

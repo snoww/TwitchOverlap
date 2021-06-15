@@ -2,8 +2,14 @@ import community as community_louvain
 import networkx as nx
 import json
 from colorhash import ColorHash
+import datetime
 
-G = nx.read_weighted_edgelist("data/6-2021/edges.csv", delimiter=",", nodetype=str)
+
+dt = datetime.datetime.today()
+
+date_dir = dt.strftime("%m-%Y")[1:]
+
+G = nx.read_weighted_edgelist(f"data/{date_dir}/edges.csv", delimiter=",", nodetype=str)
 
 partition = community_louvain.best_partition(G, resolution=0.25)
 
@@ -14,7 +20,7 @@ def normalize(s_range_max, s_range_min, t_range_max, t_range_min, num):
 
 nodes = []
 
-with open("data/6-2021/nodes.csv", "r", encoding="utf-8") as nodes_file:
+with open(f"data/{date_dir}/nodes.csv", "r", encoding="utf-8") as nodes_file:
     lines = nodes_file.readlines()
     max_size = int(lines[0].split(",")[-1])
     min_size = int(lines[-1].split(",")[-1])
@@ -31,7 +37,7 @@ with open("data/6-2021/nodes.csv", "r", encoding="utf-8") as nodes_file:
             })
 
 edges = []
-with open("data/6-2021/edges.csv", "r", encoding="utf-8") as edges_file:
+with open(f"data/{date_dir}/edges.csv", "r", encoding="utf-8") as edges_file:
     for line in edges_file:
         values = line.split(",")
         edges.append({
@@ -40,7 +46,7 @@ with open("data/6-2021/edges.csv", "r", encoding="utf-8") as edges_file:
         })
 
 
-with open("data/6-2021/graph.json", "w", encoding="utf-8") as json_file:
+with open(f"data/{date_dir}/{dt.month}_{dt.year}_graph.json", "w", encoding="utf-8") as json_file:
     json_file.write(json.dumps({
         "nodes": nodes,
         "edges": edges,

@@ -61,6 +61,12 @@ namespace TwitchOverlap.Controllers
             return View(channelLists);
         }
 
+        [Route("/atlas")]
+        public IActionResult Atlas()
+        {
+            return View("Atlas");
+        }
+
         [Route("/channel/{name}")]
         public IActionResult ChannelRedirect(string name)
         {
