@@ -8,8 +8,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Poppins', ...defaultTheme.fontFamily.sans],
-        mono: ['Jetbrains Mono', ...defaultTheme.fontFamily.mono]
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
       },
       screens: {
         '3xl': '1600px',
