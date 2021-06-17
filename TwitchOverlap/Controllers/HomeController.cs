@@ -20,7 +20,7 @@ namespace TwitchOverlap.Controllers
         private readonly TwitchContext _context;
         private readonly IDatabase _cache;
 
-        private const string ChannelSummaryCacheKey = "twitch:summary";
+        private const string IndexCacheKey = "twitch:index";
         private const string ChannelDataCacheKey = "twitch:data:";
         private const string ChannelHistoryCacheKey = "twitch:history:";
 
@@ -35,30 +35,36 @@ namespace TwitchOverlap.Controllers
         [Route("index")]
         public async Task<IActionResult> Index()
         {
-            string channelSummaries = await _cache.StringGetAsync(ChannelSummaryCacheKey);
+            string channelSummaries = await _cache.StringGetAsync(IndexCacheKey);
             if (!string.IsNullOrEmpty(channelSummaries))
             {
-                return View(JsonSerializer.Deserialize<List<ChannelSummary>>(channelSummaries));
+                return View(JsonSerializer.Deserialize<ChannelIndex>(channelSummaries));
             }
+
+            DateTime latest = await _context.Channels.MaxAsync(x => x.LastUpdate);
 
             List<ChannelSummary> channelLists = await _context.Channels.FromSqlInterpolated($@"select *
             from channel
-            where last_update = (
-                select max(last_update)
-                from channel)
+            where last_update = {latest}
               and chatters > 0
             order by chatters desc").AsNoTracking()
                 .Select(x => new ChannelSummary(x.LoginName, x.DisplayName, x.Avatar, x.Chatters))
                 .ToListAsync();
-            
+
             if (channelLists.Count == 0)
             {
                 return View("NoSummary");
             }
 
-            await _cache.StringSetAsync(ChannelSummaryCacheKey, JsonSerializer.Serialize(channelLists), TimeSpan.FromMinutes(5));
+            var index = new ChannelIndex
+            {
+                Channels = channelLists,
+                LastUpdate = latest
+            };
 
-            return View(channelLists);
+            await _cache.StringSetAsync(IndexCacheKey, JsonSerializer.Serialize(index), TimeSpan.FromMinutes(5));
+
+            return View(index);
         }
 
         [Route("/atlas")]

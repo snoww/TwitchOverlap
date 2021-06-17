@@ -46,6 +46,12 @@ namespace TwitchOverlap.Models
             LastUpdate = lastUpdate;
         }
     }
+
+    public class ChannelIndex
+    {
+        public List<ChannelSummary> Channels { get; set; }
+        public DateTime LastUpdate { get; set; }
+    }
     
     public class ChannelSummary
     {
