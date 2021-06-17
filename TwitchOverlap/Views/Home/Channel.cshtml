@@ -94,7 +94,7 @@
         {
             <tr class="border-b border-gray-300">
                 <td class="table-channel-col">
-                    <a asp-controller="Home" asp-action="Channel" asp-route-name=@channel>@channel</a>
+                    <a asp-controller="Home" asp-action="Channel" asp-route-name=@channel>@data.DisplayName</a>
                 </td>
                 <td class="table-stats-col">@(((double) data.Shared / Model.Channel.Shared).ToString("P", numberInfo))</td>
                 <td class="table-stats-col">@(data.Shared.ToString("N0"))</td>

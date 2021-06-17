@@ -33,13 +33,15 @@ namespace TwitchOverlap.Models
 
     public class Data
     {
+        public string DisplayName { get; set; }
         public string Game { get; }
         public int Shared { get; }
 
-        public Data(string game, int shared)
+        public Data(string game, int shared, string displayName)
         {
             Game = game;
             Shared = shared;
+            DisplayName = displayName;
         }
     }
 }

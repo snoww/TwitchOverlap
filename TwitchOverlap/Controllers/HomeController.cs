@@ -111,14 +111,15 @@ namespace TwitchOverlap.Controllers
             
             var overlappedChannelsData = await _context.Channels.AsNoTracking()
                 .Where(x => overlaps.Shared.Select(y => y.Name).Contains(x.LoginName))
-                .Select(x => new {x.LoginName, x.Game})
+                .Select(x => new {x.LoginName, x.DisplayName, x.Game})
                 .ToDictionaryAsync(x => x.LoginName);
 
             var channelData = new ChannelData(channel);
 
             foreach (ChannelOverlap overlap in overlaps.Shared)
             {
-                channelData.Data[overlap.Name] = new Data(overlappedChannelsData[overlap.Name].Game, overlap.Shared);
+                var data = overlappedChannelsData[overlap.Name];
+                channelData.Data[overlap.Name] = new Data(data.Game, overlap.Shared, data.DisplayName);
             }
 
             await _cache.StringSetAsync(ChannelDataCacheKey + name, JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
