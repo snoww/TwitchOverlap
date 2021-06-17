@@ -173,12 +173,12 @@ namespace TwitchOverlap.Controllers
                     }
                 }
             }
-
-            var history = new {channels = values, history = data.Values.ToList()};
             
-            await _cache.StringSetAsync(ChannelHistoryCacheKey + name, JsonSerializer.Serialize(history), TimeSpan.FromMinutes(5));
-
-            return Ok(history);
+            cachedHistory = JsonSerializer.Serialize(new {channels = values, history = data.Values.ToList()});
+            
+            await _cache.StringSetAsync(ChannelHistoryCacheKey + name, cachedHistory, TimeSpan.FromMinutes(5));
+            
+            return Ok(cachedHistory);
         }
     }
 }
