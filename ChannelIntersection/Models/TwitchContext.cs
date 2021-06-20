@@ -18,6 +18,7 @@ namespace ChannelIntersection.Models
 
         public virtual DbSet<Channel> Channels { get; set; }
         public virtual DbSet<Overlap> Overlaps { get; set; }
+        public virtual DbSet<Chatters> Chatters { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -63,6 +64,28 @@ namespace ChannelIntersection.Models
                 entity.Property(e => e.Timestamp).HasColumnName("timestamp");
                 entity.Property(e => e.Channel).HasColumnName("channel");
                 entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
+            });
+
+            // modelBuilder.Entity<Chatters>(entity =>
+            // {
+            //     entity.HasKey(e => e.Time).HasName("chatters_pk");
+            //     entity.ToTable("chatters");
+            //
+            //     entity.Property(e => e.Time).HasColumnName("time");
+            //     entity.Property(e => e.Users).HasColumnType("json").HasColumnName("users");
+            //     entity.Property(e => e.Channels).HasColumnType("json").HasColumnName("channels");
+            //     
+            // });
+            
+            modelBuilder.Entity<Chatters>(entity =>
+            {
+                entity.HasKey(e => e.Time).HasName("chatters_pk");
+                entity.ToTable("chatters2");
+
+                entity.Property(e => e.Time).HasColumnName("time");
+                entity.Property(e => e.Users).HasColumnType("json").HasColumnName("users");
+                entity.Property(e => e.Channels).HasColumnType("json").HasColumnName("channels");
+                
             });
         }
     }

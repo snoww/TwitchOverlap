@@ -10,81 +10,82 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ChannelIntersection.Models;
 using MathNet.Numerics.LinearAlgebra;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace TwitchMatrix
 {
     public class Program
     {
         private static readonly HttpClient Http = new();
-        private static readonly ConcurrentBag<string> Chatters = new();
+        private static readonly Dictionary<string, HashSet<string>> Chatters = new();
         private static readonly string TwitchToken = Environment.GetEnvironmentVariable("TWITCH_TOKEN");
         private static readonly string TwitchClient = Environment.GetEnvironmentVariable("TWITCH_CLIENT");
+        private static readonly string PsqlConn = Environment.GetEnvironmentVariable("PSQL_CONN");
+        private static TwitchContext _context;
+
+        private static readonly object WriteLock = new();
 
 
         public static async Task Main(string[] args)
         {
+            
             Console.WriteLine("starting twitch matrix");
+            await using var dbContext = new TwitchContext(@"Host=192.168.1.100;Database=twitch_overlap;Username=roki;Password=roki-snow;");
+            _context = dbContext;
+            // var r = new ReadDb(dbContext);
+            // r.Read();
+            // var k = new KComb(_context);
+            // k.DoStuff();
+            // return;
+            
             var sw = new Stopwatch();
             sw.Start();
+
             Dictionary<string, Channel> topChannels = await GetTopChannels();
             Console.WriteLine($"Retrieved {topChannels.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-            var channelChatters = new Dictionary<string, HashSet<string>>();
+            var channels = new ConcurrentBag<string>();
+            // var channelChatters = new Dictionary<string, HashSet<string>>();
 
             IEnumerable<Task> processTasks = topChannels.Select(async channel =>
             {
                 (string name, Channel ch) = channel;
-                HashSet<string> chChatters = await GetChatters(ch);
-                if (chChatters == null)
-                {
-                    return;
-                }
+                await GetChatters(ch);
+                
+                // foreach (string chatter in chChatters)
+                // {
+                //     Chatters[chatter].Add(name);
+                // }
 
-                channelChatters.TryAdd(name, chChatters);
+                channels.Add(name);
+                // channelChatters.TryAdd(name, chChatters);
             });
 
             await Task.WhenAll(processTasks);
 
             Console.WriteLine($"Retrieved {Chatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-
+            
             // list of ALL unique chatters retrieved
-            string[] chatters = Chatters.ToHashSet().ToArray();
+            // string[] chatters = Chatters.Keys.ToArray();
             // list of ALL channels retrieved
-            string[] channels = channelChatters.Select(x => x.Key).ToArray();
-
-            int rows = channelChatters.Count;
-            int columns = chatters.Length;
-
-            MatrixBuilder<float> builder = Matrix<float>.Build;
-            // create empty matrix
-            Matrix<float> matrix = builder.Sparse(rows, columns, 0);
-            var rand = new Random();
-
-            for (int i = 0; i < rows; i++)
+            // string[] channels = channelChatters.Select(x => x.Key).ToArray();
+            
+            await using var conn = new NpgsqlConnection(PsqlConn);
+            await conn.OpenAsync();
+            
+            await using (NpgsqlBinaryImporter writer = conn.BeginBinaryImport("COPY chatters2 (time, users, channels) FROM STDIN (FORMAT BINARY)"))
             {
-                for (int j = 0; j < columns; j++)
-                {
-                    // if channel[i] contains chatter[j]
-                    // set matrix[i, j] to 1
-                    if (channelChatters[channels[i]].Contains(chatters[j]))
-                    {
-                        matrix[i, j] = 1 * (rand.Next(1,100) > 10 ? 1 : rand.Next(5));
-                    }
-                }
+                await writer.StartRowAsync();
+                await writer.WriteAsync(DateTime.UtcNow, NpgsqlDbType.Timestamp);
+                await writer.WriteAsync(JsonSerializer.SerializeToUtf8Bytes(Chatters), NpgsqlDbType.Jsonb);
+                await writer.WriteAsync(JsonSerializer.SerializeToUtf8Bytes(channels), NpgsqlDbType.Jsonb);
+                await writer.CompleteAsync();
             }
-
-            Console.WriteLine($"Built sparse matrix in {sw.Elapsed.TotalSeconds}s");
-            sw.Restart();
-
-            // product = matrix * matrix.transpose()
-            // product is n x n matrix where (c_0, c_1) contains the overlap between channel c_0 and c_1
-            Matrix<float> product = matrix.TransposeAndMultiply(matrix);
-            Console.WriteLine($"Transpose and multiply in {sw.Elapsed.TotalSeconds}s");
-            sw.Restart();
             
-            
-            Console.WriteLine(product.ToString());
+            Console.WriteLine($"Inserted into database in {sw.Elapsed.TotalSeconds}s");
+            sw.Restart();
         }
 
         private static async Task<Dictionary<string, Channel>> GetTopChannels()
@@ -162,8 +163,18 @@ namespace TwitchMatrix
                         continue;
                     }
 
-                    chatterList.Add(username);
-                    Chatters.Add(username);
+                    // chatterList.Add(username);
+                    lock (WriteLock)
+                    {
+                        if (!Chatters.ContainsKey(username))
+                        {
+                            Chatters.TryAdd(username, new HashSet<string>{channel.LoginName});
+                        }
+                        else
+                        {
+                            Chatters[username].Add(channel.LoginName);
+                        }
+                    }
                 }
             }
 
