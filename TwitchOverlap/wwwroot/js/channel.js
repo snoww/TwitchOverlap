@@ -62,7 +62,7 @@ window.addEventListener("resize", () => {
 (async function() {
     async function fetchData() {
         try {
-            const response = await fetch(`/api/history${window.location.pathname}`);
+            const response = await fetch(`/api/v1/history${window.location.pathname}`);
             return response.json();
         } catch (error) {
             console.error(error);
