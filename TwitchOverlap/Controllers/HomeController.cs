@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.StaticFiles.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
+using TwitchOverlap.Extensions;
 using TwitchOverlap.Models;
 using TwitchOverlap.Services;
 
@@ -62,7 +63,7 @@ namespace TwitchOverlap.Controllers
                 LastUpdate = latest
             };
 
-            await _cache.StringSetAsync(IndexCacheKey, JsonSerializer.Serialize(index), TimeSpan.FromMinutes(5));
+            await _cache.StringSetAsync(IndexCacheKey, JsonSerializer.Serialize(index), DateTime.UtcNow.GetCacheDuration());
 
             return View(index);
         }
@@ -122,7 +123,7 @@ namespace TwitchOverlap.Controllers
                 channelData.Data[overlap.Name] = new Data(data.Game, overlap.Shared, data.DisplayName);
             }
 
-            await _cache.StringSetAsync(ChannelDataCacheKey + name, JsonSerializer.Serialize(channelData), TimeSpan.FromMinutes(5));
+            await _cache.StringSetAsync(ChannelDataCacheKey + name, JsonSerializer.Serialize(channelData), DateTime.UtcNow.GetCacheDuration());
 
             return View(channelData);
         }
@@ -177,7 +178,7 @@ namespace TwitchOverlap.Controllers
             
             cachedHistory = JsonSerializer.Serialize(new {channels = values, history = data.Values.ToList()});
             
-            await _cache.StringSetAsync(ChannelHistoryCacheKey + name, cachedHistory, TimeSpan.FromMinutes(5));
+            await _cache.StringSetAsync(ChannelHistoryCacheKey + name, cachedHistory, DateTime.UtcNow.GetCacheDuration());
             
             return Ok(cachedHistory);
         }

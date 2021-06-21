@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 
 namespace TwitchOverlap.Extensions
@@ -14,5 +15,11 @@ namespace TwitchOverlap.Extensions
 
             return num.ToString("#,0");
         } 
+        
+        public static TimeSpan GetCacheDuration(this DateTime time)
+        {
+            int duration = (60 - time.Minute) % 30;
+            return TimeSpan.FromMinutes(duration == 0 ? 1 : duration);
+        }
     }
 }
