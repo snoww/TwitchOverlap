@@ -96,19 +96,19 @@
                 <tr class="border-b border-gray-300">
                     @if (data.Change == int.MinValue)
                     {
-                        <td title="new overlap">*</td>
+                        <td class="text-blue-500" title="new overlap"><i class="fas fa-plus pl-1"></i></td>
                     }
                     else if (data.Change == 0)
                     {
-                        <td title="no change in position">-</td>
+                        <td title="no change in position"><i class="fas fa-minus pl-1"></i></td>
                     }
                     else if (data.Change > 0)
                     {
-                        <td class="text-green-500 whitespace-nowrap" title="increased position"><i class="fas fa-chevron-up"></i> @data.Change</td>
+                        <td class="text-green-500 whitespace-nowrap" title="increased position"><i class="fas fa-chevron-up pl-1"></i> @data.Change</td>
                     }
                     else
                     {
-                        <td class="text-red-500 whitespace-nowrap" title="decreased position"><i class="fas fa-chevron-down"></i> @Math.Abs(data.Change)</td>
+                        <td class="text-red-500 whitespace-nowrap" title="decreased position"><i class="fas fa-chevron-down pl-1"></i> @Math.Abs(data.Change)</td>
                     }
                     <td class="table-channel-col">
                         <a asp-controller="Home" asp-action="Channel" asp-route-name=@channel>@data.DisplayName</a>
