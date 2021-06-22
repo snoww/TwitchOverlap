@@ -13,79 +13,82 @@ using MathNet.Numerics.LinearAlgebra;
 using Npgsql;
 using NpgsqlTypes;
 
+// ReSharper disable InconsistentlySynchronizedField
+
 namespace TwitchMatrix
 {
     public class Program
     {
         private static readonly HttpClient Http = new();
-        private static readonly Dictionary<string, HashSet<string>> Chatters = new();
+        private static Dictionary<string, HashSet<string>> _chatters;
         private static readonly string TwitchToken = Environment.GetEnvironmentVariable("TWITCH_TOKEN");
         private static readonly string TwitchClient = Environment.GetEnvironmentVariable("TWITCH_CLIENT");
         private static readonly string PsqlConn = Environment.GetEnvironmentVariable("PSQL_CONN");
-        private static TwitchContext _context;
 
         private static readonly object WriteLock = new();
 
 
         public static async Task Main(string[] args)
         {
-            
             Console.WriteLine("starting twitch matrix");
-            await using var dbContext = new TwitchContext(@"Host=192.168.1.100;Database=twitch_overlap;Username=roki;Password=roki-snow;");
-            _context = dbContext;
-            // var r = new ReadDb(dbContext);
-            // r.Read();
-            // var k = new KComb(_context);
+
+            // var k = new KComb(new TwitchContext(PsqlConn));
             // k.DoStuff();
             // return;
             
+
+            DateTime now = DateTime.UtcNow;
+
+            var fileName = $"{now.Date.ToShortDateString()}.json";
+
+            if (File.Exists(fileName))
+            {
+                _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(File.OpenRead(fileName));
+            }
+            else
+            {
+                _chatters = new Dictionary<string, HashSet<string>>();
+            }
+
             var sw = new Stopwatch();
             sw.Start();
 
             Dictionary<string, Channel> topChannels = await GetTopChannels();
             Console.WriteLine($"Retrieved {topChannels.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-            var channels = new ConcurrentBag<string>();
-            // var channelChatters = new Dictionary<string, HashSet<string>>();
 
             IEnumerable<Task> processTasks = topChannels.Select(async channel =>
             {
-                (string name, Channel ch) = channel;
+                (string _, Channel ch) = channel;
                 await GetChatters(ch);
-                
-                // foreach (string chatter in chChatters)
-                // {
-                //     Chatters[chatter].Add(name);
-                // }
-
-                channels.Add(name);
-                // channelChatters.TryAdd(name, chChatters);
             });
 
             await Task.WhenAll(processTasks);
 
-            Console.WriteLine($"Retrieved {Chatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
+            Console.WriteLine($"Retrieved {_chatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-            
-            // list of ALL unique chatters retrieved
-            // string[] chatters = Chatters.Keys.ToArray();
-            // list of ALL channels retrieved
-            // string[] channels = channelChatters.Select(x => x.Key).ToArray();
-            
-            await using var conn = new NpgsqlConnection(PsqlConn);
-            await conn.OpenAsync();
-            
-            await using (NpgsqlBinaryImporter writer = conn.BeginBinaryImport("COPY chatters2 (time, users, channels) FROM STDIN (FORMAT BINARY)"))
+
+            byte[] data = JsonSerializer.SerializeToUtf8Bytes(_chatters);
+
+            await File.WriteAllBytesAsync(fileName, data);
+
+            // check if midnight
+            if (now.Subtract(TimeSpan.FromMinutes(5)).Day != now.Day)
             {
-                await writer.StartRowAsync();
-                await writer.WriteAsync(DateTime.UtcNow, NpgsqlDbType.Timestamp);
-                await writer.WriteAsync(JsonSerializer.SerializeToUtf8Bytes(Chatters), NpgsqlDbType.Jsonb);
-                await writer.WriteAsync(JsonSerializer.SerializeToUtf8Bytes(channels), NpgsqlDbType.Jsonb);
-                await writer.CompleteAsync();
+                await using var conn = new NpgsqlConnection(PsqlConn);
+                await conn.OpenAsync();
+
+                await using (NpgsqlBinaryImporter writer = conn.BeginBinaryImport("COPY chatters_day (time, users) FROM STDIN (FORMAT BINARY)"))
+                {
+                    await writer.StartRowAsync();
+                    await writer.WriteAsync(now, NpgsqlDbType.Date);
+                    await writer.WriteAsync(data, NpgsqlDbType.Json);
+                    await writer.CompleteAsync();
+                }
+
+                Console.WriteLine($"Inserted into database in {sw.Elapsed.TotalSeconds}s");
+                sw.Restart();
             }
-            
-            Console.WriteLine($"Inserted into database in {sw.Elapsed.TotalSeconds}s");
-            sw.Restart();
         }
 
         private static async Task<Dictionary<string, Channel>> GetTopChannels()
@@ -128,7 +131,7 @@ namespace TwitchMatrix
         }
 
 
-        private static async Task<HashSet<string>> GetChatters(Channel channel)
+        private static async Task GetChatters(Channel channel)
         {
             Stream stream;
             try
@@ -138,7 +141,7 @@ namespace TwitchMatrix
             catch
             {
                 Console.WriteLine($"Could not retrieve chatters for {channel.LoginName}");
-                return null;
+                return;
             }
 
             using JsonDocument response = await JsonDocument.ParseAsync(stream);
@@ -147,11 +150,10 @@ namespace TwitchMatrix
             int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
             if (chatters < 500)
             {
-                return null;
+                return;
             }
 
             channel.Chatters = chatters;
-            var chatterList = new HashSet<string>(chatters);
             JsonElement.ObjectEnumerator viewerTypes = response.RootElement.GetProperty("chatters").EnumerateObject();
             foreach (JsonProperty viewerType in viewerTypes)
             {
@@ -163,22 +165,19 @@ namespace TwitchMatrix
                         continue;
                     }
 
-                    // chatterList.Add(username);
                     lock (WriteLock)
                     {
-                        if (!Chatters.ContainsKey(username))
+                        if (!_chatters.ContainsKey(username))
                         {
-                            Chatters.TryAdd(username, new HashSet<string>{channel.LoginName});
+                            _chatters.TryAdd(username, new HashSet<string> {channel.LoginName});
                         }
                         else
                         {
-                            Chatters[username].Add(channel.LoginName);
+                            _chatters[username].Add(channel.LoginName);
                         }
                     }
                 }
             }
-
-            return chatterList;
         }
     }
 }

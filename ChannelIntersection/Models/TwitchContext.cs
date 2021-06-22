@@ -80,7 +80,7 @@ namespace ChannelIntersection.Models
             modelBuilder.Entity<Chatters>(entity =>
             {
                 entity.HasKey(e => e.Time).HasName("chatters_pk");
-                entity.ToTable("chatters2");
+                entity.ToTable("chatters");
 
                 entity.Property(e => e.Time).HasColumnName("time");
                 entity.Property(e => e.Users).HasColumnType("json").HasColumnName("users");
