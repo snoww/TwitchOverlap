@@ -96,31 +96,56 @@ namespace TwitchOverlap.Controllers
                 return View("NoData", name);
             }
 
-            Overlap overlaps = await _context.Overlaps.FromSqlInterpolated($@"select *
-            from overlap
-            where channel = {channel.Id}
-              and timestamp = (select max(timestamp)
-                               from overlap
-                               where channel = {channel.Id})").AsNoTracking()
+            List<Overlap> overlaps = await _context.Overlaps.AsNoTracking()
+                .Where(x => x.Channel == channel.Id)
+                .OrderByDescending(x => x.Timestamp)
+                .Take(2)
                 .Include(x => x.ChannelNavigation)
-                .SingleOrDefaultAsync();
+                .ToListAsync();
 
-            if (overlaps == null)
+            if (overlaps.Count == 0)
             {
                 return View("NoData", name);
             }
+
+            var latestOrder = new Dictionary<string, int>();
+            var previousOrder = new Dictionary<string, int>();
+            if (overlaps.Count == 2)
+            {
+                List<ChannelOverlap> latest = overlaps[0].Shared; 
+                List<ChannelOverlap> previous = overlaps[^1].Shared;
+
+                for (int i = 0; i < Math.Max(latest.Count, previous.Count); i++)
+                {
+                    if (i < latest.Count)
+                    {
+                        latestOrder[latest[i].Name] = i;
+                    }
+
+                    if (i < previous.Count)
+                    {
+                        previousOrder[previous[i].Name] = i;
+                    }
+                }
+            }
             
             var overlappedChannelsData = await _context.Channels.AsNoTracking()
-                .Where(x => overlaps.Shared.Select(y => y.Name).Contains(x.LoginName))
+                .Where(x => overlaps.First().Shared.Select(y => y.Name).Contains(x.LoginName))
                 .Select(x => new {x.LoginName, x.DisplayName, x.Game})
                 .ToDictionaryAsync(x => x.LoginName);
 
             var channelData = new ChannelData(channel);
 
-            foreach (ChannelOverlap overlap in overlaps.Shared)
+            foreach (ChannelOverlap overlap in overlaps.First().Shared)
             {
+                var change = int.MinValue;
+                if (previousOrder.ContainsKey(overlap.Name))
+                {
+                    change = previousOrder[overlap.Name] - latestOrder[overlap.Name];
+                }
+                
                 var data = overlappedChannelsData[overlap.Name];
-                channelData.Data[overlap.Name] = new Data(data.Game, overlap.Shared, data.DisplayName);
+                channelData.Data[overlap.Name] = new Data(data.Game, overlap.Shared, data.DisplayName, change);
             }
 
             await _cache.StringSetAsync(ChannelDataCacheKey + name, JsonSerializer.Serialize(channelData), DateTime.UtcNow.GetCacheDuration());
