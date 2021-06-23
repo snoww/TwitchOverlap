@@ -87,7 +87,7 @@ namespace TwitchMatrix
             {
                 Directory.CreateDirectory("chatters");
                 var fileName = $"chatters/{_timestamp.Date.ToShortDateString()}.json";
-
+                
                 if (File.Exists(fileName))
                 {
                     _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(File.OpenRead(fileName)) ?? new Dictionary<string, HashSet<string>>();
@@ -97,6 +97,8 @@ namespace TwitchMatrix
                     _chatters = new Dictionary<string, HashSet<string>>();
                 }
 
+                int previousSize = _chatters.Count;
+
                 IEnumerable<Task> processTasks = topChannels.Select(async channel =>
                 {
                     (string _, Channel ch) = channel;
@@ -104,7 +106,7 @@ namespace TwitchMatrix
                 });
 
                 await Task.WhenAll(processTasks);
-                Console.WriteLine($"retrieved {HalfHourlyChatters.Count:N0} chatters\nsaved {_chatters.Count:N0} chatters (+{_chatters.Count - HalfHourlyChatters.Count:N0}) in {sw.Elapsed.TotalSeconds}s");
+                Console.WriteLine($"retrieved {HalfHourlyChatters.Count:N0} chatters\nsaved {_chatters.Count:N0} chatters (+{_chatters.Count - previousSize:N0}) in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
 
                 dailyData = JsonSerializer.SerializeToUtf8Bytes(_chatters);
