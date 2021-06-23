@@ -37,7 +37,7 @@ namespace ChannelIntersection
                 _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
                 _psqlConnection = json.RootElement.GetProperty("POSTGRES").GetString();
             }
-            
+
             await using var dbContext = new TwitchContext(_psqlConnection);
             _context = dbContext;
             await using IDbContextTransaction trans = await dbContext.Database.BeginTransactionAsync();

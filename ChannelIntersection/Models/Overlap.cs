@@ -12,6 +12,51 @@ namespace ChannelIntersection.Models
         public List<ChannelOverlap> Shared { get; set; }
     }
     
+    public class OverlapDaily
+    {
+        public DateTime Date { get; set; }
+        public int Channel { get; set; }
+        public int ChannelTotalOverlap { get; set; }
+        public int ChannelTotalUnique { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
+    }
+    
+    public class OverlapRolling3Days
+    {
+        public DateTime Date { get; set; }
+        public int Channel { get; set; }
+        public int ChannelTotalOverlap { get; set; }
+        public int ChannelTotalUnique { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
+    }
+    
+    public class OverlapRolling7Days
+    {
+        public DateTime Date { get; set; }
+        public int Channel { get; set; }
+        public int ChannelTotalOverlap { get; set; }
+        public int ChannelTotalUnique { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
+    }
+    
+    public class OverlapRolling14Days
+    {
+        public DateTime Date { get; set; }
+        public int Channel { get; set; }
+        public int ChannelTotalOverlap { get; set; }
+        public int ChannelTotalUnique { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
+    }
+    
+    public class OverlapRolling30Days
+    {
+        public DateTime Date { get; set; }
+        public int Channel { get; set; }
+        public int ChannelTotalOverlap { get; set; }
+        public int ChannelTotalUnique { get; set; }
+        public List<ChannelOverlap> Shared { get; set; }
+    }
+    
     public class ChannelOverlap
     {
         public string Name { get; set; }
