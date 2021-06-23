@@ -33,7 +33,7 @@ namespace TwitchMatrix
         private static DateTime _timestamp;
 
         private const int MinChatters = 500;
-        private const int MinViewers = 1500;
+        private const int MinViewers = 500;
 
 
         public static async Task Main(string[] args)
