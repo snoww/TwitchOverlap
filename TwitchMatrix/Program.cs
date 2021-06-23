@@ -57,12 +57,14 @@ namespace TwitchMatrix
             if (_timestamp.Minute is 5 or 35)
             {
                 DateTime lastUpdate = await dbContext.Channels.AsNoTracking().MaxAsync(x => x.LastUpdate);
-                
+
                 if (_timestamp - lastUpdate <= TimeSpan.FromMinutes(10))
                 {
                     Console.WriteLine("intersection already calculated, exiting.");
                     return;
                 }
+
+                Console.WriteLine("latest calculation not found, starting backup calculation");
             }
             else if (_timestamp.Minute == 0)
             {
@@ -89,7 +91,7 @@ namespace TwitchMatrix
             {
                 Directory.CreateDirectory("chatters");
                 var fileName = $"chatters/{_timestamp.Date.ToShortDateString()}.json";
-                
+
                 if (File.Exists(fileName))
                 {
                     _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(File.OpenRead(fileName)) ?? new Dictionary<string, HashSet<string>>();
@@ -127,7 +129,7 @@ namespace TwitchMatrix
                 Console.WriteLine($"retrieved {HalfHourlyChatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
             }
-            
+
             var hh = new HalfHourly(_context, HalfHourlyChatters, topChannels, _timestamp);
             await hh.CalculateShared();
 
@@ -165,7 +167,7 @@ namespace TwitchMatrix
         private static async Task<Dictionary<string, Channel>> GetTopChannels()
         {
             var channels = new Dictionary<string, Channel>();
-            var newChannels = new HashSet<Channel>();
+            var newChannels = new Dictionary<string, Channel>();
             var pageToken = string.Empty;
             do
             {
@@ -196,7 +198,7 @@ namespace TwitchMatrix
                         if (dbChannel == null)
                         {
                             dbChannel = new Channel(login, channel.GetProperty("user_name").GetString(), channel.GetProperty("game_name").GetString(), viewerCount, _timestamp);
-                            newChannels.Add(dbChannel);
+                            newChannels.TryAdd(login, dbChannel);
                         }
                         else
                         {
@@ -211,7 +213,7 @@ namespace TwitchMatrix
                 }
             } while (pageToken != null);
 
-            await _context.AddRangeAsync(newChannels);
+            await _context.AddRangeAsync(newChannels.Values);
             await _context.SaveChangesAsync();
             return channels;
         }
