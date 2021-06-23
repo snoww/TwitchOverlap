@@ -76,3 +76,10 @@ create table if not exists overlap_rolling_30_days
 );
 
 create index if not exists channel_last_update_index on channel (last_update desc);
+create index if not exists overlap_timestamp_desc_channel_index on overlap (timestamp desc, channel);
+create index if not exists chatters_daily_date_desc_index on chatters_daily (date desc);
+create index if not exists overlap_daily_date_desc_channel_index on overlap_daily (date desc, channel);
+create index if not exists overlap_rolling_3_days_date_desc_channel_index on overlap_rolling_3_days (date desc, channel);
+create index if not exists overlap_rolling_7_days_date_desc_channel_index on overlap_rolling_7_days (date desc, channel);
+create index if not exists overlap_rolling_14_days_date_desc_channel_index on overlap_rolling_14_days (date desc, channel);
+create index if not exists overlap_rolling_30_days_date_desc_channel_index on overlap_rolling_30_days (date desc, channel);
