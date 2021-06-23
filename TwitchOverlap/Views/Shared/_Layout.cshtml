@@ -6,9 +6,11 @@
     @await RenderSectionAsync("metatags", false)
 
     <environment include="Development">
+        <title>@ViewData["Title"] (DEV)</title>
         <link href="~/css/tailwind.css" rel="stylesheet"/>
     </environment>
     <environment exclude="Development">
+        <title>@ViewData["Title"]</title>
         <link href="~/css/tailwind.min.css" rel="stylesheet" asp-append-version="true"/>
     </environment>
 
