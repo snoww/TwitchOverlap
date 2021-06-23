@@ -54,7 +54,17 @@ namespace TwitchMatrix
 
             _flags = AggregateFlags.HalfHourly;
 
-            if (_timestamp.Minute == 0)
+            if (_timestamp.Minute is 5 or 35)
+            {
+                DateTime lastUpdate = await dbContext.Channels.AsNoTracking().MaxAsync(x => x.LastUpdate);
+                
+                if (_timestamp - lastUpdate <= TimeSpan.FromMinutes(10))
+                {
+                    Console.WriteLine("intersection already calculated, exiting.");
+                    return;
+                }
+            }
+            else if (_timestamp.Minute == 0)
             {
                 _flags = AggregateFlags.Hourly;
             }
@@ -353,6 +363,6 @@ namespace TwitchMatrix
     {
         HalfHourly = 1,
         Hourly = 2 | HalfHourly,
-        Daily = 4 | Hourly
+        Daily = 4 | Hourly,
     }
 }
