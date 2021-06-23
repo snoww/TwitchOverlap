@@ -56,6 +56,16 @@ create table if not exists overlap_rolling_7_days
     primary key (date, channel)
 );
 
+create table if not exists overlap_rolling_14_days
+(
+    date    date not null,
+    channel int references channel (id),
+    channel_total_unique int not null,
+    channel_total_overlap int not null,
+    shared  jsonb,
+    primary key (date, channel)
+);
+
 create table if not exists overlap_rolling_30_days
 (
     date    date not null,

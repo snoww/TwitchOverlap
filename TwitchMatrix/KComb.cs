@@ -29,8 +29,8 @@ namespace TwitchMatrix
 
             var channelIntersections = new Dictionary<string, Dictionary<string, int>>();
             var mergedChatters = new Dictionary<string, HashSet<string>>();
-            
-            foreach (var chatters in _context.Chatters.AsNoTracking().Where(x => x.Time >= DateTime.UtcNow.AddDays(-7)).Select(x => x.Users))
+
+            foreach (var chatters in _context.Chatters.AsNoTracking().Where(x => x.Date >= DateTime.UtcNow.AddDays(-7)).Select(x => x.Users))
             {
                 foreach ((string username, HashSet<string> channels) in chatters)
                 {

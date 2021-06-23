@@ -19,6 +19,13 @@ namespace ChannelIntersection.Models
         public virtual DbSet<Channel> Channels { get; set; }
         public virtual DbSet<Overlap> Overlaps { get; set; }
         public virtual DbSet<Chatters> Chatters { get; set; }
+        public virtual DbSet<OverlapDaily> OverlapsDaily { get; set; }
+        public virtual DbSet<OverlapRolling3Days> OverlapRolling3Days { get; set; }
+        public virtual DbSet<OverlapRolling7Days> OverlapRolling7Days { get; set; }
+        public virtual DbSet<OverlapRolling14Days> OverlapRolling14Days { get; set; }
+        public virtual DbSet<OverlapRolling30Days> OverlapRolling30Days { get; set; }
+
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -66,26 +73,73 @@ namespace ChannelIntersection.Models
                 entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
             });
 
-            // modelBuilder.Entity<Chatters>(entity =>
-            // {
-            //     entity.HasKey(e => e.Time).HasName("chatters_pk");
-            //     entity.ToTable("chatters");
-            //
-            //     entity.Property(e => e.Time).HasColumnName("time");
-            //     entity.Property(e => e.Users).HasColumnType("json").HasColumnName("users");
-            //     entity.Property(e => e.Channels).HasColumnType("json").HasColumnName("channels");
-            //     
-            // });
-            
             modelBuilder.Entity<Chatters>(entity =>
             {
-                entity.HasKey(e => e.Time).HasName("chatters_pk");
-                entity.ToTable("chatters");
+                entity.HasKey(e => e.Date).HasName("chatters_daily_pk");
+                entity.ToTable("chatters_daily");
 
-                entity.Property(e => e.Time).HasColumnName("time");
-                entity.Property(e => e.Users).HasColumnType("json").HasColumnName("users");
-                entity.Property(e => e.Channels).HasColumnType("json").HasColumnName("channels");
-                
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.Users).HasColumnType("json").HasColumnName("chatters");
+            });
+            
+            modelBuilder.Entity<OverlapDaily>(entity =>
+            {
+                entity.HasKey(e => new { e.Date, e.Channel }).HasName("overlap_daily_pkey");                
+                entity.ToTable("overlap_daily");
+
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.Channel).HasColumnName("channel");
+                entity.Property(e => e.ChannelTotalOverlap).HasColumnName("channel_total_overlap");
+                entity.Property(e => e.ChannelTotalUnique).HasColumnName("channel_total_unique");
+                entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
+            });
+            
+            modelBuilder.Entity<OverlapRolling3Days>(entity =>
+            {
+                entity.HasKey(e => new { e.Date, e.Channel }).HasName("overlap_rolling_3_days_pkey");                
+                entity.ToTable("overlap_rolling_3_days");
+
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.Channel).HasColumnName("channel");
+                entity.Property(e => e.ChannelTotalOverlap).HasColumnName("channel_total_overlap");
+                entity.Property(e => e.ChannelTotalUnique).HasColumnName("channel_total_unique");
+                entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
+            });
+            
+            modelBuilder.Entity<OverlapRolling7Days>(entity =>
+            {
+                entity.HasKey(e => new { e.Date, e.Channel }).HasName("overlap_rolling_7_days_pkey");                
+                entity.ToTable("overlap_rolling_7_days");
+
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.Channel).HasColumnName("channel");
+                entity.Property(e => e.ChannelTotalOverlap).HasColumnName("channel_total_overlap");
+                entity.Property(e => e.ChannelTotalUnique).HasColumnName("channel_total_unique");
+                entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
+            });
+            
+            modelBuilder.Entity<OverlapRolling14Days>(entity =>
+            {
+                entity.HasKey(e => new { e.Date, e.Channel }).HasName("overlap_rolling_14_days_pkey");                
+                entity.ToTable("overlap_rolling_14_days");
+
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.Channel).HasColumnName("channel");
+                entity.Property(e => e.ChannelTotalOverlap).HasColumnName("channel_total_overlap");
+                entity.Property(e => e.ChannelTotalUnique).HasColumnName("channel_total_unique");
+                entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
+            });
+            
+            modelBuilder.Entity<OverlapRolling30Days>(entity =>
+            {
+                entity.HasKey(e => new { e.Date, e.Channel }).HasName("overlap_rolling_30_days_pkey");                
+                entity.ToTable("overlap_rolling_30_days");
+
+                entity.Property(e => e.Date).HasColumnName("date");
+                entity.Property(e => e.Channel).HasColumnName("channel");
+                entity.Property(e => e.ChannelTotalOverlap).HasColumnName("channel_total_overlap");
+                entity.Property(e => e.ChannelTotalUnique).HasColumnName("channel_total_unique");
+                entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
             });
         }
     }
