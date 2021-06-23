@@ -4,7 +4,6 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     @await RenderSectionAsync("metatags", false)
-    <title>@ViewData["Title"]</title>
 
     <environment include="Development">
         <link href="~/css/tailwind.css" rel="stylesheet"/>
@@ -33,7 +32,12 @@
                 <img class="pl-4" src="~/images/roki2-round-10.png" alt="Roki" width="64">
             </a>
             <div class="pl-4 hidden sm:block">
-                <a class="text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 font-extrabold text-xl tracking-tighter" href="/">Twitch Overlap</a>
+                <environment include="Development">
+                    <a class="text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 font-extrabold text-xl tracking-tighter" href="/">Twitch Overlap (DEV)</a>
+                </environment>
+                <environment exclude="Development">
+                    <a class="text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 font-extrabold text-xl tracking-tighter" href="/">Twitch Overlap</a>
+                </environment>
             </div>
             <div class="pl-8 hidden sm:flex items-center font-medium">
                 <a class="text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 text-xl tracking-tighter" href="/atlas">Twitch Atlas</a>

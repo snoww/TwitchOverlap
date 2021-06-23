@@ -11,10 +11,16 @@
     <meta property="og:title" content="Twitch Overlap">
     <meta property="og:description" content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currenlty chat hopping. The site is open source on GitHub."/>
 }
+
 <div class="container w-full md:max-w-5xl xl:max-w-7xl mx-auto mx-2 tracking-tight mt-16 mb-20">
 
     <div class="px-2 md:px-4 pt-4">
-        <h1 class="font-medium tracking-tighter text-5xl text-center mb-4">Twitch Community Overlap</h1>
+        <environment include="Development">
+            <h1 class="font-medium tracking-tighter text-5xl text-center mb-4">Twitch Community Overlap (DEV)</h1>
+        </environment>
+        <environment exclude="Development">
+            <h1 class="font-medium tracking-tighter text-5xl text-center mb-4">Twitch Community Overlap</h1>
+        </environment>
         <div class="mb-3">
             <span><span class="mr-2 bg-gray-500 p-1 rounded-md text-white">New!</span><a class="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 text-lg font-medium" href="/atlas">Twitch Atlas</a>, is a force directed graph representation of communities of Twitch, inspired and motivated by <a class="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800" href="https://www.reddit.com/user/Kgersh">/u/Kgersh's</a> Twitch Atlas (<a class="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800" href="https://github.com/KiranGershenfeld/VisualizingTwitchCommunities">Github</a>) The interactive graph allows you to zoom and pan around, also the nodes are randomly positioned in the graph, so everyone will see a slightly different layout. Since the graph is rendered on your locally, it might be laggy for browsers without hardware acceleration. There isn't a legend because the community detection is done automatically through an algorithm.</span>
             <p class="mt-2">Current Atlas Date: <span class="font-medium">June 1st > June 15th</span></p>
@@ -47,23 +53,23 @@
             </div>
         </div>
     </div>
-    
+
 
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 mx-2 sm:mx-4">
-    @foreach (ChannelSummary summary in Model.Channels)
-    {
-        <div class="channel-card">
-            <a href="/@summary.Id">
-                <div class="flex justify-start items-center">
-                    <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/@summary.Avatar" class="rounded-full" alt="@summary.Id" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'" width="50">
-                    <div class="flex flex-col pl-2 overflow-hidden">
-                        <div class="truncate">@summary.DisplayName</div>
-                        <div class="truncate text-sm">chatters: @summary.Chatters.KiloFormat()</div>
+        @foreach (ChannelSummary summary in Model.Channels)
+        {
+            <div class="channel-card">
+                <a href="/@summary.Id">
+                    <div class="flex justify-start items-center">
+                        <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/@summary.Avatar" class="rounded-full" alt="@summary.Id" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'" width="50">
+                        <div class="flex flex-col pl-2 overflow-hidden">
+                            <div class="truncate">@summary.DisplayName</div>
+                            <div class="truncate text-sm">chatters: @summary.Chatters.KiloFormat()</div>
+                        </div>
                     </div>
-                </div>
-            </a>
-        </div>
-    }
-</div>
+                </a>
+            </div>
+        }
+    </div>
 
 </div>

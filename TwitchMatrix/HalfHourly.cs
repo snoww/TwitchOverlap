@@ -123,11 +123,11 @@ namespace TwitchMatrix
                 });
             });
             
-            _context.Channels.UpdateRange(_channels.Values.ToList());
+            _context.Channels.UpdateRange(_channels.Values);
             await _context.Overlaps.AddRangeAsync(overlapData);
             
             await _context.SaveChangesAsync();
-            Console.WriteLine($"added half-hourly intersection to database in {sw.Elapsed.TotalSeconds}s");
+            Console.WriteLine($"inserted 1/2 hour data to database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
         }
     }
