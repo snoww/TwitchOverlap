@@ -11,7 +11,6 @@ create table if not exists channel
     last_update  timestamp
 ) with (fillfactor = 95);
 
-
 create table if not exists overlap
 (
     timestamp timestamp not null,
@@ -75,3 +74,5 @@ create table if not exists overlap_rolling_30_days
     shared  jsonb,
     primary key (date, channel)
 );
+
+create index if not exists channel_last_update_index on channel (last_update desc);
