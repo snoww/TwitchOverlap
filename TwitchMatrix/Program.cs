@@ -112,11 +112,12 @@ namespace TwitchMatrix
                 await Task.WhenAll(processTasks);
                 Console.WriteLine($"retrieved {HalfHourlyChatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
-                var hh = new HalfHourly(_context, HalfHourlyChatters, topChannels
-                    .Where(x => x.Value.Chatters >= MinChatters)
-                    .ToDictionary(x => x.Key, x => x.Value), _timestamp);
-                await hh.CalculateShared();
             }
+            
+            var hh = new HalfHourly(_context, HalfHourlyChatters, topChannels
+                .Where(x => x.Value.Chatters >= MinChatters)
+                .ToDictionary(x => x.Key, x => x.Value), _timestamp);
+            await hh.CalculateShared();
 
             if (_flags.HasFlag(AggregateFlags.Daily))
             {
