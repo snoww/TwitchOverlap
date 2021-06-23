@@ -75,6 +75,8 @@ namespace TwitchMatrix
 
             var sw = new Stopwatch();
             sw.Start();
+            var totalSw = new Stopwatch();
+            totalSw.Start();
 
             Dictionary<string, Channel> topChannels = await GetTopChannels();
             await GetChannelAvatars(topChannels);
@@ -147,7 +149,7 @@ namespace TwitchMatrix
 
                     await conn.CloseAsync();
 
-                    Console.WriteLine($"Inserted into database in {sw.Elapsed.TotalSeconds}s");
+                    Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
                     sw.Restart();
                 }
 
@@ -156,6 +158,8 @@ namespace TwitchMatrix
             }
 
             await trans.CommitAsync();
+            sw.Stop();
+            Console.WriteLine($"total time taken: {totalSw.Elapsed.TotalSeconds}s");
         }
 
         private static async Task<Dictionary<string, Channel>> GetTopChannels()
