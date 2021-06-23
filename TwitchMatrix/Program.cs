@@ -75,7 +75,8 @@ namespace TwitchMatrix
             byte[] dailyData = null;
             if (_flags.HasFlag(AggregateFlags.Hourly))
             {
-                var fileName = $"{_timestamp.Date.ToShortDateString()}.json";
+                Directory.CreateDirectory("chatters");
+                var fileName = $"chatters/{_timestamp.Date.ToShortDateString()}.json";
 
                 if (File.Exists(fileName))
                 {
