@@ -108,6 +108,11 @@ namespace TwitchMatrix
             Parallel.ForEach(_channels, x =>
             {
                 (_, Channel ch) = x;
+                if (!channelUniqueChatters.ContainsKey(ch.LoginName))
+                {
+                    return;
+                }
+                
                 ch.Shared = channelTotalOverlap[ch.LoginName];
                 overlapData.Add(new Overlap {
                     Timestamp = _timestamp, 
