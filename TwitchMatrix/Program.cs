@@ -114,9 +114,7 @@ namespace TwitchMatrix
                 sw.Restart();
             }
             
-            var hh = new HalfHourly(_context, HalfHourlyChatters, topChannels
-                .Where(x => x.Value.Chatters >= MinChatters)
-                .ToDictionary(x => x.Key, x => x.Value), _timestamp);
+            var hh = new HalfHourly(_context, HalfHourlyChatters, topChannels, _timestamp);
             await hh.CalculateShared();
 
             if (_flags.HasFlag(AggregateFlags.Daily))
