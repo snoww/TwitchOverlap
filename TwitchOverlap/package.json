@@ -12,8 +12,8 @@
     "tailwindcss": "^2.1.4"
   },
   "scripts": {
-    "css:build": "npx tailwindcss-cli@latest build -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.css",
-    "css:publish": "cross-env NODE_ENV=production npx tailwindcss-cli@latest build -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.min.css --minify"
+    "css:build": "npx tailwindcss build -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.css",
+    "css:publish": "cross-env NODE_ENV=production npx tailwindcss build -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.min.css --minify"
   },
   "author": "",
   "license": "MIT"
