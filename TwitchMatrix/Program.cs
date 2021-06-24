@@ -70,7 +70,8 @@ namespace TwitchMatrix
             {
                 _flags = AggregateFlags.Hourly;
             }
-            else if ((_timestamp - TimeSpan.FromMinutes(15)).Day != _timestamp.Day)
+            
+            if ((_timestamp - TimeSpan.FromMinutes(15)).Day != _timestamp.Day)
             {
                 _flags = AggregateFlags.Daily;
             }
@@ -86,9 +87,9 @@ namespace TwitchMatrix
             Console.WriteLine($"retrieved {topChannels.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
 
-            byte[] dailyData = null;
             if (_flags.HasFlag(AggregateFlags.Hourly))
             {
+                Console.WriteLine("beginning hourly calculation");
                 Directory.CreateDirectory("chatters");
                 var fileName = $"chatters/{_timestamp.Date.ToShortDateString()}.json";
 
@@ -112,13 +113,12 @@ namespace TwitchMatrix
                 await Task.WhenAll(processTasks);
                 Console.WriteLine($"retrieved {HalfHourlyChatters.Count:N0} chatters\nsaved {_chatters.Count:N0} chatters (+{_chatters.Count - previousSize:N0}) in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
-
-                dailyData = JsonSerializer.SerializeToUtf8Bytes(_chatters);
-
-                await File.WriteAllBytesAsync(fileName, dailyData);
+                
+                await File.WriteAllBytesAsync(fileName, JsonSerializer.SerializeToUtf8Bytes(_chatters));
             }
             else // half hourly
             {
+                Console.WriteLine("beginning half hourly calculation");
                 IEnumerable<Task> processTasks = topChannels.Select(async channel =>
                 {
                     (string _, Channel ch) = channel;
@@ -135,6 +135,7 @@ namespace TwitchMatrix
 
             if (_flags.HasFlag(AggregateFlags.Daily))
             {
+                Console.WriteLine("beginning daily aggregation");
                 DateTime date = await _context.Chatters.MaxAsync(x => x.Date);
                 if (date.Date != _timestamp.Date)
                 {
@@ -145,7 +146,7 @@ namespace TwitchMatrix
                     {
                         await writer.StartRowAsync();
                         await writer.WriteAsync(_timestamp, NpgsqlDbType.Date);
-                        await writer.WriteAsync(dailyData, NpgsqlDbType.Json);
+                        await writer.WriteAsync(await File.ReadAllBytesAsync($"chatters/{_timestamp.Date.AddDays(-1).ToShortDateString()}.json"), NpgsqlDbType.Json);
                         await writer.CompleteAsync();
                     }
 
