@@ -135,31 +135,31 @@ namespace TwitchMatrix
 
             if (_flags.HasFlag(AggregateFlags.Daily))
             {
-                Console.WriteLine("beginning daily aggregation");
-                DateTime date = await _context.Chatters.MaxAsync(x => x.Date);
-                DateTime yesterday = _timestamp.Date.AddDays(-1);
-                _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(File.OpenRead($"chatters/{yesterday.ToShortDateString()}.json"));
-                if (date.Date != _timestamp.Date)
-                {
-                    await using var conn = new NpgsqlConnection(_psqlConnection);
-                    await conn.OpenAsync();
-
-                    await using (NpgsqlBinaryImporter writer = conn.BeginBinaryImport("COPY chatters_daily (date, chatters) FROM STDIN (FORMAT BINARY)"))
-                    {
-                        await writer.StartRowAsync();
-                        await writer.WriteAsync(yesterday, NpgsqlDbType.Date);
-                        await writer.WriteAsync(_chatters, NpgsqlDbType.Json);
-                        await writer.CompleteAsync();
-                    }
-
-                    await conn.CloseAsync();
-
-                    Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
-                    sw.Restart();
-                }
-
-                var daily = new Daily(_context, _chatters, _timestamp);
-                await daily.Aggregate();
+                // Console.WriteLine("beginning daily aggregation");
+                // DateTime date = await _context.Chatters.MaxAsync(x => x.Date);
+                // DateTime yesterday = _timestamp.Date.AddDays(-1);
+                // _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(File.OpenRead($"chatters/{yesterday.ToShortDateString()}.json"));
+                // if (date.Date != _timestamp.Date)
+                // {
+                //     await using var conn = new NpgsqlConnection(_psqlConnection);
+                //     await conn.OpenAsync();
+                //
+                //     await using (NpgsqlBinaryImporter writer = conn.BeginBinaryImport("COPY chatters_daily (date, chatters) FROM STDIN (FORMAT BINARY)"))
+                //     {
+                //         await writer.StartRowAsync();
+                //         await writer.WriteAsync(yesterday, NpgsqlDbType.Date);
+                //         await writer.WriteAsync(_chatters, NpgsqlDbType.Json);
+                //         await writer.CompleteAsync();
+                //     }
+                //
+                //     await conn.CloseAsync();
+                //
+                //     Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
+                //     sw.Restart();
+                // }
+                //
+                // var daily = new Daily(_context, _chatters, _timestamp);
+                // await daily.Aggregate();
             }
 
             await trans.CommitAsync();
