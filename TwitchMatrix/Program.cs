@@ -137,6 +137,8 @@ namespace TwitchMatrix
             {
                 Console.WriteLine("beginning daily aggregation");
                 DateTime date = await _context.Chatters.MaxAsync(x => x.Date);
+                DateTime yesterday = _timestamp.Date.AddDays(-1);
+                _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(File.OpenRead($"chatters/{yesterday.ToShortDateString()}.json"));
                 if (date.Date != _timestamp.Date)
                 {
                     await using var conn = new NpgsqlConnection(_psqlConnection);
@@ -145,8 +147,8 @@ namespace TwitchMatrix
                     await using (NpgsqlBinaryImporter writer = conn.BeginBinaryImport("COPY chatters_daily (date, chatters) FROM STDIN (FORMAT BINARY)"))
                     {
                         await writer.StartRowAsync();
-                        await writer.WriteAsync(_timestamp, NpgsqlDbType.Date);
-                        await writer.WriteAsync(await File.ReadAllBytesAsync($"chatters/{_timestamp.Date.AddDays(-1).ToShortDateString()}.json"), NpgsqlDbType.Json);
+                        await writer.WriteAsync(yesterday, NpgsqlDbType.Date);
+                        await writer.WriteAsync(_chatters, NpgsqlDbType.Json);
                         await writer.CompleteAsync();
                     }
 
