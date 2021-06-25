@@ -45,18 +45,18 @@ namespace TwitchMatrix
                 _psqlConnection = json.RootElement.GetProperty("POSTGRES").GetString();
             }
 
-            await using var dbContext = new TwitchContext(_psqlConnection);
-            _context = dbContext;
-            await using IDbContextTransaction trans = await dbContext.Database.BeginTransactionAsync();
+            _context = new TwitchContext(_psqlConnection);
+            IDbContextTransaction trans = await _context.Database.BeginTransactionAsync();
 
             _timestamp = DateTime.UtcNow;
             Console.WriteLine($"starting twitch matrix at {_timestamp:u}");
 
             _flags = AggregateFlags.HalfHourly;
+            var backup = false;
 
             if (_timestamp.Minute is 5 or 35)
             {
-                DateTime lastUpdate = await dbContext.Channels.AsNoTracking().MaxAsync(x => x.LastUpdate);
+                DateTime lastUpdate = await _context.Channels.AsNoTracking().MaxAsync(x => x.LastUpdate);
 
                 if (_timestamp - lastUpdate <= TimeSpan.FromMinutes(10))
                 {
@@ -64,6 +64,7 @@ namespace TwitchMatrix
                     return;
                 }
 
+                backup = true;
                 Console.WriteLine("latest calculation not found, starting backup calculation");
             }
             else if (_timestamp.Minute == 0)
@@ -71,7 +72,7 @@ namespace TwitchMatrix
                 _flags = AggregateFlags.Hourly;
             }
             
-            if ((_timestamp - TimeSpan.FromMinutes(15)).Day != _timestamp.Day)
+            if (!backup && (_timestamp - TimeSpan.FromMinutes(15)).Day != _timestamp.Day)
             {
                 _flags = AggregateFlags.Daily;
             }
@@ -95,7 +96,8 @@ namespace TwitchMatrix
 
                 if (File.Exists(fileName))
                 {
-                    _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(File.OpenRead(fileName)) ?? new Dictionary<string, HashSet<string>>();
+                    await using FileStream fs = File.OpenRead(fileName);
+                    _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(fs) ?? new Dictionary<string, HashSet<string>>();
                 }
                 else
                 {
@@ -132,37 +134,24 @@ namespace TwitchMatrix
 
             var hh = new HalfHourly(_context, HalfHourlyChatters, topChannels, _timestamp);
             await hh.CalculateShared();
+            await trans.CommitAsync();
+            // dispose context and transaction, so we can safely create new instance
+            await _context.DisposeAsync();
+            await trans.DisposeAsync();
 
             if (_flags.HasFlag(AggregateFlags.Daily))
             {
-                // Console.WriteLine("beginning daily aggregation");
-                // DateTime date = await _context.Chatters.MaxAsync(x => x.Date);
-                // DateTime yesterday = _timestamp.Date.AddDays(-1);
-                // _chatters = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(File.OpenRead($"chatters/{yesterday.ToShortDateString()}.json"));
-                // if (date.Date != _timestamp.Date)
-                // {
-                //     await using var conn = new NpgsqlConnection(_psqlConnection);
-                //     await conn.OpenAsync();
-                //
-                //     await using (NpgsqlBinaryImporter writer = conn.BeginBinaryImport("COPY chatters_daily (date, chatters) FROM STDIN (FORMAT BINARY)"))
-                //     {
-                //         await writer.StartRowAsync();
-                //         await writer.WriteAsync(yesterday, NpgsqlDbType.Date);
-                //         await writer.WriteAsync(_chatters, NpgsqlDbType.Json);
-                //         await writer.CompleteAsync();
-                //     }
-                //
-                //     await conn.CloseAsync();
-                //
-                //     Console.WriteLine($"inserted into database in {sw.Elapsed.TotalSeconds}s");
-                //     sw.Restart();
-                // }
-                //
-                // var daily = new Daily(_context, _chatters, _timestamp);
-                // await daily.Aggregate();
+                // new context for daily aggregation
+                _context = new TwitchContext(_psqlConnection);
+                trans = await _context.Database.BeginTransactionAsync();
+                var daily = new Daily(_context, _timestamp);
+                await daily.Aggregate();
+                // await trans.CommitAsync();
+                
+                await _context.DisposeAsync();
+                await trans.DisposeAsync();
             }
 
-            await trans.CommitAsync();
             sw.Stop();
             Console.WriteLine($"total time taken: {totalSw.Elapsed.TotalSeconds}s");
         }
