@@ -11,14 +11,11 @@ using System.Threading.Tasks;
 using ChannelIntersection.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Npgsql;
-using NpgsqlTypes;
-
 // ReSharper disable InconsistentlySynchronizedField
 
 namespace TwitchMatrix
 {
-    public class Program
+    public static class Program
     {
         private static readonly HttpClient Http = new();
         private static Dictionary<string, HashSet<string>> _chatters;
@@ -33,7 +30,7 @@ namespace TwitchMatrix
         private static DateTime _timestamp;
 
         private const int MinChatters = 500;
-        private const int MinViewers = 500;
+        private const int MinViewers = 1000;
 
 
         public static async Task Main(string[] args)
