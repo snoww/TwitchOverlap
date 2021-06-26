@@ -234,7 +234,7 @@ namespace TwitchMatrix
             {
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapDaily {
-                    Date = _timestamp, 
+                    Date = _timestamp.AddDays(-1), 
                     Channel = channelId, 
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -262,7 +262,7 @@ namespace TwitchMatrix
             {
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapRolling3Days {
-                    Date = _timestamp, 
+                    Date = _timestamp.AddDays(-1), 
                     Channel = channelId, 
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -290,7 +290,7 @@ namespace TwitchMatrix
             {
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapRolling7Days {
-                    Date = _timestamp, 
+                    Date = _timestamp.AddDays(-1), 
                     Channel = channelId, 
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -319,7 +319,7 @@ namespace TwitchMatrix
             {
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapRolling14Days {
-                    Date = _timestamp, 
+                    Date = _timestamp.AddDays(-1), 
                     Channel = channelId, 
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],

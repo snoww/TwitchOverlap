@@ -143,7 +143,7 @@ namespace TwitchMatrix
                 trans = await _context.Database.BeginTransactionAsync();
                 var daily = new Daily(_context, _timestamp);
                 await daily.Aggregate();
-                // await trans.CommitAsync();
+                await trans.CommitAsync();
                 
                 await _context.DisposeAsync();
                 await trans.DisposeAsync();
