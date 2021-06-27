@@ -18,7 +18,6 @@ namespace ChannelIntersection.Models
 
         public virtual DbSet<Channel> Channels { get; set; }
         public virtual DbSet<Overlap> Overlaps { get; set; }
-        public virtual DbSet<Chatters> Chatters { get; set; }
         public virtual DbSet<OverlapDaily> OverlapsDaily { get; set; }
         public virtual DbSet<OverlapRolling3Days> OverlapRolling3Days { get; set; }
         public virtual DbSet<OverlapRolling7Days> OverlapRolling7Days { get; set; }
@@ -68,15 +67,6 @@ namespace ChannelIntersection.Models
                 entity.Property(e => e.Timestamp).HasColumnName("timestamp");
                 entity.Property(e => e.Channel).HasColumnName("channel");
                 entity.Property(e => e.Shared).HasColumnType("jsonb").HasColumnName("shared");
-            });
-
-            modelBuilder.Entity<Chatters>(entity =>
-            {
-                entity.HasKey(e => e.Date).HasName("chatters_daily_pk");
-                entity.ToTable("chatters_daily");
-
-                entity.Property(e => e.Date).HasColumnName("date");
-                entity.Property(e => e.Users).HasColumnType("json").HasColumnName("chatters");
             });
             
             modelBuilder.Entity<OverlapDaily>(entity =>
