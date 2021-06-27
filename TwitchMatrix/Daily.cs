@@ -21,6 +21,7 @@ namespace TwitchMatrix
         private readonly ConcurrentDictionary<string, int> _channelTotalOverlap = new();
         private readonly ConcurrentDictionary<string, int> _channelUniqueChatters = new();
 
+        private const int Limit = 500;
         private const string Dir = "chatters/";
         private const string Extension = ".json";
 
@@ -110,22 +111,18 @@ namespace TwitchMatrix
                         start = 4;
                         end = 7;
                         break;
-                    case 14:
+                    default:
                         start = 8;
                         end = 14;
                         break;
-                    default:
-                        start = 15;
-                        end = 30;
-                        break;
                 }
-                
+
                 for (int i = start; i <= end; i++)
                 {
                     fileNames.Add(Dir + _timestamp.AddDays(-i).ToShortDateString() + Extension);
                 }
             }
-            
+
             return fileNames;
         }
 
@@ -137,7 +134,7 @@ namespace TwitchMatrix
                 {
                     continue;
                 }
-                
+
                 await using FileStream fs = File.OpenRead(file);
                 foreach ((string username, HashSet<string> channels) in await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(fs) ?? new Dictionary<string, HashSet<string>>())
                 {
@@ -225,7 +222,7 @@ namespace TwitchMatrix
                 }
             });
         }
-        
+
         private async Task InsertDailyToDatabase()
         {
             var overlapData = new ConcurrentBag<OverlapDaily>();
@@ -233,9 +230,10 @@ namespace TwitchMatrix
             Parallel.ForEach(await FetchChannelIds(), x =>
             {
                 (string channel, int channelId) = x;
-                overlapData.Add(new OverlapDaily {
-                    Date = _timestamp.AddDays(-1), 
-                    Channel = channelId, 
+                overlapData.Add(new OverlapDaily
+                {
+                    Date = _timestamp.AddDays(-1),
+                    Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
                     Shared = _channelOverlap[channel]
@@ -245,15 +243,16 @@ namespace TwitchMatrix
                             Name = y.Key,
                             Shared = y.Value
                         })
+                        .Take(Limit)
                         .ToList()
                 });
             });
-            
+
             await _context.OverlapsDaily.AddRangeAsync(overlapData);
-            
+
             await _context.SaveChangesAsync();
         }
-        
+
         private async Task Insert3DaysToDatabase()
         {
             var overlapData = new ConcurrentBag<OverlapRolling3Days>();
@@ -261,9 +260,10 @@ namespace TwitchMatrix
             Parallel.ForEach(await FetchChannelIds(), x =>
             {
                 (string channel, int channelId) = x;
-                overlapData.Add(new OverlapRolling3Days {
-                    Date = _timestamp.AddDays(-1), 
-                    Channel = channelId, 
+                overlapData.Add(new OverlapRolling3Days
+                {
+                    Date = _timestamp.AddDays(-1),
+                    Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
                     Shared = _channelOverlap[channel]
@@ -273,15 +273,16 @@ namespace TwitchMatrix
                             Name = y.Key,
                             Shared = y.Value
                         })
+                        .Take(Limit)
                         .ToList()
                 });
             });
-            
+
             await _context.OverlapRolling3Days.AddRangeAsync(overlapData);
-            
+
             await _context.SaveChangesAsync();
         }
-                
+
         private async Task Insert7DaysToDatabase()
         {
             var overlapData = new ConcurrentBag<OverlapRolling7Days>();
@@ -289,9 +290,10 @@ namespace TwitchMatrix
             Parallel.ForEach(await FetchChannelIds(), x =>
             {
                 (string channel, int channelId) = x;
-                overlapData.Add(new OverlapRolling7Days {
-                    Date = _timestamp.AddDays(-1), 
-                    Channel = channelId, 
+                overlapData.Add(new OverlapRolling7Days
+                {
+                    Date = _timestamp.AddDays(-1),
+                    Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
                     Shared = _channelOverlap[channel]
@@ -301,16 +303,17 @@ namespace TwitchMatrix
                             Name = y.Key,
                             Shared = y.Value
                         })
+                        .Take(Limit)
                         .ToList()
                 });
             });
-            
+
             await _context.OverlapRolling7Days.AddRangeAsync(overlapData);
-            
+
             await _context.SaveChangesAsync();
         }
-        
-                        
+
+
         private async Task Insert14DaysToDatabase()
         {
             var overlapData = new ConcurrentBag<OverlapRolling14Days>();
@@ -318,9 +321,10 @@ namespace TwitchMatrix
             Parallel.ForEach(await FetchChannelIds(), x =>
             {
                 (string channel, int channelId) = x;
-                overlapData.Add(new OverlapRolling14Days {
-                    Date = _timestamp.AddDays(-1), 
-                    Channel = channelId, 
+                overlapData.Add(new OverlapRolling14Days
+                {
+                    Date = _timestamp.AddDays(-1),
+                    Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
                     Shared = _channelOverlap[channel]
@@ -330,12 +334,13 @@ namespace TwitchMatrix
                             Name = y.Key,
                             Shared = y.Value
                         })
+                        .Take(Limit)
                         .ToList()
                 });
             });
-            
+
             await _context.OverlapRolling14Days.AddRangeAsync(overlapData);
-            
+
             await _context.SaveChangesAsync();
         }
     }
