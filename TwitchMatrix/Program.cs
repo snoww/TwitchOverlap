@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using ChannelIntersection.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+
 // ReSharper disable InconsistentlySynchronizedField
 
 namespace TwitchMatrix
@@ -24,7 +25,8 @@ namespace TwitchMatrix
         private static string _twitchClient;
         private static string _psqlConnection;
 
-        private static readonly object WriteLock = new();
+        private static readonly object DailyChatterLock = new();
+        private static readonly object HalfHourlyChatterLock = new();
         private static AggregateFlags _flags;
         private static TwitchContext _context;
         private static DateTime _timestamp;
@@ -68,7 +70,7 @@ namespace TwitchMatrix
             {
                 _flags = AggregateFlags.Hourly;
             }
-            
+
             if (!backup && (_timestamp - TimeSpan.FromMinutes(15)).Day != _timestamp.Day)
             {
                 _flags = AggregateFlags.Daily;
@@ -112,7 +114,7 @@ namespace TwitchMatrix
                 await Task.WhenAll(processTasks);
                 Console.WriteLine($"retrieved {HalfHourlyChatters.Count:N0} chatters\nsaved {_chatters.Count:N0} chatters (+{_chatters.Count - previousSize:N0}) in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
-                
+
                 await File.WriteAllBytesAsync(fileName, JsonSerializer.SerializeToUtf8Bytes(_chatters));
             }
             else // half hourly
@@ -144,7 +146,7 @@ namespace TwitchMatrix
                 var daily = new Daily(_context, _timestamp);
                 await daily.Aggregate();
                 await trans.CommitAsync();
-                
+
                 await _context.DisposeAsync();
                 await trans.DisposeAsync();
             }
@@ -241,7 +243,7 @@ namespace TwitchMatrix
                         continue;
                     }
 
-                    lock (WriteLock)
+                    lock (HalfHourlyChatterLock)
                     {
                         if (!HalfHourlyChatters.ContainsKey(username))
                         {
@@ -290,7 +292,7 @@ namespace TwitchMatrix
                         continue;
                     }
 
-                    lock (WriteLock)
+                    lock (DailyChatterLock)
                     {
                         if (!_chatters.ContainsKey(username))
                         {
@@ -300,7 +302,10 @@ namespace TwitchMatrix
                         {
                             _chatters[username].Add(channel.LoginName);
                         }
+                    }
 
+                    lock (HalfHourlyChatterLock)
+                    {
                         if (!HalfHourlyChatters.ContainsKey(username))
                         {
                             HalfHourlyChatters.TryAdd(username, new HashSet<string> {channel.LoginName});
@@ -318,7 +323,7 @@ namespace TwitchMatrix
         private static async Task GetChannelAvatars(Dictionary<string, Channel> channels)
         {
             using var http = new HttpClient();
-            foreach (string reqString in RequestBuilder(channels.Keys.ToList()))
+            foreach (string reqString in RequestBuilder(channels.Keys))
             {
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
