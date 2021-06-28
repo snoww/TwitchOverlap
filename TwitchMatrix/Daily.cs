@@ -17,9 +17,13 @@ namespace TwitchMatrix
         private readonly Dictionary<string, HashSet<string>> _chatters = new();
         private readonly DateTime _timestamp;
 
-        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, int>> _channelOverlap = new();
-        private readonly ConcurrentDictionary<string, int> _channelTotalOverlap = new();
-        private readonly ConcurrentDictionary<string, int> _channelUniqueChatters = new();
+        private readonly Dictionary<string, Dictionary<string, int>> _channelOverlap = new();
+        private readonly Dictionary<string, int> _channelTotalOverlap = new();
+        private readonly Dictionary<string, int> _channelUniqueChatters = new();
+
+        private readonly object _channelOverlapLock = new();
+        private readonly object _channelTotalOverlapCountLock = new();
+        private readonly object _channelUniqueChatterCountLock = new();
 
         private const int Limit = 500;
         private const string Dir = "chatters/";
@@ -105,7 +109,7 @@ namespace TwitchMatrix
                         start = 4;
                         end = 7;
                         break;
-                    default:
+                    default: // case 14:
                         start = 8;
                         end = 14;
                         break;
@@ -129,8 +133,13 @@ namespace TwitchMatrix
                     continue;
                 }
 
-                await using FileStream fs = File.OpenRead(file);
-                foreach ((string username, HashSet<string> channels) in await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(fs) ?? new Dictionary<string, HashSet<string>>())
+                Dictionary<string, HashSet<string>> data;
+                await using (FileStream fs = File.OpenRead(file))
+                {
+                    data = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(fs) ?? new Dictionary<string, HashSet<string>>();
+                }
+                
+                foreach ((string username, HashSet<string> channels) in data)
                 {
                     if (!_chatters.ContainsKey(username))
                     {
@@ -150,68 +159,97 @@ namespace TwitchMatrix
             Parallel.ForEach(chatters, x =>
             {
                 (string _, HashSet<string> channels) = x;
-                foreach (string channel in channels)
-                {
-                    if (!_channelUniqueChatters.ContainsKey(channel))
-                    {
-                        _channelUniqueChatters[channel] = 1;
-                    }
-                    else
-                    {
-                        _channelUniqueChatters[channel]++;
-                    }
-
-                    if (channels.Count < 2) break;
-
-                    if (!_channelTotalOverlap.ContainsKey(channel))
-                    {
-                        _channelTotalOverlap[channel] = 1;
-                    }
-                    else
-                    {
-                        _channelTotalOverlap[channel]++;
-                    }
-                }
-
                 if (channels.Count < 2)
                 {
+                    // only appear in one channel
+                    // increment unique chatter count in channel
+                    foreach (string channel in channels)
+                    {
+                        lock (_channelUniqueChatterCountLock)
+                        {
+                            if (!_channelUniqueChatters.ContainsKey(channel))
+                            {
+                                _channelUniqueChatters[channel] = 1;
+                            }
+                            else
+                            {
+                                _channelUniqueChatters[channel]++;
+                            }
+                        }
+                    }
+
                     return;
                 }
 
-                foreach (IEnumerable<string> combs in Helper.GetKCombs(channels, 2))
+                foreach (string channel in channels)
                 {
-                    string[] pair = combs.ToArray();
-                    if (!_channelOverlap.ContainsKey(pair[0]))
+                    // appears in multiple channels
+                    // increment unique chatter count
+                    // increment overlap chatter count
+                    lock (_channelUniqueChatterCountLock)
                     {
-                        _channelOverlap[pair[0]] = new ConcurrentDictionary<string, int>();
-                        _channelOverlap[pair[0]].TryAdd(pair[1], 1);
-                    }
-                    else
-                    {
-                        if (!_channelOverlap[pair[0]].ContainsKey(pair[1]))
+                        if (!_channelUniqueChatters.ContainsKey(channel))
                         {
-                            _channelOverlap[pair[0]][pair[1]] = 1;
+                            _channelUniqueChatters[channel] = 1;
                         }
                         else
                         {
-                            _channelOverlap[pair[0]][pair[1]]++;
+                            _channelUniqueChatters[channel]++;
                         }
                     }
 
-                    if (!_channelOverlap.ContainsKey(pair[1]))
+                    lock (_channelTotalOverlapCountLock)
                     {
-                        _channelOverlap[pair[1]] = new ConcurrentDictionary<string, int>();
-                        _channelOverlap[pair[1]].TryAdd(pair[0], 1);
-                    }
-                    else
-                    {
-                        if (!_channelOverlap[pair[1]].ContainsKey(pair[0]))
+                        if (!_channelTotalOverlap.ContainsKey(channel))
                         {
-                            _channelOverlap[pair[1]][pair[0]] = 1;
+                            _channelTotalOverlap[channel] = 1;
                         }
                         else
                         {
-                            _channelOverlap[pair[1]][pair[0]]++;
+                            _channelTotalOverlap[channel]++;
+                        }
+                    }
+                }
+
+                // loop over each combination of channels, then for each channel pair, increment their overlaps
+                // e.g. channels = ["xqcow", "mizkif", "summit1g"]
+                // combinations = [["xqcow", "mizkif"], ["xqcow", "summit1g"], ["mizkif", "summit1g"]]
+                // and for each pair, we increment the overlap count
+                foreach (IEnumerable<string> combs in Helper.GetKCombs(channels, 2))
+                {
+                    string[] pair = combs.ToArray();
+                    lock (_channelOverlapLock)
+                    {
+                        if (!_channelOverlap.ContainsKey(pair[0]))
+                        {
+                            _channelOverlap[pair[0]] = new Dictionary<string, int> {{pair[1], 1}};
+                        }
+                        else
+                        {
+                            if (!_channelOverlap[pair[0]].ContainsKey(pair[1]))
+                            {
+                                _channelOverlap[pair[0]][pair[1]] = 1;
+                            }
+                            else
+                            {
+                                _channelOverlap[pair[0]][pair[1]]++;
+                            }
+                        }
+
+                        if (!_channelOverlap.ContainsKey(pair[1]))
+                        {
+                            _channelOverlap[pair[1]] = new Dictionary<string, int> {{pair[0], 1}};
+                        }
+                        else
+                        {
+                            if (!_channelOverlap[pair[1]].ContainsKey(pair[0]))
+                            {
+                                _channelOverlap[pair[1]][pair[0]] = 1;
+                            }
+                            else
+                            {
+                                _channelOverlap[pair[1]][pair[0]]++;
+                            }
                         }
                     }
                 }
