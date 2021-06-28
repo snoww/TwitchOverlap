@@ -56,6 +56,8 @@ namespace TwitchMatrix
             Console.WriteLine("aggregating 1 day data");
             Calculate(_chatters);
             await InsertDailyToDatabase();
+            _channelTotalOverlap.Clear();
+            _channelUniqueChatters.Clear();
         }
 
         private async Task Aggregate3Days()
@@ -65,6 +67,8 @@ namespace TwitchMatrix
             Console.WriteLine("aggregating 3 day data");
             Calculate(_chatters);
             await Insert3DaysToDatabase();
+            _channelTotalOverlap.Clear();
+            _channelUniqueChatters.Clear();
         }
 
         private async Task Aggregate7Days()
@@ -74,6 +78,8 @@ namespace TwitchMatrix
             Console.WriteLine("aggregating 7 day data");
             Calculate(_chatters);
             await Insert7DaysToDatabase();
+            _channelTotalOverlap.Clear();
+            _channelUniqueChatters.Clear();
         }
 
         private async Task Aggregate14Days()
@@ -83,6 +89,8 @@ namespace TwitchMatrix
             Console.WriteLine("aggregating 14 day data");
             Calculate(_chatters);
             await Insert14DaysToDatabase();
+            _channelTotalOverlap.Clear();
+            _channelUniqueChatters.Clear();
         }
 
         private async Task<Dictionary<string, int>> FetchChannelIds()
@@ -152,6 +160,7 @@ namespace TwitchMatrix
 
         private void Calculate(Dictionary<string, HashSet<string>> chatters)
         {
+            Console.WriteLine($"aggregating {chatters.Count:N0} chatters");
             Parallel.ForEach(chatters, x =>
             {
                 (string _, HashSet<string> channels) = x;
