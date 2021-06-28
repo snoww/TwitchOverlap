@@ -43,9 +43,6 @@ namespace TwitchMatrix
             sw.Restart();
             await Aggregate7Days();
             Console.WriteLine($"aggregated 7 day data in {sw.Elapsed.TotalSeconds}s");
-            sw.Restart();
-            await Aggregate14Days();
-            Console.WriteLine($"aggregated 14 day data in {sw.Elapsed.TotalSeconds}s");
             sw.Stop();
         }
 
@@ -78,17 +75,6 @@ namespace TwitchMatrix
             Console.WriteLine("aggregating 7 day data");
             Calculate(_chatters);
             await Insert7DaysToDatabase();
-            _channelTotalOverlap.Clear();
-            _channelUniqueChatters.Clear();
-        }
-
-        private async Task Aggregate14Days()
-        {
-            Console.WriteLine("loading 14 day data");
-            await LoadData(GetFileNames(14));
-            Console.WriteLine("aggregating 14 day data");
-            Calculate(_chatters);
-            await Insert14DaysToDatabase();
             _channelTotalOverlap.Clear();
             _channelUniqueChatters.Clear();
         }
@@ -318,37 +304,6 @@ namespace TwitchMatrix
             });
 
             await _context.OverlapRolling7Days.AddRangeAsync(overlapData);
-
-            await _context.SaveChangesAsync();
-        }
-
-
-        private async Task Insert14DaysToDatabase()
-        {
-            var overlapData = new ConcurrentBag<OverlapRolling14Days>();
-
-            Parallel.ForEach(await FetchChannelIds(), x =>
-            {
-                (string channel, int channelId) = x;
-                overlapData.Add(new OverlapRolling14Days
-                {
-                    Date = _timestamp.AddDays(-1),
-                    Channel = channelId,
-                    ChannelTotalOverlap = _channelTotalOverlap[channel],
-                    ChannelTotalUnique = _channelUniqueChatters[channel],
-                    Shared = _channelOverlap[channel]
-                        .OrderByDescending(y => y.Value)
-                        .Select(y => new ChannelOverlap
-                        {
-                            Name = y.Key,
-                            Shared = y.Value
-                        })
-                        .Take(Limit)
-                        .ToList()
-                });
-            });
-
-            await _context.OverlapRolling14Days.AddRangeAsync(overlapData);
 
             await _context.SaveChangesAsync();
         }
