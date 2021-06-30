@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Twitch Atlas - June 1st > June 15th - Twitch Overlap";
+    ViewData["Title"] = "Twitch Atlas - June 2021 - Twitch Overlap";
 }
 
 @section metatags
@@ -26,7 +26,7 @@
     (async function () {
         async function fetchData() {
             try {
-                const response = await fetch("data/@(DateTime.UtcNow.ToString("M_yyyy"))_graph.json");
+                const response = await fetch("data/6_2021_graph.json");
                 return response.json();
             } catch (error) {
                 console.error(error);
