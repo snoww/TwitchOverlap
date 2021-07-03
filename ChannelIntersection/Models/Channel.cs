@@ -17,6 +17,8 @@ namespace ChannelIntersection.Models
         public int Shared { get; set; }
         public DateTime LastUpdate { get; set; }
         
+        public virtual ICollection<ChannelHistory> ChannelHistories { get; set; }
+        
         public Channel(int id, string loginName, string game, int viewers, int chatters, int shared, DateTime lastUpdate, string avatar, string displayName)
         {
             Id = id;
@@ -43,5 +45,16 @@ namespace ChannelIntersection.Models
             var other = obj as Channel;
             return other?.LoginName == null ? 1 : string.Compare(LoginName, other.LoginName, StringComparison.Ordinal);
         }
+    }
+    
+    public class ChannelHistory
+    {
+        public DateTime Timestamp { get; set; }
+        public int Id { get; set; }
+        public int? Viewers { get; set; }
+        public int? Chatters { get; set; }
+        public int? Shared { get; set; }
+
+        public virtual Channel Channel { get; set; }
     }
 }

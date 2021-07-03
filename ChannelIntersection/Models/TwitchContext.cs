@@ -17,6 +17,7 @@ namespace ChannelIntersection.Models
         }
 
         public virtual DbSet<Channel> Channels { get; set; }
+        public virtual DbSet<ChannelHistory> ChannelsHistories { get; set; }
         public virtual DbSet<Overlap> Overlaps { get; set; }
         public virtual DbSet<OverlapDaily> OverlapsDaily { get; set; }
         public virtual DbSet<OverlapRolling3Days> OverlapRolling3Days { get; set; }
@@ -54,6 +55,25 @@ namespace ChannelIntersection.Models
                 entity.Property(e => e.Viewers).HasColumnName("viewers");
             });
 
+            modelBuilder.Entity<ChannelHistory>(entity =>
+            {
+                entity.HasKey(e => new { e.Timestamp, e.Id })
+                    .HasName("channel_history_pkey");
+
+                entity.ToTable("channel_history");
+                
+                entity.Property(e => e.Timestamp).HasColumnName("timestamp");
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Chatters).HasColumnName("chatters");
+                entity.Property(e => e.Shared).HasColumnName("shared");
+                entity.Property(e => e.Viewers).HasColumnName("viewers");
+                entity.HasOne(d => d.Channel)
+                    .WithMany(p => p.ChannelHistories)
+                    .HasForeignKey(d => d.Id)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("channel_history_id_fkey");
+            });
+            
             modelBuilder.Entity<Overlap>(entity =>
             {
                 entity.HasKey(e => new { e.Timestamp, e.Channel })

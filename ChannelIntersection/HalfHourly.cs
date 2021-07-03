@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using ChannelIntersection.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChannelIntersection
 {
@@ -110,7 +111,7 @@ namespace ChannelIntersection
             Parallel.ForEach(_channels, x =>
             {
                 (_, Channel ch) = x;
-                if (!channelUniqueChatters.ContainsKey(ch.LoginName))
+                if (!channelTotalOverlap.ContainsKey(ch.LoginName))
                 {
                     return;
                 }
@@ -132,9 +133,36 @@ namespace ChannelIntersection
             });
             
             _context.Channels.UpdateRange(_channels.Values);
+            await _context.ChannelsHistories.AddRangeAsync(_channels.Values.Select(x => new ChannelHistory
+            {
+                Id = x.Id,
+                Timestamp = x.LastUpdate,
+                Viewers = x.Viewers,
+                Chatters = x.Chatters,
+                Shared = x.Shared,
+            }));
             await _context.Overlaps.AddRangeAsync(overlapData);
-            
             await _context.SaveChangesAsync();
+            
+            // remove old data
+            DateTime thirtyDays = _timestamp.AddDays(-30);
+            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap where timestamp <= {thirtyDays}");
+            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from channel_history where timestamp <= {thirtyDays}");
+            await _context.Database.ExecuteSqlRawAsync(@"
+                delete
+                from channel_history
+                where exists(
+                    select 1
+                    from (
+                        select r.timestamp, r.id
+                        from (select h.timestamp,
+                                     h.id,
+                                     row_number() over (partition by h.id order by h.timestamp desc) as rank
+                              from channel_history h) r
+                        where rank > 2) b
+                    where b.timestamp = channel_history.timestamp 
+                      and b.id = channel_history.id)");
+            
             Console.WriteLine($"inserted 1/2 hour data to database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
         }

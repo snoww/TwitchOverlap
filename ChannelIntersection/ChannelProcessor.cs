@@ -49,6 +49,7 @@ namespace ChannelIntersection
             totalSw.Start();
             
             await GetFlags();
+            await FetchChannels();
             if (_flags.HasFlag(AggregateFlags.Hourly))
             {
                 Console.WriteLine("beginning hourly calculation");
