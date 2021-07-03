@@ -17,7 +17,6 @@
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.7" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
       <PackageReference Include="StackExchange.Redis" Version="2.2.4" />
-      <PackageReference Include="Z.EntityFramework.Plus.EFCore" Version="5.1.37" />
     </ItemGroup>
 
     <ItemGroup>
