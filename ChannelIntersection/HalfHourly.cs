@@ -12,11 +12,11 @@ namespace ChannelIntersection
     public class HalfHourly
     {
         private readonly TwitchContext _context;
-        private readonly Dictionary<string, HashSet<string>> _chatters;
+        private readonly Dictionary<string, List<string>> _chatters;
         private readonly Dictionary<string, Channel> _channels;
         private readonly DateTime _timestamp;
 
-        public HalfHourly(TwitchContext context, Dictionary<string, HashSet<string>> chatters, Dictionary<string, Channel> channels, DateTime timestamp)
+        public HalfHourly(TwitchContext context, Dictionary<string, List<string>> chatters, Dictionary<string, Channel> channels, DateTime timestamp)
         {
             _context = context;
             _chatters = chatters;
@@ -36,7 +36,7 @@ namespace ChannelIntersection
             
             // skip users that are present in more than 10 channels in the half hour aggregation
             // since these are most likely bots
-            foreach ((string _, HashSet<string> channels) in _chatters.Where(x => x.Value.Count < 10))
+            foreach ((string _, List<string> channels) in _chatters.Where(x => x.Value.Count < 10))
             {
                 foreach (string channel in channels)
                 {

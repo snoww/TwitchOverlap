@@ -9,6 +9,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ChannelIntersection.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+
 // ReSharper disable InconsistentlySynchronizedField
 
 namespace ChannelIntersection
@@ -24,13 +26,14 @@ namespace ChannelIntersection
         private readonly string _twitchClient;
         private readonly string _twitchToken;
         private AggregateFlags _flags;
-        
-        private Dictionary<string,Channel> _topChannels;
+
+        private Dictionary<string, Channel> _topChannels;
         private static Dictionary<string, HashSet<string>> _chatters;
-        private readonly Dictionary<string, HashSet<string>> _halfHourlyChatters = new();
-        
+        private readonly Dictionary<string, List<string>> _halfHourlyChatters = new();
+
         private const int MinChatters = 500;
         private const int MinViewers = 1000;
+        private const int MinAggregateChatters = 1000;
 
         public ChannelProcessor(string psqlConnection, string twitchClient, string twitchToken)
         {
@@ -42,12 +45,12 @@ namespace ChannelIntersection
         public async Task Run()
         {
             Console.WriteLine($"starting channel processor at {Timestamp:u}");
-            
+
             var sw = new Stopwatch();
             sw.Start();
             var totalSw = new Stopwatch();
             totalSw.Start();
-            
+
             await GetFlags();
             await FetchChannels();
             if (_flags.HasFlag(AggregateFlags.Hourly))
@@ -55,7 +58,7 @@ namespace ChannelIntersection
                 Console.WriteLine("beginning hourly calculation");
                 Directory.CreateDirectory("chatters");
                 var fileName = $"chatters/{Timestamp.Date.ToShortDateString()}.json";
-                
+
                 if (File.Exists(fileName))
                 {
                     await using FileStream fs = File.OpenRead(fileName);
@@ -65,20 +68,21 @@ namespace ChannelIntersection
                 {
                     _chatters = new Dictionary<string, HashSet<string>>();
                 }
+
                 sw.Restart();
 
                 int previousSize = _chatters.Count;
-                
+
                 IEnumerable<Task> processTasks = _topChannels.Select(async channel =>
                 {
                     (string _, Channel ch) = channel;
-                    await GetChattersHourly(ch);
+                    await GetChatters(ch);
                 });
-                
+
                 await Task.WhenAll(processTasks);
                 Console.WriteLine($"retrieved {_halfHourlyChatters.Count:N0} chatters\nsaved {_chatters.Count:N0} chatters (+{_chatters.Count - previousSize:N0}) in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
-                
+
                 await File.WriteAllBytesAsync(fileName, JsonSerializer.SerializeToUtf8Bytes(_chatters));
             }
             else // half hourly
@@ -100,21 +104,23 @@ namespace ChannelIntersection
                 var hh = new HalfHourly(context, _halfHourlyChatters, _topChannels, Timestamp);
                 await hh.CalculateShared();
             }
-            
+
             if (_flags.HasFlag(AggregateFlags.Daily))
             {
                 await using var context = new TwitchContext(_psqlConnection);
+                await using IDbContextTransaction trans = await context.Database.BeginTransactionAsync();
                 var daily = new Daily(context, Timestamp);
                 await daily.Aggregate();
+                await trans.CommitAsync();
             }
-            
+
             sw.Stop();
             Console.WriteLine($"total time taken: {totalSw.Elapsed.TotalSeconds}s");
         }
 
         private async Task GetFlags()
         {
-            _flags = AggregateFlags.HalfHourly;
+            _flags = AggregateFlags.Daily;
             var backup = false;
 
             if (Timestamp.Minute is 5 or 35)
@@ -205,7 +211,7 @@ namespace ChannelIntersection
             await context.SaveChangesAsync();
             return channels;
         }
-        
+
         private async Task GetChannelAvatars(Dictionary<string, Channel> channels)
         {
             using var http = new HttpClient();
@@ -225,7 +231,7 @@ namespace ChannelIntersection
                 }
             }
         }
-        
+
         private async Task GetChatters(Channel channel)
         {
             Stream stream;
@@ -249,7 +255,19 @@ namespace ChannelIntersection
             }
 
             channel.Chatters = chatters;
-            JsonElement.ObjectEnumerator viewerTypes = response.RootElement.GetProperty("chatters").EnumerateObject();
+            if (chatters >= MinAggregateChatters && _flags.HasFlag(AggregateFlags.Hourly))
+            {
+                IterateHourly(channel, response.RootElement);
+            }
+            else
+            {
+                IterateHalfHourly(channel, response.RootElement);
+            }
+        }
+
+        private void IterateHalfHourly(Channel channel, JsonElement root)
+        {
+            JsonElement.ObjectEnumerator viewerTypes = root.GetProperty("chatters").EnumerateObject();
             foreach (JsonProperty viewerType in viewerTypes)
             {
                 foreach (JsonElement viewer in viewerType.Value.EnumerateArray())
@@ -264,7 +282,7 @@ namespace ChannelIntersection
                     {
                         if (!_halfHourlyChatters.ContainsKey(username))
                         {
-                            _halfHourlyChatters.TryAdd(username, new HashSet<string> {channel.LoginName});
+                            _halfHourlyChatters.TryAdd(username, new List<string> {channel.LoginName});
                         }
                         else
                         {
@@ -274,31 +292,10 @@ namespace ChannelIntersection
                 }
             }
         }
-        
-        private async Task GetChattersHourly(Channel channel)
+
+        private void IterateHourly(Channel channel, JsonElement root)
         {
-            Stream stream;
-            try
-            {
-                stream = await Http.GetStreamAsync($"https://tmi.twitch.tv/group/user/{channel.LoginName}/chatters");
-            }
-            catch
-            {
-                Console.WriteLine($"Could not retrieve chatters for {channel.LoginName}");
-                return;
-            }
-
-            using JsonDocument response = await JsonDocument.ParseAsync(stream);
-            await stream.DisposeAsync();
-
-            int chatters = response.RootElement.GetProperty("chatter_count").GetInt32();
-            if (chatters < 500)
-            {
-                return;
-            }
-
-            channel.Chatters = chatters;
-            JsonElement.ObjectEnumerator viewerTypes = response.RootElement.GetProperty("chatters").EnumerateObject();
+            JsonElement.ObjectEnumerator viewerTypes = root.GetProperty("chatters").EnumerateObject();
             foreach (JsonProperty viewerType in viewerTypes)
             {
                 foreach (JsonElement viewer in viewerType.Value.EnumerateArray())
@@ -325,7 +322,7 @@ namespace ChannelIntersection
                     {
                         if (!_halfHourlyChatters.ContainsKey(username))
                         {
-                            _halfHourlyChatters.TryAdd(username, new HashSet<string> {channel.LoginName});
+                            _halfHourlyChatters.TryAdd(username, new List<string> {channel.LoginName});
                         }
                         else
                         {
