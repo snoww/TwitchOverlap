@@ -289,7 +289,7 @@ namespace ChannelIntersection
             });
 
             await _context.OverlapsDaily.AddRangeAsync(overlapData);
-
+            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_daily where timestamp <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
 
@@ -319,7 +319,7 @@ namespace ChannelIntersection
             });
 
             await _context.OverlapRolling3Days.AddRangeAsync(overlapData);
-
+            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_3_days where timestamp <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
 
@@ -349,7 +349,7 @@ namespace ChannelIntersection
             });
 
             await _context.OverlapRolling7Days.AddRangeAsync(overlapData);
-
+            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_7_days where timestamp <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
 
