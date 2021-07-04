@@ -25,7 +25,9 @@ namespace ChannelIntersection
         private readonly object _channelTotalOverlapCountLock = new();
         private readonly object _channelUniqueChatterCountLock = new();
 
-        private const int Limit = 500;
+        private const int OneDayLimit = 100;
+        private const int ThreeDayLimit = 200;
+        private const int SevenDayLimit = 300;
         private const string Dir = "chatters/";
         private const string Extension = ".json";
 
@@ -77,13 +79,15 @@ namespace ChannelIntersection
         private async Task Aggregate7Days()
         {
             Console.WriteLine("loading 7 day data");
-            await LoadData(GetFileNames(7));
+            string[] fileNames = GetFileNames(7).ToArray();
+            await LoadData(fileNames);
             Console.WriteLine("aggregating 7 day data");
             Calculate(_chatters);
             await Insert7DaysToDatabase();
             _channelOverlap.Clear();
             _channelTotalOverlap.Clear();
             _channelUniqueChatters.Clear();
+            await ArchiveOldest(fileNames[^1]);
         }
 
         private async Task<Dictionary<string, int>> FetchChannelIds()
@@ -141,7 +145,7 @@ namespace ChannelIntersection
                 {
                     data = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(fs) ?? new Dictionary<string, HashSet<string>>();
                 }
-                
+
                 foreach ((string username, HashSet<string> channels) in data)
                 {
                     if (!_chatters.ContainsKey(username))
@@ -279,7 +283,7 @@ namespace ChannelIntersection
                             Name = y.Key,
                             Shared = y.Value
                         })
-                        .Take(Limit)
+                        .Take(OneDayLimit)
                         .ToList()
                 });
             });
@@ -309,7 +313,7 @@ namespace ChannelIntersection
                             Name = y.Key,
                             Shared = y.Value
                         })
-                        .Take(Limit)
+                        .Take(ThreeDayLimit)
                         .ToList()
                 });
             });
@@ -339,7 +343,7 @@ namespace ChannelIntersection
                             Name = y.Key,
                             Shared = y.Value
                         })
-                        .Take(Limit)
+                        .Take(SevenDayLimit)
                         .ToList()
                 });
             });
@@ -347,6 +351,18 @@ namespace ChannelIntersection
             await _context.OverlapRolling7Days.AddRangeAsync(overlapData);
 
             await _context.SaveChangesAsync();
+        }
+
+        private static async Task ArchiveOldest(string oldestFile)
+        {
+            if (!File.Exists(oldestFile))
+            {
+                return;
+            }
+
+            using var proc = new Process {StartInfo = {UseShellExecute = false, FileName = "gzip", Arguments = oldestFile}};
+            proc.Start();
+            await proc.WaitForExitAsync();
         }
     }
 }
