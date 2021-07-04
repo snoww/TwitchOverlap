@@ -273,7 +273,7 @@ namespace ChannelIntersection
                 foreach (JsonElement viewer in viewerType.Value.EnumerateArray())
                 {
                     string username = viewer.GetString()?.ToLower();
-                    if (username == null || username.EndsWith("bot", StringComparison.OrdinalIgnoreCase))
+                    if (username == null || username.EndsWith("bot", StringComparison.Ordinal))
                     {
                         continue;
                     }
@@ -301,7 +301,7 @@ namespace ChannelIntersection
                 foreach (JsonElement viewer in viewerType.Value.EnumerateArray())
                 {
                     string username = viewer.GetString()?.ToLower();
-                    if (username == null || username.EndsWith("bot", StringComparison.OrdinalIgnoreCase))
+                    if (username == null || username.EndsWith("bot", StringComparison.Ordinal))
                     {
                         continue;
                     }
