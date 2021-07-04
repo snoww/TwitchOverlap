@@ -52,7 +52,11 @@ namespace ChannelIntersection
             totalSw.Start();
 
             await GetFlags();
+            Console.WriteLine("retrieving channels");
             await FetchChannels();
+            Console.WriteLine($"retrieved {_topChannels.Count} channels in {sw.Elapsed.TotalSeconds}s");
+            sw.Restart();
+            
             if (_flags.HasFlag(AggregateFlags.Hourly))
             {
                 Console.WriteLine("beginning hourly calculation");
