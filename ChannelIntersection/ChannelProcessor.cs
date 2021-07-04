@@ -120,7 +120,7 @@ namespace ChannelIntersection
 
         private async Task GetFlags()
         {
-            _flags = AggregateFlags.Daily;
+            _flags = AggregateFlags.HalfHourly;
             var backup = false;
 
             if (Timestamp.Minute is 5 or 35)
