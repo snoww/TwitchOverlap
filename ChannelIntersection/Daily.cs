@@ -24,7 +24,8 @@ namespace ChannelIntersection
         private readonly object _channelOverlapLock = new();
         private readonly object _channelTotalOverlapCountLock = new();
         private readonly object _channelUniqueChatterCountLock = new();
-
+        
+        private const int MinSharedViewers = 5;
         private const int OneDayLimit = 100;
         private const int ThreeDayLimit = 200;
         private const int SevenDayLimit = 300;
@@ -278,6 +279,7 @@ namespace ChannelIntersection
                     ChannelTotalUnique = _channelUniqueChatters[channel],
                     Shared = _channelOverlap[channel]
                         .OrderByDescending(y => y.Value)
+                        .Where(y => y.Value >= MinSharedViewers)
                         .Select(y => new ChannelOverlap
                         {
                             Name = y.Key,
@@ -308,6 +310,7 @@ namespace ChannelIntersection
                     ChannelTotalUnique = _channelUniqueChatters[channel],
                     Shared = _channelOverlap[channel]
                         .OrderByDescending(y => y.Value)
+                        .Where(y => y.Value >= MinSharedViewers)
                         .Select(y => new ChannelOverlap
                         {
                             Name = y.Key,
@@ -338,6 +341,7 @@ namespace ChannelIntersection
                     ChannelTotalUnique = _channelUniqueChatters[channel],
                     Shared = _channelOverlap[channel]
                         .OrderByDescending(y => y.Value)
+                        .Where(y => y.Value >= MinSharedViewers)
                         .Select(y => new ChannelOverlap
                         {
                             Name = y.Key,
