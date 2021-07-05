@@ -51,9 +51,9 @@ namespace ChannelIntersection.Models
     {
         public DateTime Timestamp { get; set; }
         public int Id { get; set; }
-        public int? Viewers { get; set; }
-        public int? Chatters { get; set; }
-        public int? Shared { get; set; }
+        public int Viewers { get; set; }
+        public int Chatters { get; set; }
+        public int Shared { get; set; }
 
         public virtual Channel Channel { get; set; }
     }
