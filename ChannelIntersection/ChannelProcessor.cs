@@ -136,7 +136,7 @@ namespace ChannelIntersection
                     if (Timestamp - lastUpdate <= TimeSpan.FromMinutes(10))
                     {
                         Console.WriteLine("intersection already calculated, exiting.");
-                        return;
+                        Environment.Exit(1);
                     }
                 }
 
