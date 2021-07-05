@@ -16,6 +16,9 @@ namespace ChannelIntersection
         private readonly Dictionary<string, Channel> _channels;
         private readonly DateTime _timestamp;
 
+        private const int MinSharedViewers = 5;
+        private const int MaxSharedChannels = 100;
+
         public HalfHourly(TwitchContext context, Dictionary<string, List<string>> chatters, Dictionary<string, Channel> channels, DateTime timestamp)
         {
             _context = context;
@@ -122,12 +125,13 @@ namespace ChannelIntersection
                     Channel = ch.Id, 
                     Shared = channelOverlap[ch.LoginName]
                         .OrderByDescending(y => y.Value)
+                        .Where(y => y.Value >= MinSharedViewers)
                         .Select(y => new ChannelOverlap
                         {
                             Name = y.Key,
                             Shared = y.Value
                         })
-                        .Take(250)
+                        .Take(MaxSharedChannels)
                         .ToList()
                 });
             });
@@ -163,7 +167,7 @@ namespace ChannelIntersection
                     where b.timestamp = channel_history.timestamp 
                       and b.id = channel_history.id)");
             
-            Console.WriteLine($"inserted 1/2 hour data to database in {sw.Elapsed.TotalSeconds}s");
+            Console.WriteLine($"inserted half hour data to database in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
         }
     }
