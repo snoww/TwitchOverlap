@@ -32,7 +32,7 @@ namespace ChannelIntersection
         private readonly Dictionary<string, List<string>> _halfHourlyChatters = new();
 
         private const int MinChatters = 500;
-        private const int MinViewers = 1000;
+        private const int MinViewers = 500;
         private const int MinAggregateChatters = 1000;
 
         public ChannelProcessor(string psqlConnection, string twitchClient, string twitchToken)
@@ -218,14 +218,13 @@ namespace ChannelIntersection
 
         private async Task GetChannelAvatars(Dictionary<string, Channel> channels)
         {
-            using var http = new HttpClient();
             foreach (string reqString in Helper.RequestBuilder(channels.Keys))
             {
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
                 request.Headers.Add("Client-Id", _twitchClient);
                 request.RequestUri = new Uri($"https://api.twitch.tv/helix/users?{reqString}");
-                using HttpResponseMessage response = await http.SendAsync(request);
+                using HttpResponseMessage response = await Http.SendAsync(request);
                 using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
                 JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
                 foreach (JsonElement channel in data)
