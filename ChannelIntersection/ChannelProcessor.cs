@@ -99,7 +99,7 @@ namespace ChannelIntersection
                 });
 
                 await Task.WhenAll(processTasks);
-                Console.WriteLine($"retrieved {_halfHourlyChatters.Count} chatters in {sw.Elapsed.TotalSeconds}s");
+                Console.WriteLine($"retrieved {_halfHourlyChatters.Count:N0} chatters in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
             }
 
