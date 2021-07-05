@@ -32,7 +32,7 @@ namespace ChannelIntersection
         private readonly Dictionary<string, List<string>> _halfHourlyChatters = new();
 
         private const int MinChatters = 500;
-        private const int MinViewers = 500;
+        private const int MinViewers = 750;
         private const int MinAggregateChatters = 1000;
 
         public ChannelProcessor(string psqlConnection, string twitchClient, string twitchToken)
