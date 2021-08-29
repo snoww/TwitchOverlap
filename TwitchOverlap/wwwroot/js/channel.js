@@ -128,14 +128,20 @@ window.addEventListener("resize", () => {
         tooltip: {
             trigger: "axis",
             formatter: function(params) {
-                let output = "<div class=\"mb-2\"><b>" + params[0].name + " UTC</b></div>";
+                let output
+                if (window.location.pathname.split("/").length > 2) {
+                    output = "<div class=\"mb-2\"><b>" + params[0].name + "</b></div>";
+                } else {
+                    output = "<div class=\"mb-2\"><b>" + params[0].name + " UTC</b></div>";
+                }
+                
                 const values = Object.entries(params[0].value).filter(x => x[0] !== "timestamp");
                 for (let i = 0; i < values.length; i++) {
                     let param = params.find(x => x.seriesName === values[i][0]);
                     if (param == null) {
                         continue;
                     }
-                    output += "<div class=\"flex justify-between\"><div class=\"mr-4\">" + param.marker + values[i][0] + "</div><div class=\"font-bold\">" + values[i][1].toLocaleString() + "</div></div>";
+                    output += "<div class=\"flex justify-between\"><div class=\"mr-4\">" + param.marker + values[i][0] + "</div><div class=\"font-mono\">" + values[i][1].toLocaleString() + "</div></div>";
                 }
                 return output;
             }

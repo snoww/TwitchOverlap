@@ -19,32 +19,20 @@ namespace TwitchOverlap.Models
         public DateTime LastUpdate { get; set; }
 
         [JsonIgnore]
-        public virtual ICollection<Overlap> OverlapChannelNavigations { get; set; } = new HashSet<Overlap>();
+        public virtual ICollection<Overlap> OverlapChannelNavigations { get; set; } = new List<Overlap>();
+        public virtual IList<ChannelHistory> History { get; set; } = new List<ChannelHistory>();
+    }
+    
+    public class ChannelHistory
+    {
+        public DateTime Timestamp { get; set; }
+        public int Id { get; set; }
+        public int Viewers { get; set; }
+        public int Chatters { get; set; }
+        public int Shared { get; set; }
 
-        public Channel()
-        {
-        }
-        
-        public Channel(int id, string game, int viewers, int chatters, int shared, DateTime lastUpdate, string avatar, string displayName)
-        {
-            Id = id;
-            Game = game;
-            Viewers = viewers;
-            Chatters = chatters;
-            Shared = shared;
-            LastUpdate = lastUpdate;
-            Avatar = avatar;
-            DisplayName = displayName;
-        }
-
-        public Channel(string loginName, string displayName, string game, int viewers, DateTime lastUpdate)
-        {
-            LoginName = loginName;
-            DisplayName = displayName;
-            Game = game;
-            Viewers = viewers;
-            LastUpdate = lastUpdate;
-        }
+        [JsonIgnore]
+        public virtual Channel Channel { get; set; }
     }
 
     public class ChannelIndex
@@ -68,6 +56,4 @@ namespace TwitchOverlap.Models
             Chatters = chatters;
         }
     }
-    
-    
 }

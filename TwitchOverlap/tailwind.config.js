@@ -1,14 +1,21 @@
 const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
-  purge: [
-    './Views/**/*.cshtml'
-  ],
+  mode: 'jit',
+  purge: {
+    content: [
+        './Views/**/*.cshtml'
+    ],
+    safelist: [
+        'font-mono'
+    ]
+  },
   darkMode: 'class', // or 'media' or 'class'
   theme: {
     extend: {
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono]
       },
       screens: {
         '3xl': '1600px',
@@ -25,12 +32,6 @@ module.exports = {
     screens: {
       'xs': '475px',
       ...defaultTheme.screens,
-    },
-  },
-  variants: {
-    extend: {
-      opacity: ['disabled'],
-      backgroundColor: ['active'],
     },
   },
   plugins: [

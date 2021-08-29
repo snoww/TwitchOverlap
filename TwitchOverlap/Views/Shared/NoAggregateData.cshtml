@@ -1,0 +1,50 @@
+@model ChannelAggregateData
+
+@{
+    ViewData["Title"] = $"{Model} - No Data";
+}
+
+@section metatags
+{
+    <meta property="og:title" content="@Model - Twitch Community Overlap"/>
+    <meta property="og:description" content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
+    <meta property="og:image" content="/images/roki2-round-10.png"/>
+}
+
+<div class="container w-full md:max-w-5xl xl:max-w-7xl mx-auto tracking-tight mt-16 mb-20">
+    <div class="block md:flex justify-between">
+        <div class="flex items-center pt-4 px-4">
+            <a href="https://www.twitch.tv/@Model.Channel.LoginName" target="_blank" rel="noopener noreferrer">
+                <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/@Model.Channel.Avatar" class="rounded-full" alt="twitch-avatar" onerror="if (this.src !== 'https://i.imgur.com/V2dxUn8.png') this.src = 'https://i.imgur.com/V2dxUn8.png'">
+            </a>
+            <div class="pl-3 flex flex-col">
+                <a class="text-2xl hover:underline hover:text-pink-500" href="https://www.twitch.tv/@Model.Channel.LoginName" target="_blank" rel="noopener noreferrer">@Model.Channel.DisplayName</a>
+                <a class="hover:underline hover:text-pink-500" href="https://www.twitch.tv/directory/game/@Model.Channel.Game" target="_blank" rel="noopener noreferrer">@Model.Channel.Game</a>
+            </div>
+        </div>
+        <div class="mt-4 ml-4 mr-4 md:mt-0 md:ml-0 flex items-end">
+            <a class="rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 @(Model.Type == AggregateDays.Default ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500")"
+               href="/@Model.Channel.LoginName">
+                30 min
+            </a>
+            <a class="rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 @(Model.Type == AggregateDays.OneDay ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500")"
+               href="/@Model.Channel.LoginName/1">
+                1 day
+            </a>
+            <a class="rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 @(Model.Type == AggregateDays.ThreeDays ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500")"
+               href="/@Model.Channel.LoginName/3">
+                3 days
+            </a>
+            <a class="rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 @(Model.Type == AggregateDays.SevenDays ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500")"
+               href="/@Model.Channel.LoginName/7">
+                7 days
+            </a>
+        </div>
+    </div>
+    <div class="pt-4 px-4">
+        <img src="https://cdn.frankerfacez.com/emoticon/425196/2" alt="Sadge">
+        <div class="pt-2">No @((int) Model.Type) day aggregate data recorded.</div>
+        <div>Not enough data collected for <span class="font-bold">@Model.Channel.DisplayName</span>. Viewer data needs to be collected for more than 1 day in order to calculate aggregate data.</div>
+    </div>
+
+</div>

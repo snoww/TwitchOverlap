@@ -12,7 +12,7 @@
     "tailwindcss": "^2.1.4"
   },
   "scripts": {
-    "css:build": "npx tailwindcss build -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.css",
+    "css": "npx tailwindcss -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.css --watch",
     "css:publish": "cross-env NODE_ENV=production npx tailwindcss build -i ./wwwroot/css/site.css -o ./wwwroot/css/tailwind.min.css --minify"
   },
   "author": "",
