@@ -2,13 +2,13 @@
 @model ChannelAggregateData
 
 @{
-    ViewData["Title"] = $"{Model.Channel.DisplayName} - Twitch Overlap";
+    ViewData["Title"] = $"{Model.Channel.DisplayName} - {(int)Model.Type} Day Aggregate - Twitch Overlap";
 }
 
 @section metatags
 {
     <meta property="og:title" content="@Model.Channel.DisplayName - Twitch Community Overlap">
-    <meta property="og:description" content="Chat hopper stats for @Model.Channel.DisplayName. Currently sharing @Model.Channel.Shared.ToString("N0") total viewers. Find out in detail which channels @Model.Channel.DisplayName's viewers are watching, or who's viewers are watching to @Model.Channel.DisplayName. The site is open source on GitHub."/>
+    <meta property="og:description" content="@((int)Model.Type) day aggregate overlap stats for @Model.Channel.DisplayName. Currently sharing @Model.Channel.Shared.ToString("N0") total viewers. Find out in detail which channels @Model.Channel.DisplayName's viewers are watching, or who's viewers are watching to @Model.Channel.DisplayName. The site is open source on GitHub."/>
     <meta property="og:image" content="https://static-cdn.jtvnw.net/jtv_user_pictures/@Model.Channel.Avatar">
 }
 
@@ -18,7 +18,7 @@
 }
 
 @{
-    var numberInfo = new NumberFormatInfo {PercentPositivePattern = 1};
+    var numberInfo = new NumberFormatInfo { PercentPositivePattern = 1 };
 }
 
 <div class="container w-full md:max-w-5xl xl:max-w-7xl mx-auto tracking-tight mt-16 mb-20">
@@ -34,18 +34,22 @@
         </div>
         <div class="mt-4 ml-4 mr-4 md:mt-0 md:ml-0 flex items-end">
             <a class="rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 @(Model.Type == AggregateDays.Default ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500")"
+               title="30 min stats"
                href="/@Model.Channel.LoginName">
                 30 min
             </a>
             <a class="rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 @(Model.Type == AggregateDays.OneDay ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500")"
+               title="1 day rolling aggregate"
                href="/@Model.Channel.LoginName/1">
                 1 day
             </a>
             <a class="rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 @(Model.Type == AggregateDays.ThreeDays ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500")"
+               title="3 day rolling aggregate"
                href="/@Model.Channel.LoginName/3">
                 3 days
             </a>
             <a class="rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 @(Model.Type == AggregateDays.SevenDays ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500")"
+               title="7 day rolling aggregate"
                href="/@Model.Channel.LoginName/7">
                 7 days
             </a>
@@ -103,7 +107,7 @@
                 if (Model.Change.OverlapPercentChange.HasValue)
                 {
                     <div class="flex items-center justify-center">
-                        <div>@(((double) Model.ChannelTotalOverlap / Model.ChannelTotalUnique).ToString("P", numberInfo))</div>
+                        <div>@(((double)Model.ChannelTotalOverlap / Model.ChannelTotalUnique).ToString("P", numberInfo))</div>
                         @{
                             if (Model.Change.OverlapPercentChange.Value >= 0)
                             {
@@ -118,7 +122,7 @@
                 }
                 else
                 {
-                    <div>@(((double) Model.ChannelTotalOverlap / Model.ChannelTotalUnique).ToString("P", numberInfo))</div>
+                    <div>@(((double)Model.ChannelTotalOverlap / Model.ChannelTotalUnique).ToString("P", numberInfo))</div>
                 }
             }
         </div>
@@ -189,11 +193,11 @@
                         </td>
                     }
                     <td class="table-channel-col">
-                        <a href="/@data.LoginName/@((int) Model.Type)">@data.DisplayName</a>
+                        <a href="/@data.LoginName/@((int)Model.Type)">@data.DisplayName</a>
                     </td>
-                    <td class="table-stats-col">@(((double) data.Shared / Model.ChannelTotalOverlap).ToString("P", numberInfo))</td>
+                    <td class="table-stats-col">@(((double)data.Shared / Model.ChannelTotalOverlap).ToString("P", numberInfo))</td>
                     <td class="table-stats-col">@(data.Shared.ToString("N0"))</td>
-                    <td class="table-stats-col">@(((double) data.Shared / Model.ChannelTotalUnique).ToString("P", numberInfo))</td>
+                    <td class="table-stats-col">@(((double)data.Shared / Model.ChannelTotalUnique).ToString("P", numberInfo))</td>
                     <td class="table-stats-col hover:underline hover:text-pink-500 truncate">
                         <a href="https://www.twitch.tv/directory/game/@data.Game" target="_blank" rel="noopener noreferrer">@data.Game</a>
                     </td>
