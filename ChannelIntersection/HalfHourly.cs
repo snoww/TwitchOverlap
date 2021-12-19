@@ -118,15 +118,21 @@ namespace ChannelIntersection
                 {
                     return;
                 }
+
+                List<KeyValuePair<string, int>> filter = channelOverlap[ch.LoginName].OrderByDescending(y => y.Value)
+                    .Where(y => y.Value >= MinSharedViewers)
+                    .ToList();
+
+                if (filter.Count < 1)
+                {
+                    return;
+                }
                 
                 ch.Shared = channelTotalOverlap[ch.LoginName];
                 overlapData.Add(new Overlap {
                     Timestamp = _timestamp, 
                     Channel = ch.Id, 
-                    Shared = channelOverlap[ch.LoginName]
-                        .OrderByDescending(y => y.Value)
-                        .Where(y => y.Value >= MinSharedViewers)
-                        .Select(y => new ChannelOverlap
+                    Shared = filter.Select(y => new ChannelOverlap 
                         {
                             Name = y.Key,
                             Shared = y.Value
