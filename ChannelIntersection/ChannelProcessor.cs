@@ -56,7 +56,7 @@ namespace ChannelIntersection
             await FetchChannels();
             Console.WriteLine($"retrieved {_topChannels.Count} channels in {sw.Elapsed.TotalSeconds}s");
             sw.Restart();
-            
+
             if (_flags.HasFlag(AggregateFlags.Hourly))
             {
                 Console.WriteLine("beginning hourly calculation");
@@ -77,13 +77,12 @@ namespace ChannelIntersection
 
                 int previousSize = _chatters.Count;
 
-                IEnumerable<Task> processTasks = _topChannels.Select(async channel =>
+                await Parallel.ForEachAsync(_topChannels, async (channel, token) =>
                 {
                     (string _, Channel ch) = channel;
                     await GetChatters(ch);
                 });
 
-                await Task.WhenAll(processTasks);
                 Console.WriteLine($"retrieved {_halfHourlyChatters.Count:N0} chatters\nsaved {_chatters.Count:N0} chatters (+{_chatters.Count - previousSize:N0}) in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
 
@@ -92,22 +91,20 @@ namespace ChannelIntersection
             else // half hourly
             {
                 Console.WriteLine("beginning half hourly calculation");
-                IEnumerable<Task> processTasks = _topChannels.Select(async channel =>
+                await Parallel.ForEachAsync(_topChannels, async (channel, token) =>
                 {
                     (string _, Channel ch) = channel;
                     await GetChatters(ch);
                 });
 
-                await Task.WhenAll(processTasks);
                 Console.WriteLine($"retrieved {_halfHourlyChatters.Count:N0} chatters in {sw.Elapsed.TotalSeconds}s");
                 sw.Restart();
             }
 
-            await using (var context = new TwitchContext(_psqlConnection))
-            {
-                var hh = new HalfHourly(context, _halfHourlyChatters, _topChannels, Timestamp);
-                await hh.CalculateShared();
-            }
+            var hh = new HalfHourly(_psqlConnection, _halfHourlyChatters, _topChannels, Timestamp);
+            await hh.CalculateShared();
+            
+            // await hh.AddUserChannels();
 
             if (_flags.HasFlag(AggregateFlags.Daily))
             {

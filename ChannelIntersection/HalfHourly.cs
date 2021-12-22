@@ -5,13 +5,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using ChannelIntersection.Models;
+using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChannelIntersection
 {
     public class HalfHourly
     {
-        private readonly TwitchContext _context;
+        private readonly string _connString;
         private readonly Dictionary<string, List<string>> _chatters;
         private readonly Dictionary<string, Channel> _channels;
         private readonly DateTime _timestamp;
@@ -19,9 +20,9 @@ namespace ChannelIntersection
         private const int MinSharedViewers = 5;
         private const int MaxSharedChannels = 100;
 
-        public HalfHourly(TwitchContext context, Dictionary<string, List<string>> chatters, Dictionary<string, Channel> channels, DateTime timestamp)
+        public HalfHourly(string connString, Dictionary<string, List<string>> chatters, Dictionary<string, Channel> channels, DateTime timestamp)
         {
-            _context = context;
+            _connString = connString;
             _chatters = chatters;
             _channels = channels;
             _timestamp = timestamp;
@@ -142,23 +143,24 @@ namespace ChannelIntersection
                 });
             });
             
-            _context.Channels.UpdateRange(_channels.Values);
-            await _context.ChannelsHistories.AddRangeAsync(_channels.Values.Select(x => new ChannelHistory
+            await using var context = new TwitchContext(_connString);
+            await context.BulkUpdateAsync(_channels.Values.ToList());
+            await context.BulkInsertAsync(_channels.Values.Select(x => new ChannelHistory
             {
                 Id = x.Id,
                 Timestamp = x.LastUpdate,
                 Viewers = x.Viewers,
                 Chatters = x.Chatters,
                 Shared = x.Shared,
-            }));
-            await _context.Overlaps.AddRangeAsync(overlapData);
-            await _context.SaveChangesAsync();
+            }).ToList());
+            await context.BulkInsertAsync(overlapData.ToList());
+            await context.SaveChangesAsync();
             
             // remove old data
             DateTime thirtyDays = _timestamp.AddDays(-30);
-            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap where timestamp <= {thirtyDays}");
-            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from channel_history where timestamp <= {thirtyDays}");
-            await _context.Database.ExecuteSqlRawAsync(@"
+            await context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap where timestamp <= {thirtyDays}");
+            await context.Database.ExecuteSqlInterpolatedAsync($"delete from channel_history where timestamp <= {thirtyDays}");
+            await context.Database.ExecuteSqlRawAsync(@"
                 delete
                 from channel_history
                 where exists(

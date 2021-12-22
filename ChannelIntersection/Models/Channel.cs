@@ -18,6 +18,10 @@ namespace ChannelIntersection.Models
         public DateTime LastUpdate { get; set; }
         
         public virtual ICollection<ChannelHistory> ChannelHistories { get; set; }
+
+        public Channel()
+        {
+        }
         
         public Channel(int id, string loginName, string game, int viewers, int chatters, int shared, DateTime lastUpdate, string avatar, string displayName)
         {
