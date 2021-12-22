@@ -24,15 +24,6 @@
       <None Update="config.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Remove="chatters\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="chatters\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="chatters\**" />
     </ItemGroup>
 
 </Project>
