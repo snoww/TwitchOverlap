@@ -2,7 +2,8 @@ import Head from "next/head";
 import Nav from "../components/Nav";
 import {GetStaticProps} from "next";
 import ChannelCard, {IndexChannelData} from "../components/ChannelCard";
-import {DateTime, Interval} from "luxon";
+import {DateTime} from "luxon";
+import {getTimeDiff} from "../utils/helpers";
 
 type HomeProps = {
   lastUpdate: string
@@ -10,37 +11,7 @@ type HomeProps = {
 }
 
 export default function Home({channels, lastUpdate}: HomeProps) {
-  let lastUpdated: string;
-
-  const now = DateTime.utc();
-  const lastUpdateDate = DateTime.fromISO(lastUpdate, {zone: "utc"});
-  const diff = Interval.fromDateTimes(lastUpdateDate, now);
-  console.log(now.toISO());
-  console.log(lastUpdateDate.toISO());
-  if (diff.length("minutes") <= 60) {
-    const rounded = Math.floor(diff.length("minutes"));
-    if (rounded === 1) {
-      lastUpdated = `${rounded} minute ago`;
-    } else {
-      lastUpdated = `${rounded} minutes ago`;
-    }
-  } else if (diff.length("hours") <= 24) {
-    const rounded = Math.floor(diff.length("hours"));
-    if (rounded === 1) {
-      lastUpdated = `${rounded} hour ago`;
-    } else {
-      lastUpdated = `${rounded} hours ago`;
-    }
-  } else if (diff.length("days") <= 7) {
-    const rounded = Math.floor(diff.length("days"));
-    if (rounded === 1) {
-      lastUpdated = `${rounded} day ago`;
-    } else {
-      lastUpdated = `${rounded} days ago`;
-    }
-  } else {
-    lastUpdated = lastUpdateDate.toISO();
-  }
+  const lastUpdated = getTimeDiff(DateTime.fromISO(lastUpdate, {zone: "utc"}));
 
   return (
     <>

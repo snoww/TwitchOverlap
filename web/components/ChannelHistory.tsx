@@ -1,6 +1,5 @@
 import ReactECharts from "echarts-for-react";
 import useSWR from "swr";
-import {useState} from "react";
 
 const stringToRGB = function (str: string) {
   let hash = 0;
@@ -21,15 +20,8 @@ type ChannelHistory = {
   channel: string
 }
 
-function useForceUpdate(){
-  const [value, setValue] = useState(0); // integer state
-  return () => setValue(value => value + 1); // update the state to force render
-}
-
 const ChannelHistory = ({channel}: ChannelHistory) => {
-  const forceUpdate = useForceUpdate();
-  // const [option, setOption] = useState({})
-  const {data, error} = useSWR(`http://localhost:5000/api/v1/history/${channel}`, fetcher);
+  const {data, error} = useSWR(`http://192.168.1.104:5000/api/v1/history/${channel}`, fetcher);
 
   if (error) {
     return <div>Chart Error</div>;
@@ -108,7 +100,7 @@ const ChannelHistory = ({channel}: ChannelHistory) => {
     },
     dataset: {
       dimensions: data.channels,
-      source: data.history
+      source: [...data.history].reverse()
     },
     xAxis: {
       type: "category"
@@ -138,7 +130,6 @@ const ChannelHistory = ({channel}: ChannelHistory) => {
       }
     },]
   };
-
 
   return (
     <ReactECharts className={"mt-4"} style={{width: "100%", minHeight: "480px"}} option={option}/>

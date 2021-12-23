@@ -9,7 +9,7 @@ const Nav = () => {
           <Link href="/">
             <a className="block sm:hidden md:block">
               <div className="block pl-4" style={{fontSize: 0}}>
-                <Image src="/images/roki2-round-10.png" alt="Roki" width={48} height={48}/>
+                <Image src="/images/roki2-round-10.png" alt="Roki" width={48} height={48} quality={10}/>
               </div>
             </a>
           </Link>

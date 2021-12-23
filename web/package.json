@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.4.0",
-    "date-fns": "^2.27.0",
     "echarts": "^5.2.2",
     "echarts-for-react": "^3.0.2",
     "eslint-config-airbnb-typescript": "^16.1.0",
