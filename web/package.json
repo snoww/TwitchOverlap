@@ -1,0 +1,42 @@
+{
+  "name": "twitch-overlap",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tailwindcss/forms": "^0.4.0",
+    "date-fns": "^2.27.0",
+    "echarts": "^5.2.2",
+    "echarts-for-react": "^3.0.2",
+    "eslint-config-airbnb-typescript": "^16.1.0",
+    "js-abbreviation-number": "^1.4.0",
+    "luxon": "^2.2.0",
+    "next": "12.0.7",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "swr": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/luxon": "^2.0.8",
+    "@types/react": "17.0.37",
+    "@typescript-eslint/eslint-plugin": "^5.8.0",
+    "@typescript-eslint/parser": "^5.8.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.5.0",
+    "eslint-config-airbnb": "^19.0.2",
+    "eslint-config-next": "12.0.7",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-react": "^7.28.0",
+    "eslint-plugin-react-hooks": "^4.3.0",
+    "postcss": "^8.4.5",
+    "postcss-import": "^14.0.2",
+    "tailwindcss": "^3.0.7",
+    "typescript": "^4.5.4"
+  }
+}
