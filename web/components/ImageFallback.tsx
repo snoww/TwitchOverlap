@@ -4,7 +4,7 @@ import Image from "next/image";
 export type ImageFallbackProps = {
     src: string,
     fallbackSrc: string,
-    [x: string]: unknown;
+    [x: string]: any;
 }
 
 const ImageFallback = (props: ImageFallbackProps) => {

@@ -46,13 +46,15 @@ const Channel = ({type, channel, data}: ChannelData) => {
       <div className="container w-full md:max-w-5xl xl:max-w-7xl mx-auto tracking-tight mt-16 mb-20">
         <div className="block md:flex justify-between">
           <div className="flex items-center pt-4 px-4">
-            <a href={`https://www.twitch.tv/${channel.loginName}`} target="_blank" rel="noopener noreferrer">
-              <ImageFallback src={`https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.avatar.replace("70x70", "300x300")}`}
-                             fallbackSrc="https://i.imgur.com/V2dxUn8.png"
-                             className="rounded-full"
-                             alt={`${channel.loginName}-avatar`}
-                             width="70" height="70" layout="fixed"
-                             priority={true}
+            <a href={`https://www.twitch.tv/${channel.loginName}`} target="_blank" rel="noopener noreferrer"
+               className="flex">
+              <ImageFallback
+                src={`https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.avatar.replace("70x70", "300x300")}`}
+                fallbackSrc="https://i.imgur.com/V2dxUn8.png"
+                className="rounded-full"
+                alt={`${channel.loginName}-avatar`}
+                width="70" height="70" layout="fixed"
+                priority={true}
               />
             </a>
             <div className="pl-3 flex flex-col">

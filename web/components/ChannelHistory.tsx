@@ -83,17 +83,20 @@ const ChannelHistory = ({channel}: ChannelHistory) => {
     }],
     tooltip: {
       trigger: "axis",
-      formatter: function (params: any[]) {
-        let output = "<div class=\"mb-2\"><b>" + params[0].name + " UTC</b></div>";
-        const values = Object.entries(params[0].value).filter(x => x[0] !== "timestamp");
+      formatter: function(params: {name: string, seriesName: string, value: { [x: string]: any }, [x: string]: any}[]) {
+        let output;
+        if (window.location.pathname.split("/").length > 2) {
+          output = "<div class=\"mb-2\"><b>" + params[0].name + "</b></div>";
+        } else {
+          output = "<div class=\"mb-2\"><b>" + params[0].name + " UTC</b></div>";
+        }
+        const values: [string, number][] = Object.entries(params[0].value).filter(x => x[0] !== "timestamp");
         for (let i = 0; i < values.length; i++) {
-          const param = params.find(x => x.seriesName === values[i][0]);
+          const param = params.find((x: { seriesName: string; }) => x.seriesName === values[i][0]);
           if (param == null) {
             continue;
           }
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          output += "<div class=\"flex justify-between\"><div class=\"mr-4\">" + param.marker + values[i][0] + "</div><div class=\"font-bold\">" + values[i][1].toLocaleString() + "</div></div>";
+          output += `<div class="flex justify-between"><div class="mr-4">${param.marker}${values[i][0]}</div><div class="font-mono">${values[i][1].toLocaleString()}</div></div>`;
         }
         return output;
       }
