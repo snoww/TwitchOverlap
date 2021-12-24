@@ -1,6 +1,5 @@
 import Head from "next/head";
 import Nav from "../components/Nav";
-import {GetStaticProps} from "next";
 import Link from "next/link";
 import Image from "next/image";
 import {ChannelOverlapData} from "../components/ChannelInfo/ChannelTableRow";
@@ -13,7 +12,7 @@ import ChannelDefaultInfo from "../components/ChannelInfo/ChannelDefaultInfo";
 import ChannelAggregateInfo from "../components/ChannelInfo/ChannelAggregateInfo";
 import ChannelDefaultTable from "../components/ChannelInfo/ChannelDefaultTable";
 import ChannelAggregateTable from "../components/ChannelInfo/ChannelAggregateTable";
-
+import {ParsedUrlQuery} from "querystring";
 
 export enum AggregateDays {
   Default = 0,
@@ -78,7 +77,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
           <div className="pt-4">
             <Image className="flex" src="https://cdn.frankerfacez.com/emoticon/425196/4" alt="Sadge" width="56"
                    height="43"/>
-            <div className="pt-2">No data recorded for <span className="font-bold">{asPath.substring(1)}</span></div>
+            <div className="pt-2">No data recorded for <span className="font-bold">{asPath.split("/")[1]}</span></div>
             <div>Only channels above {(1000).toLocaleString()} concurrent viewers and 500 chatters are recorded at the
               moment, requirements
               may be lowered in the future.
@@ -93,7 +92,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
   return (
     <>
       <Head>
-        <title>{channel.displayName} - Twitch Overlap</title>
+        <title>{`${channel.displayName}${type === AggregateDays.Default ? "" : ` - ${type.toString()} Day Aggregate`} - Twitch Overlap`}</title>
         <meta property="og:title" content={`${channel.displayName} - Twitch Community Overlap`}/>
         <meta property="og:description"
               content={`Chat hopper stats for ${channel.displayName}. Currently sharing ${channel.shared} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>
@@ -174,8 +173,13 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
   );
 };
 
-export const getStaticProps: GetStaticProps = async (context) => {
-  const channel = context.params?.channel;
+interface Params extends ParsedUrlQuery {
+  channel: string[],
+}
+
+export const getStaticProps = async (context: { params: Params; }) => {
+  const params = context.params as Params;
+  const channel = params.channel;
   const request = "http://192.168.1.104:5000/api/v1/channel/";
   if (channel === null || channel === undefined) {
     return {
@@ -229,14 +233,10 @@ export async function getStaticPaths() {
   const res = await fetch("http://192.168.1.104:5000/api/v1/channels/500");
   const channels = await res.json();
 
-  // Get the paths we want to pre-render based on posts
   const paths = channels.map((x: string) => ({
     params: {channel: [x]},
   }));
 
-  // We'll pre-render only these paths at build time.
-  // { fallback: blocking } will server-render pages
-  // on-demand if the path doesn't exist.
   return {paths, fallback: "blocking"};
 }
 
