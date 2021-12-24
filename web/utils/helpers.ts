@@ -32,3 +32,20 @@ export function getTimeDiff(start: DateTime): string {
 
   return lastUpdated;
 }
+
+export function getDateDiff(start: DateTime): string {
+  let lastUpdated: string;
+
+  const now = DateTime.utc();
+  const diff = Interval.fromDateTimes(start, now);
+  if (diff.length("days") >= 1) {
+    lastUpdated = "Today";
+  } else if (diff.length("days") == 2) {
+    lastUpdated = "Yesterday";
+  } else {
+    lastUpdated = `${Math.floor(diff.length("day"))} days ago`;
+  }
+
+  return lastUpdated;
+}
+

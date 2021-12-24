@@ -3,39 +3,65 @@ import Nav from "../components/Nav";
 import {GetStaticProps} from "next";
 import Link from "next/link";
 import Image from "next/image";
-import ChannelTableRow, {ChannelOverlapData} from "../components/ChannelTableRow";
+import {ChannelOverlapData} from "../components/ChannelInfo/ChannelTableRow";
 import {DateTime} from "luxon";
 import {getTimeDiff} from "../utils/helpers";
 import ImageFallback from "../components/ImageFallback";
-import ChannelHistory from "../components/ChannelHistory";
+import ChannelHistory from "../components/ChannelInfo/ChannelHistory";
 import {useRouter} from "next/router";
+import ChannelDefaultInfo from "../components/ChannelInfo/ChannelDefaultInfo";
+import ChannelAggregateInfo from "../components/ChannelInfo/ChannelAggregateInfo";
+import ChannelDefaultTable from "../components/ChannelInfo/ChannelDefaultTable";
+import ChannelAggregateTable from "../components/ChannelInfo/ChannelAggregateTable";
 
 
-enum AggregateDays {
+export enum AggregateDays {
   Default = 0,
   OneDay = 1,
   ThreeDays = 3,
   SevenDays = 7
 }
 
-type ChannelData = {
+type ChannelPrev = {
+  timestamp: string,
+  viewers: number,
+  chatters: number,
+  shared: number
+}
+
+export type ChannelStats = {
+  id: number,
+  loginName: string
+  displayName: string,
+  avatar: string,
+  game: string,
+  viewers: number,
+  chatters: number,
+  shared: number,
+  history: ChannelPrev[],
+  lastUpdate: string
+}
+
+type ChannelAggregateChange = {
+  totalChatterChange: number,
+  totalChatterPercentageChange: number,
+  overlapPercentChange: number,
+  totalOverlapChange: number,
+  totalOverlapPercentageChange: number,
+}
+
+export type ChannelData = {
   notFound: boolean
   type: AggregateDays,
-  channel: {
-    id: number,
-    loginName: string
-    displayName: string,
-    avatar: string,
-    game: string,
-    viewers: number,
-    chatters: number,
-    shared: number,
-    lastUpdate: string
-  },
+  channel: ChannelStats,
+  change: ChannelAggregateChange,
+  channelTotalUnique: number,
+  channelTotalOverlap: number,
+  date: string,
   data: ChannelOverlapData[]
 }
 
-const Channel = ({notFound, type, channel, data}: ChannelData) => {
+const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data, notFound, type, date}: ChannelData) => {
   const {asPath} = useRouter();
   if (notFound) {
     return (
@@ -105,85 +131,73 @@ const Channel = ({notFound, type, channel, data}: ChannelData) => {
                 30 min
               </a>
             </Link>
-            <Link href={`/${channel.loginName}`}>
+            <Link href={`/${channel.loginName}/1`}>
               <a
                 className={`rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 ${type == AggregateDays.OneDay ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500"}`}
-                title="30 min stats">
+                title="1 day stats">
                 1 day
               </a>
             </Link>
-            <Link href={`/${channel.loginName}`}>
+            <Link href={`/${channel.loginName}/3`}>
               <a
                 className={`rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 ${type == AggregateDays.ThreeDays ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500"}`}
-                title="30 min stats">
+                title="3 day stats">
                 3 days
               </a>
             </Link>
-            <Link href={`/${channel.loginName}`}>
+            <Link href={`/${channel.loginName}/7`}>
               <a
                 className={`rounded border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md px-2 ${type == AggregateDays.SevenDays ? "bg-pink-500 hover:bg-pink-600 dark:bg-pink-800 dark:hover:bg-pink-700" : "dark:bg-gray-700 hover:text-pink-500"}`}
-                title="30 min stats">
+                title="7 day stats">
                 7 days
               </a>
             </Link>
           </div>
         </div>
-        <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 px-4 text-center">
-          <div className="stats-card">
-            <div className="font-medium mb-1">Last Updated</div>
-            <div>{lastUpdated}</div>
-          </div>
-          <div className="stats-card" title="Total viewers in stream, includes embedded viewers">
-            <div className="font-medium mb-1">Viewers</div>
-            <div>{channel.viewers.toLocaleString()}</div>
-          </div>
-          <div className="stats-card" title="Total chatters in stream, excludes embedded viewers">
-            <div className="font-medium mb-1">Chatters</div>
-            <div>{channel.chatters.toLocaleString()}</div>
-          </div>
-          <div className="stats-card" title="Ratio of chatters to viewers, higher is better">
-            <div className="font-medium mb-1">Chatter Ratio</div>
-            <div>{(channel.chatters / channel.viewers).toFixed(2).toLocaleString()}</div>
-          </div>
-          <div className="stats-card" title="Percentage of total viewers that are watching another stream">
-            <div className="font-medium mb-1">Overlap Percentage</div>
-            <div>{(channel.shared / channel.viewers * 100).toFixed(2).toLocaleString()}%</div>
-          </div>
-          <div className="stats-card" title="Total number of viewers watching another stream">
-            <div className="font-medium mb-1">Total Shared</div>
-            <div>{channel.shared.toLocaleString()}</div>
-          </div>
+        <div
+          className={`pt-4 grid grid-cols-2 gap-4 px-4 text-center ${type === AggregateDays.Default ? "sm:grid-cols-3 lg:grid-cols-6" : "md:grid-cols-4"}`}>
+          {type === AggregateDays.Default
+            ? <ChannelDefaultInfo channel={channel} lastUpdated={lastUpdated}/>
+            : <ChannelAggregateInfo change={change} channelTotalOverlap={channelTotalOverlap}
+                                    channelTotalUnique={channelTotalUnique}
+                                    channel={channel} notFound={notFound} type={AggregateDays.Default} data={data}
+                                    date={date}/>
+          }
         </div>
-        <ChannelHistory channel={channel.loginName}/>
-        <div className="overflow-x-auto">
-          <table className="table-fixed mt-4 mx-auto">
-            <thead className="text-left font-medium">
-            <tr className="border-b-2 border-gray-400">
-              <td className="px-2 md:px-4 py-2" title="Change compared to last overlap">Δ</td>
-              <td className="w-1/6 px-2 md:px-4 py-2" title="Channel">Channel</td>
-              <td className="w-1/6 px-2 md:px-4 py-2" title="Probability of where a shared chatter is from">Overlap
-                Probability
-              </td>
-              <td className="w-1/6 px-2 md:px-4 py-2" title="Total number of overlap from a channel">Overlap Chatters
-              </td>
-              <td className="w-1/6 px-2 md:px-4 py-2" title="Percentage of total chatters">% of Total Chatters</td>
-              <td className="w-1/3 px-2 md:px-4 py-2" title="Current category">Playing</td>
-            </tr>
-            </thead>
-            <tbody>
-            {data.map(x =>
-              <ChannelTableRow key={x.loginName} shared={channel.shared} chatters={channel.chatters} data={x}/>
-            )}
-            </tbody>
-          </table>
-        </div>
+        <ChannelHistory channel={channel.loginName} type={type}/>
+        {type === AggregateDays.Default
+          ? <ChannelDefaultTable data={data} channel={channel}/>
+          : <ChannelAggregateTable data={data} totalUnique={channelTotalUnique} totalShared={channelTotalOverlap} type={type}/>
+        }
       </div>
     </>
   );
 };
 
-export const getStaticProps: GetStaticProps = async ({params}) => {
-  const res = await fetch(`http://192.168.1.104:5000/api/v1/channel/${params!.channel}`);
+export const getStaticProps: GetStaticProps = async (context) => {
+  const channel = context.params?.channel;
+  const request = "http://192.168.1.104:5000/api/v1/channel/";
+  if (channel === null || channel === undefined) {
+    return {
+      redirect: {
+        destination: "/"
+      }
+    };
+  }
+
+  let res;
+  if (channel.length == 1) {
+    res = await fetch(request + channel[0]);
+  } else if (channel.length == 2 && (channel[1] === "1" || channel[1] === "3" || channel[1] === "7")) {
+    res = await fetch(`${request + channel[0]}/${channel[1]}`);
+  } else {
+    return {
+      redirect: {
+        destination: "/" + channel[0]
+      }
+    };
+  }
+
   if (!res.ok) {
     return {
       props: {
@@ -205,9 +219,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
   return {
     props: {
       notFound: false,
-      type: data.type,
-      channel: data.channel,
-      data: data.data
+      ...data
     },
     revalidate: 60
   };
@@ -219,7 +231,7 @@ export async function getStaticPaths() {
 
   // Get the paths we want to pre-render based on posts
   const paths = channels.map((x: string) => ({
-    params: {channel: x},
+    params: {channel: [x]},
   }));
 
   // We'll pre-render only these paths at build time.

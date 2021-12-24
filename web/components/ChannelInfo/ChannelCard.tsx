@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { abbreviateNumber } from "js-abbreviation-number";
-import ImageFallback from "./ImageFallback";
+import ImageFallback from "../ImageFallback";
 
 export type IndexChannelData = {
   id: string,

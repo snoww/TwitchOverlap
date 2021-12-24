@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-type ChannelTableRowType = {
+export type ChannelTableRowType = {
   shared: number,
   chatters: number,
-  data: ChannelOverlapData
+  data: ChannelOverlapData,
 }
 
 export type ChannelOverlapData = {
@@ -14,7 +14,7 @@ export type ChannelOverlapData = {
   shared: number
 }
 
-const RowChange = (prop: {change: number}) => {
+export const RowChange = (prop: {change: number}) => {
   const change = prop.change;
   if (change === null) {
     return (

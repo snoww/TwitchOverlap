@@ -1,5 +1,6 @@
 import ReactECharts from "echarts-for-react";
 import useSWR from "swr";
+import {AggregateDays} from "../../pages/[...channel]";
 
 const stringToRGB = function (str: string) {
   let hash = 0;
@@ -18,11 +19,13 @@ const stringToRGB = function (str: string) {
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 type ChannelHistory = {
-  channel: string
+  channel: string,
+  type: AggregateDays
 }
 
-const ChannelHistory = ({channel}: ChannelHistory) => {
-  const {data, error} = useSWR(`http://192.168.1.104:5000/api/v1/history/${channel}`, fetcher);
+const ChannelHistory = ({channel, type}: ChannelHistory) => {
+
+  const {data, error} = useSWR(`http://192.168.1.104:5000/api/v1/history/${channel}${type === AggregateDays.Default ? "" : `/${type.toString()}`}`, fetcher);
 
   if (error) {
     return <div>Chart Error</div>;

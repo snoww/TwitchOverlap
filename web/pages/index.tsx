@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Nav from "../components/Nav";
 import {GetStaticProps} from "next";
-import ChannelCard, {IndexChannelData} from "../components/ChannelCard";
+import ChannelCard, {IndexChannelData} from "../components/ChannelInfo/ChannelCard";
 import {DateTime} from "luxon";
 import {getTimeDiff} from "../utils/helpers";
 
@@ -45,7 +45,7 @@ export default function Home({channels, lastUpdate}: HomeProps) {
   );
 }
 
-export const getStaticProps: GetStaticProps = async (context) => {
+export const getStaticProps: GetStaticProps = async () => {
   const res = await fetch("http://192.168.1.104:5000/api/v1/index");
   const data = await res.json();
 
