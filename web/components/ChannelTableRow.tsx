@@ -33,13 +33,13 @@ const RowChange = (prop: {change: number}) => {
   if (change > 0) {
     return (
       <td className="text-emerald-500 whitespace-nowrap" title="increased position">
-        <i className="fas fa-chevron-up pl-1"><span className="font-sans font-medium"> {change}</span></i>
+        <i className="fas fa-chevron-up pl-1"><span className="font-sans font-medium">{` ${change}`}</span></i>
       </td>
     );
   } else {
     return (
       <td className="text-red-500 whitespace-nowrap" title="increased position">
-        <i className="fas fa-chevron-down pl-1"><span className="font-sans font-medium"> {Math.abs(change)}</span></i>
+        <i className="fas fa-chevron-down pl-1"><span className="font-sans font-medium">{` ${Math.abs(change)}`}</span></i>
       </td>
     );
   }
@@ -51,7 +51,7 @@ const ChannelTableRow = ({shared, chatters, data}: ChannelTableRowType) => {
       <tr className="border-b border-gray-300">
         <RowChange change={data.change}/>
         <td className="table-channel-col">
-          <a href={`/${data.loginName}`}>{data.displayName}</a>
+          <Link href={`/${data.loginName}`}>{data.displayName}</Link>
         </td>
         <td className="table-stats-col">{((data.shared/shared)*100).toFixed(2).toLocaleString()}%</td>
         <td className="table-stats-col">{data.shared.toLocaleString()}</td>

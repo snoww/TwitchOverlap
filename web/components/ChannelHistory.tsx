@@ -9,7 +9,8 @@ const stringToRGB = function (str: string) {
   let colour = "#";
   for (let i = 0; i < 3; i++) {
     const value = (hash >> (i * 8)) & 0xFF;
-    colour += ("00" + value.toString(16)).substr(-2);
+    const str = ("00" + value.toString(16));
+    colour += str.substring(str.length-2);
   }
   return colour;
 };
@@ -31,7 +32,7 @@ const ChannelHistory = ({channel}: ChannelHistory) => {
     return <ReactECharts className={"mt-4"} style={{width: "100%", minHeight: "480px"}}
                          showLoading={true}
                          loadingOption={{textColor: "#fff", maskColor: "rgba(255, 255, 255, 0)"}}
-                         option={{}}/>;
+                         option={{}} notMerge={true}/>;
   }
 
   const lines = [];
@@ -135,7 +136,7 @@ const ChannelHistory = ({channel}: ChannelHistory) => {
   };
 
   return (
-    <ReactECharts className={"mt-4"} style={{width: "100%", minHeight: "480px"}} option={option}/>
+    <ReactECharts className={"mt-4"} style={{width: "100%", minHeight: "480px"}} option={option} notMerge={true}/>
   );
 };
 

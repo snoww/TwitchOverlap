@@ -2,11 +2,14 @@ import Head from "next/head";
 import Nav from "../components/Nav";
 import {GetStaticProps} from "next";
 import Link from "next/link";
+import Image from "next/image";
 import ChannelTableRow, {ChannelOverlapData} from "../components/ChannelTableRow";
 import {DateTime} from "luxon";
 import {getTimeDiff} from "../utils/helpers";
 import ImageFallback from "../components/ImageFallback";
 import ChannelHistory from "../components/ChannelHistory";
+import {useRouter} from "next/router";
+
 
 enum AggregateDays {
   Default = 0,
@@ -16,6 +19,7 @@ enum AggregateDays {
 }
 
 type ChannelData = {
+  notFound: boolean
   type: AggregateDays,
   channel: {
     id: number,
@@ -31,7 +35,34 @@ type ChannelData = {
   data: ChannelOverlapData[]
 }
 
-const Channel = ({type, channel, data}: ChannelData) => {
+const Channel = ({notFound, type, channel, data}: ChannelData) => {
+  const {asPath} = useRouter();
+  if (notFound) {
+    return (
+      <>
+        <Head>
+          <title>No Data - Twitch Overlap</title>
+          <meta property="og:title" content="@Model - Twitch Community Overlap"/>
+          <meta property="og:description"
+                content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
+          <meta property="og:image" content="/images/roki2-round-10.png"/>
+        </Head>
+        <Nav/>
+        <div className="container w-full md:max-w-5xl xl:max-w-7xl mx-auto tracking-tight mt-16 mb-20">
+          <div className="pt-4">
+            <Image className="flex" src="https://cdn.frankerfacez.com/emoticon/425196/4" alt="Sadge" width="56"
+                   height="43"/>
+            <div className="pt-2">No data recorded for <span className="font-bold">{asPath.substring(1)}</span></div>
+            <div>Only channels above {(1000).toLocaleString()} concurrent viewers and 500 chatters are recorded at the
+              moment, requirements
+              may be lowered in the future.
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   const lastUpdated = getTimeDiff(DateTime.fromISO(channel.lastUpdate, {zone: "utc"}));
   return (
     <>
@@ -153,25 +184,37 @@ const Channel = ({type, channel, data}: ChannelData) => {
 
 export const getStaticProps: GetStaticProps = async ({params}) => {
   const res = await fetch(`http://192.168.1.104:5000/api/v1/channel/${params!.channel}`);
+  if (!res.ok) {
+    return {
+      props: {
+        notFound: true
+      }
+    };
+  }
+
   const data = await res.json();
 
   if (!data) {
     return {
-      notFound: true,
+      props: {
+        notFound: true,
+      }
     };
   }
 
   return {
     props: {
+      notFound: false,
       type: data.type,
       channel: data.channel,
       data: data.data
-    }
+    },
+    revalidate: 60
   };
 };
 
 export async function getStaticPaths() {
-  const res = await fetch("http://192.168.1.104:5000/api/v1/channels");
+  const res = await fetch("http://192.168.1.104:5000/api/v1/channels/500");
   const channels = await res.json();
 
   // Get the paths we want to pre-render based on posts
