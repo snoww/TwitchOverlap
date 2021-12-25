@@ -7,28 +7,23 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ChannelIntersection.Models;
-using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
-// ReSharper disable InconsistentlySynchronizedField
 
 namespace ChannelIntersection
 {
     public class Daily
     {
         private readonly TwitchContext _context;
+        private readonly Dictionary<string, HashSet<string>> _chatters = new();
         private readonly DateTime _timestamp;
-        private readonly DateOnly _date;
 
         private readonly Dictionary<string, Dictionary<string, int>> _channelOverlap = new();
         private readonly Dictionary<string, int> _channelTotalOverlap = new();
-        private Dictionary<string, int> _channelUniqueChatters = new();
-
-        private readonly Dictionary<string, HashSet<int>> _channelChatters = new();
-        private readonly Dictionary<int, List<string>> _chatterChannels = new();
+        private readonly Dictionary<string, int> _channelUniqueChatters = new();
 
         private readonly object _channelOverlapLock = new();
         private readonly object _channelTotalOverlapCountLock = new();
-        private readonly object _aggregateLock = new();
+        private readonly object _channelUniqueChatterCountLock = new();
         
         private const int MinSharedViewers = 5;
         private const int OneDayLimit = 100;
@@ -41,7 +36,6 @@ namespace ChannelIntersection
         {
             _context = context;
             _timestamp = timestamp;
-            _date = DateOnly.FromDateTime(_timestamp.AddDays(-1));
         }
 
         public async Task Aggregate()
@@ -64,9 +58,7 @@ namespace ChannelIntersection
             Console.WriteLine("loading 1 day data");
             await LoadData(GetFileNames(1));
             Console.WriteLine("aggregating 1 day data");
-            TransposeChatters();
-            Console.WriteLine("calculating overlap");
-            Calculate();
+            Calculate(_chatters);
             await InsertDailyToDatabase();
             _channelOverlap.Clear();
             _channelTotalOverlap.Clear();
@@ -78,9 +70,7 @@ namespace ChannelIntersection
             Console.WriteLine("loading 3 day data");
             await LoadData(GetFileNames(3));
             Console.WriteLine("aggregating 3 day data");
-            TransposeChatters();
-            Console.WriteLine("calculating overlap");
-            Calculate();
+            Calculate(_chatters);
             await Insert3DaysToDatabase();
             _channelOverlap.Clear();
             _channelTotalOverlap.Clear();
@@ -93,9 +83,7 @@ namespace ChannelIntersection
             string[] fileNames = GetFileNames(7).ToArray();
             await LoadData(fileNames);
             Console.WriteLine("aggregating 7 day data");
-            TransposeChatters();
-            Console.WriteLine("calculating overlap");
-            Calculate();
+            Calculate(_chatters);
             await Insert7DaysToDatabase();
             _channelOverlap.Clear();
             _channelTotalOverlap.Clear();
@@ -146,74 +134,78 @@ namespace ChannelIntersection
 
         private async Task LoadData(IEnumerable<string> files)
         {
-            await Parallel.ForEachAsync(files, async (file, token) =>
+            foreach (string file in files)
             {
                 if (!File.Exists(file))
                 {
-                    return;
+                    continue;
                 }
 
-                Dictionary<string, List<string>> data;
+                Dictionary<string, HashSet<string>> data;
                 await using (FileStream fs = File.OpenRead(file))
                 {
-                    data = await JsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(fs, cancellationToken: token) ?? new Dictionary<string, List<string>>();
+                    data = await JsonSerializer.DeserializeAsync<Dictionary<string, HashSet<string>>>(fs) ?? new Dictionary<string, HashSet<string>>();
                 }
-                
-                foreach (var (user, channels) in data)
+
+                foreach ((string username, HashSet<string> channels) in data)
                 {
-                    foreach (string channel in channels)
+                    if (!_chatters.ContainsKey(username))
                     {
-                        lock (_aggregateLock)
-                        {
-                            if (!_channelChatters.ContainsKey(channel))
-                            {
-                                _channelChatters[channel] = new HashSet<int>();
-                            }
-                            else
-                            {
-                                _channelChatters[channel].Add(user.GetHashCode());
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        private void TransposeChatters()
-        {
-            foreach (var (channel, user) in _channelChatters)
-            {
-                foreach (int hash in user)
-                {
-                    if (!_chatterChannels.ContainsKey(hash))
-                    {
-                        _chatterChannels[hash] = new List<string> { channel };
+                        _chatters[username] = new HashSet<string>(channels);
                     }
                     else
                     {
-                        _chatterChannels[hash].Add(channel);
+                        _chatters[username].UnionWith(channels);
                     }
                 }
             }
-            Console.WriteLine($"transposed {_chatterChannels.Count:N0} chatters");
-            _channelUniqueChatters = _channelChatters.ToDictionary(x => x.Key, y => y.Value.Count);
         }
 
-        private void Calculate()
+        private void Calculate(Dictionary<string, HashSet<string>> chatters)
         {
-            Parallel.ForEach(_chatterChannels, x =>
+            Console.WriteLine($"aggregating {chatters.Count:N0} chatters");
+            Parallel.ForEach(chatters, x =>
             {
-                var (_, channels) = x;
-                
+                (string _, HashSet<string> channels) = x;
                 if (channels.Count < 2)
                 {
+                    // only appear in one channel
+                    // increment unique chatter count in channel
+                    foreach (string channel in channels)
+                    {
+                        lock (_channelUniqueChatterCountLock)
+                        {
+                            if (!_channelUniqueChatters.ContainsKey(channel))
+                            {
+                                _channelUniqueChatters[channel] = 1;
+                            }
+                            else
+                            {
+                                _channelUniqueChatters[channel]++;
+                            }
+                        }
+                    }
+
                     return;
                 }
 
                 foreach (string channel in channels)
                 {
                     // appears in multiple channels
+                    // increment unique chatter count
                     // increment overlap chatter count
+                    lock (_channelUniqueChatterCountLock)
+                    {
+                        if (!_channelUniqueChatters.ContainsKey(channel))
+                        {
+                            _channelUniqueChatters[channel] = 1;
+                        }
+                        else
+                        {
+                            _channelUniqueChatters[channel]++;
+                        }
+                    }
+
                     lock (_channelTotalOverlapCountLock)
                     {
                         if (!_channelTotalOverlap.ContainsKey(channel))
@@ -281,7 +273,7 @@ namespace ChannelIntersection
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapDaily
                 {
-                    Date = _date,
+                    Date = _timestamp.AddDays(-1),
                     Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -298,7 +290,7 @@ namespace ChannelIntersection
                 });
             });
 
-            await _context.BulkInsertAsync(overlapData.ToList());
+            await _context.OverlapsDaily.AddRangeAsync(overlapData);
             await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_daily where date <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
@@ -312,7 +304,7 @@ namespace ChannelIntersection
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapRolling3Days
                 {
-                    Date = _date,
+                    Date = _timestamp.AddDays(-1),
                     Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -329,7 +321,7 @@ namespace ChannelIntersection
                 });
             });
 
-            await _context.BulkInsertAsync(overlapData.ToList());
+            await _context.OverlapRolling3Days.AddRangeAsync(overlapData);
             await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_3_days where date <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
@@ -343,7 +335,7 @@ namespace ChannelIntersection
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapRolling7Days
                 {
-                    Date = _date,
+                    Date = _timestamp.AddDays(-1),
                     Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -360,7 +352,7 @@ namespace ChannelIntersection
                 });
             });
 
-            await _context.BulkInsertAsync(overlapData.ToList());
+            await _context.OverlapRolling7Days.AddRangeAsync(overlapData);
             await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_7_days where date <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
