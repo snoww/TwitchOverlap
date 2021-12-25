@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ChannelIntersection.Models;
+using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChannelIntersection
@@ -16,6 +17,7 @@ namespace ChannelIntersection
         private readonly TwitchContext _context;
         private readonly Dictionary<string, HashSet<string>> _chatters = new();
         private readonly DateTime _timestamp;
+        private readonly DateOnly _date;
 
         private readonly Dictionary<string, Dictionary<string, int>> _channelOverlap = new();
         private readonly Dictionary<string, int> _channelTotalOverlap = new();
@@ -36,6 +38,7 @@ namespace ChannelIntersection
         {
             _context = context;
             _timestamp = timestamp;
+            _date = DateOnly.FromDateTime(timestamp.AddDays(-1));
         }
 
         public async Task Aggregate()
@@ -273,7 +276,7 @@ namespace ChannelIntersection
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapDaily
                 {
-                    Date = _timestamp.AddDays(-1),
+                    Date = _date,
                     Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -290,7 +293,7 @@ namespace ChannelIntersection
                 });
             });
 
-            await _context.OverlapsDaily.AddRangeAsync(overlapData);
+            await _context.BulkInsertAsync(overlapData.ToList());
             await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_daily where date <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
@@ -304,7 +307,7 @@ namespace ChannelIntersection
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapRolling3Days
                 {
-                    Date = _timestamp.AddDays(-1),
+                    Date = _date,
                     Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -321,7 +324,7 @@ namespace ChannelIntersection
                 });
             });
 
-            await _context.OverlapRolling3Days.AddRangeAsync(overlapData);
+            await _context.BulkInsertAsync(overlapData.ToList());
             await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_3_days where date <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
@@ -335,7 +338,7 @@ namespace ChannelIntersection
                 (string channel, int channelId) = x;
                 overlapData.Add(new OverlapRolling7Days
                 {
-                    Date = _timestamp.AddDays(-1),
+                    Date = _date,
                     Channel = channelId,
                     ChannelTotalOverlap = _channelTotalOverlap[channel],
                     ChannelTotalUnique = _channelUniqueChatters[channel],
@@ -352,7 +355,7 @@ namespace ChannelIntersection
                 });
             });
 
-            await _context.OverlapRolling7Days.AddRangeAsync(overlapData);
+            await _context.BulkInsertAsync(overlapData.ToList());
             await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_7_days where date <= {_timestamp.AddDays(-14)}");
             await _context.SaveChangesAsync();
         }
