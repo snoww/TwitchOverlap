@@ -1,6 +1,7 @@
 import ReactECharts from "echarts-for-react";
 import useSWR from "swr";
 import {AggregateDays} from "../../pages/[...channel]";
+import {useTheme} from "next-themes";
 
 const stringToRGB = function (str: string) {
   let hash = 0;
@@ -24,6 +25,8 @@ type ChannelHistory = {
 }
 
 const ChannelHistory = ({channel, type}: ChannelHistory) => {
+  const { theme } = useTheme();
+
   const {
     data,
     error
@@ -144,6 +147,26 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
       }
     },]
   };
+
+  if (theme !== "dark") {
+    option.textStyle = {
+      fontFamily: "Inter",
+      color: "#000"
+    };
+    option.legend = {
+      textStyle: {
+        color: "#000"
+      },
+      inactiveColor: "#d3d3d3",
+      type: "scroll",
+      pageTextStyle: {
+        color: "#000"
+      },
+      pageIconColor: "#2f4554",
+      pageIconInactiveColor: "#aaa",
+      data: legendData
+    };
+  }
 
   return (
     <ReactECharts className={"mt-4"} style={{width: "100%", minHeight: "480px"}} option={option} notMerge={true}/>
