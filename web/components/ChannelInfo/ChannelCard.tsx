@@ -12,7 +12,7 @@ export type IndexChannelData = {
 const ChannelCard = ({ id, avatar, displayName, chatters }: IndexChannelData) => {
 
   return (
-    <div className="channel-card">
+    <div className="channel-card" title={`${displayName}'s viewer overlap`}>
       <Link href={`/${id}`}>
         <a>
           <div className="flex justify-start items-center">

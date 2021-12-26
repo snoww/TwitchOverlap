@@ -1,11 +1,6 @@
 import Head from "next/head";
 import Nav from "../components/Nav";
-import Link from "next/link";
-import Image from "next/image";
 import {ChannelOverlapData} from "../components/ChannelInfo/ChannelTableRow";
-import {DateTime} from "luxon";
-import {getTimeDiff} from "../utils/helpers";
-import ImageFallback from "../components/ImageFallback";
 import ChannelHistory from "../components/ChannelInfo/ChannelHistory";
 import {useRouter} from "next/router";
 import ChannelDefaultInfo from "../components/ChannelInfo/ChannelDefaultInfo";
@@ -69,9 +64,9 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
       <>
         <Head>
           <title>No Data - Twitch Overlap</title>
-          <meta property="og:title" content="@Model - Twitch Community Overlap"/>
+          <meta property="og:title" content="Twitch Community Overlap"/>
           <meta property="og:description"
-                content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
+                content="The site shows stats about the overlap of viewers and chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
           <meta property="og:image" content="/images/roki2-round-10.png"/>
         </Head>
         <Nav/>
@@ -92,9 +87,9 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
       <>
         <Head>
           <title>No Data - Twitch Overlap</title>
-          <meta property="og:title" content="@Model - Twitch Community Overlap"/>
+          <meta property="og:title" content={`${channel.displayName} - Twitch Community Overlap`}/>
           <meta property="og:description"
-                content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
+                content="The site shows stats about the overlap of viewers and chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
           <meta property="og:image" content="/images/roki2-round-10.png"/>
         </Head>
         <Nav/>
@@ -102,7 +97,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
           <ChannelHeader channel={channel} type={type}/>
           <div className="pt-4 px-4">
             <Sadge/>
-            <div className="pt-2">No {type.toString()} day aggregate data recorded.</div>
+            <div className="pt-2">No {type.toString()} day aggregate data recorded for {channel.displayName}.</div>
             <div>Not enough data collected for <span className="font-bold">{channel.displayName}</span>. Viewer
               data needs to be collected for more than 1 day in order to calculate aggregate data.
             </div>
@@ -118,8 +113,10 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
         <title>{`${channel.displayName}${type === AggregateDays.Default ? "" : ` - ${type.toString()} Day Aggregate`} - Twitch Overlap`}</title>
         <meta property="og:title" content={`${channel.displayName} - Twitch Community Overlap`}/>
         <meta property="og:description"
-              content={`Chat hopper stats for ${channel.displayName}. Currently sharing ${channel.shared} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>
+              content={`Viewer and chatter overlap stats for ${channel.displayName}. Currently sharing ${channel.shared.toLocaleString()} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>
         <meta property="og:image" content={`https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.avatar}`}/>
+        <meta name="description"
+              content={`Viewer and chatter overlap stats for ${channel.displayName}. Showing ${channel.displayName}'s audience overlap. Currently sharing ${channel.shared.toLocaleString()} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>
       </Head>
       <Nav/>
       <div className="container w-full md:max-w-5xl xl:max-w-7xl mx-auto tracking-tight mt-16 mb-20">
@@ -137,7 +134,8 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
         <ChannelHistory channel={channel.loginName} type={type}/>
         {type === AggregateDays.Default
           ? <ChannelDefaultTable data={data} channel={channel}/>
-          : <ChannelAggregateTable data={data} totalUnique={channelTotalUnique} totalShared={channelTotalOverlap} type={type}/>
+          : <ChannelAggregateTable data={data} totalUnique={channelTotalUnique} totalShared={channelTotalOverlap}
+                                   type={type}/>
         }
       </div>
     </>

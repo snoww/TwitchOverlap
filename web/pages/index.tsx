@@ -4,6 +4,7 @@ import {GetStaticProps} from "next";
 import ChannelCard, {IndexChannelData} from "../components/ChannelInfo/ChannelCard";
 import {DateTime} from "luxon";
 import {getTimeDiff} from "../utils/helpers";
+import React from "react";
 
 type HomeProps = {
   lastUpdate: string
@@ -19,13 +20,15 @@ export default function Home({channels, lastUpdate}: HomeProps) {
         <title>Twitch Overlap</title>
         <meta property="og:title" content="Twitch Overlap"/>
         <meta property="og:description"
-              content="The site shows stats about the overlap of chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
+              content="The site shows stats about the overlap of viewers and chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. Also commonly referred to as viewer/audience overlap stats. The site is open source on GitHub."/>
+        <meta name="description"
+              content="The site shows stats about the overlap of viewers and chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. Also commonly referred to as viewer/audience overlap stats. The site is open source on GitHub."/>
       </Head>
       <Nav/>
       <div className="container w-full md:max-w-5xl xl:max-w-7xl mx-auto tracking-tight mt-16 mb-20">
         <div className="px-2 md:px-4 pt-4">
           <h1 className="font-medium tracking-tighter text-5xl text-center mb-4">Twitch Community Overlap</h1>
-          <p className="mb-2">The site shows stats about the overlap of chatters from different channels. You can find
+          <p className="mb-2">The site shows the viewer and audience overlap stats between different channels on Twitch. You can find
             who&apos;s community overlaps the most with your favorite streamer. You can also check which channels chat
             hoppers are going to. Currently tracks all channels over 1000 concurrent viewers. Data updates every 30
             minutes.</p>
