@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import ToggleDark from "./ToggleDark";
 
 const Nav = () => {
   return (
@@ -42,12 +43,10 @@ const Nav = () => {
         <div className="flex-1 flex justify-end">
           <button
             className="mr-4 text-gray-700 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-800 focus:outline-none"
-            id="toggle-dark"
-            // onClick="toggleDark()"
           >
-            <i id="dark-icon" className="fas fa-sun fa-2x"/>
+            <ToggleDark/>
           </button>
-          <a className="mr-4 hover:text-pink-500" href="https://github.com/snoww/TwitchOverlap" target="_blank"
+          <a className="mr-4 hover:text-pink-500 dark:hover:text-pink-800" href="https://github.com/snoww/TwitchOverlap" target="_blank"
              rel="noopener noreferrer"><i className="fab fa-github fa-2x"/></a>
         </div>
       </div>

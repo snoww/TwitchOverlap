@@ -1,13 +1,17 @@
 import {ChannelInfo} from "./ChannelInfo";
 import {ChannelStats} from "../../pages/[...channel]";
+import {getTimeDiff} from "../../utils/helpers";
+import {DateTime} from "luxon";
 
-const ChannelDefaultInfo = (props: {channel: ChannelStats, lastUpdated: string}) => {
-  const { channel, lastUpdated } = props;
+const ChannelDefaultInfo = ({channel}: {channel: ChannelStats}) => {
+  const time = DateTime.fromISO(channel.lastUpdate, {zone: "utc"});
+  const lastUpdated = getTimeDiff(time);
+
   return (
     <>
       <div className="stats-card">
         <div className="font-medium mb-1">Last Updated</div>
-        <div>{lastUpdated}</div>
+        <div title={time.toISO()}>{lastUpdated}</div>
       </div>
       <div className="stats-card" title="Total viewers in stream, includes embedded viewers">
         <div className="font-medium mb-1">Viewers</div>

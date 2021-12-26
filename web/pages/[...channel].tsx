@@ -112,7 +112,6 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
     );
   }
 
-  const lastUpdated = getTimeDiff(DateTime.fromISO(channel.lastUpdate, {zone: "utc"}));
   return (
     <>
       <Head>
@@ -128,7 +127,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
         <div
           className={`pt-4 grid grid-cols-2 gap-4 px-4 text-center ${type === AggregateDays.Default ? "sm:grid-cols-3 lg:grid-cols-6" : "md:grid-cols-4"}`}>
           {type === AggregateDays.Default
-            ? <ChannelDefaultInfo channel={channel} lastUpdated={lastUpdated}/>
+            ? <ChannelDefaultInfo channel={channel}/>
             : <ChannelAggregateInfo change={change} channelTotalOverlap={channelTotalOverlap}
                                     channelTotalUnique={channelTotalUnique}
                                     channel={channel} notFound={notFound} type={AggregateDays.Default} data={data}

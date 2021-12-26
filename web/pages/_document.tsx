@@ -8,7 +8,7 @@ class MyDocument extends Document {
 
   render() {
     return (
-      <Html lang="en" className={"dark"}>
+      <Html lang="en">
         <Head>
           {/* Global site tag (gtag.js) - Google Analytics*/}
           {/*<script*/}

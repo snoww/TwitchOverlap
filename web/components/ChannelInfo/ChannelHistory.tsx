@@ -11,7 +11,7 @@ const stringToRGB = function (str: string) {
   for (let i = 0; i < 3; i++) {
     const value = (hash >> (i * 8)) & 0xFF;
     const str = ("00" + value.toString(16));
-    colour += str.substring(str.length-2);
+    colour += str.substring(str.length - 2);
   }
   return colour;
 };
@@ -24,11 +24,18 @@ type ChannelHistory = {
 }
 
 const ChannelHistory = ({channel, type}: ChannelHistory) => {
-
-  const {data, error} = useSWR(`http://192.168.1.104:5000/api/v1/history/${channel}${type === AggregateDays.Default ? "" : `/${type.toString()}`}`, fetcher);
+  const {
+    data,
+    error
+  } = useSWR(`http://192.168.1.104:5000/api/v1/history/${channel}${type === AggregateDays.Default ? "" : `/${type.toString()}`}`,
+    fetcher, {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false
+    });
 
   if (error) {
-    return <div>Chart Error</div>;
+    return <div>Chart Error. :/</div>;
   }
 
   if (!data) {
@@ -87,12 +94,12 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
     }],
     tooltip: {
       trigger: "axis",
-      formatter: function(params: {name: string, seriesName: string, value: { [x: string]: any }, [x: string]: any}[]) {
+      formatter: function (params: { name: string, seriesName: string, value: { [x: string]: any }, [x: string]: any }[]) {
         let output;
         if (window.location.pathname.split("/").length > 2) {
-          output = "<div class=\"mb-2\"><b>" + params[0].name + "</b></div>";
+          output = `<div class="mb-2"><b>${params[0].name}</b></div>`;
         } else {
-          output = "<div class=\"mb-2\"><b>" + params[0].name + " UTC</b></div>";
+          output = `<div class="mb-2"><b>${params[0].name}</b></div>`;
         }
         const values: [string, number][] = Object.entries(params[0].value).filter(x => x[0] !== "timestamp");
         for (let i = 0; i < values.length; i++) {
