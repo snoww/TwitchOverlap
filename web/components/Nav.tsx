@@ -108,7 +108,7 @@ const Nav = () => {
         </div>
         <div className="hidden flex-1 sm:flex justify-end">
           <button
-            className="mr-4 text-gray-700 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-800 focus:outline-none"
+            className="mr-4 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-800 focus:outline-none"
           >
             <ToggleDark/>
           </button>
