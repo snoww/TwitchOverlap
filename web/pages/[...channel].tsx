@@ -63,7 +63,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
     return (
       <>
         <Head>
-          <title>No Data - Twitch Overlap</title>
+          <title>No Data - Twitch Viewer Overlap</title>
           <meta property="og:title" content="Twitch Community Overlap"/>
           <meta property="og:description"
                 content="The site shows stats about the overlap of viewers and chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
@@ -86,7 +86,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
     return (
       <>
         <Head>
-          <title>No Data - Twitch Overlap</title>
+          <title>No Data - Twitch Viewer Overlap</title>
           <meta property="og:title" content={`${channel.displayName} - Twitch Community Overlap`}/>
           <meta property="og:description"
                 content="The site shows stats about the overlap of viewers and chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. The site is open source on GitHub."/>
@@ -110,7 +110,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
   return (
     <>
       <Head>
-        <title>{`${channel.displayName}${type === AggregateDays.Default ? "" : ` - ${type.toString()} Day Aggregate`} - Twitch Overlap`}</title>
+        <title>{`${channel.displayName}${type === AggregateDays.Default ? "" : ` - ${type.toString()} Day Aggregate`} - Twitch Viewer Overlap`}</title>
         <meta property="og:title" content={`${channel.displayName} - Twitch Community Overlap`}/>
         <meta property="og:description"
               content={`Viewer and chatter overlap stats for ${channel.displayName}. Currently sharing ${channel.shared.toLocaleString()} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>

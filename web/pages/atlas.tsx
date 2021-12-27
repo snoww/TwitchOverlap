@@ -77,7 +77,7 @@ const Atlas = ({data}: AtlasProps) => {
   return (
     <>
       <Head>
-        <title>{"Twitch Atlas - June 1st > June 15th - Twitch Overlap"}</title>
+        <title>{"Twitch Atlas - June 1st > June 15th - Twitch Viewer Overlap"}</title>
         <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
         <meta property="og:description"
               content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. Inspired by /u/Kgersh's Twitch Atlas on Reddit. The site is open source on GitHub."/>

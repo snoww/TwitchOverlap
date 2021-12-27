@@ -17,8 +17,8 @@ export default function Home({channels, lastUpdate}: HomeProps) {
   return (
     <>
       <Head>
-        <title>Twitch Overlap</title>
-        <meta property="og:title" content="Twitch Overlap"/>
+        <title>Twitch Viewer Overlap</title>
+        <meta property="og:title" content="Twitch Viewer Overlap"/>
         <meta property="og:description"
               content="The site shows stats about the overlap of viewers and chatters from different channels on Twitch. You can find out who your favorite streamer shares viewers with, or how many people are currently chat hopping. Also commonly referred to as viewer/audience overlap stats. The site is open source on GitHub."/>
         <meta name="description"
