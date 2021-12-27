@@ -1,4 +1,4 @@
-import {ChannelOverlapData} from "./ChannelTableRow";
+import {ChannelOverlapData} from "./ChannelDefaultTableRow";
 import ChannelAggregateTableRow from "./ChannelAggregateTableRow";
 import {AggregateDays} from "../../pages/[...channel]";
 

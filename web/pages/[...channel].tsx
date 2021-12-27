@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Nav from "../components/Nav";
-import {ChannelOverlapData} from "../components/ChannelInfo/ChannelTableRow";
+import {ChannelOverlapData} from "../components/ChannelInfo/ChannelDefaultTableRow";
 import ChannelHistory from "../components/ChannelInfo/ChannelHistory";
 import {useRouter} from "next/router";
 import ChannelDefaultInfo from "../components/ChannelInfo/ChannelDefaultInfo";

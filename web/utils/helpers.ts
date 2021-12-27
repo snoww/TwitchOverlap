@@ -48,4 +48,3 @@ export function getDateDiff(start: DateTime): string {
 
   return lastUpdated;
 }
-

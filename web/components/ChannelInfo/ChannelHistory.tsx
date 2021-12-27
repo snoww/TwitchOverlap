@@ -2,6 +2,7 @@ import ReactECharts from "echarts-for-react";
 import useSWR from "swr";
 import {AggregateDays} from "../../pages/[...channel]";
 import {useTheme} from "next-themes";
+import {DateTime} from "luxon";
 
 const stringToRGB = function (str: string) {
   let hash = 0;
@@ -25,7 +26,7 @@ type ChannelHistory = {
 }
 
 const ChannelHistory = ({channel, type}: ChannelHistory) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
 
   const {
     data,
@@ -66,6 +67,23 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
     });
   }
 
+  // reverse history data, to show the latest data point at the end of the chart
+  const chartData = [];
+  if (type === AggregateDays.Default) {
+    for (let i = data.history.length - 1; i >= 0; i--) {
+      const tmp = data.history[i];
+      const dt = DateTime.fromISO(tmp.timestamp);
+      const dtStr = dt.toLocaleString({month: "short", day: "2-digit"})
+        + " "
+        + dt.toLocaleString({hour: "numeric", minute: "numeric"});
+      chartData.push({...tmp, timestamp: dtStr});
+    }
+  } else {
+    for (let i = data.history.length - 1; i >= 0; i--) {
+      chartData.push(data.history[i]);
+    }
+  }
+
   const legendData = data.channels.slice(1).sort();
   const option = {
     textStyle: {
@@ -100,7 +118,9 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
       formatter: function (params: { name: string, seriesName: string, value: { [x: string]: any }, [x: string]: any }[]) {
         let output;
         if (window.location.pathname.split("/").length > 2) {
-          output = `<div class="mb-2"><b>${params[0].name}</b></div>`;
+          const dt = DateTime.fromJSDate(new Date(`${params[0].name} ${new Date(Date.now()).getUTCFullYear()}`));
+          const before = dt.plus({days: -type});
+          output = `<div class="mb-2"><b>${before.toLocaleString({month: "short", day: "numeric"})} - ${dt.toLocaleString({month: "short", day: "numeric"})}</b></div>`;
         } else {
           output = `<div class="mb-2"><b>${params[0].name}</b></div>`;
         }
@@ -117,7 +137,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
     },
     dataset: {
       dimensions: data.channels,
-      source: [...data.history].reverse()
+      source: chartData
     },
     xAxis: {
       type: "category"

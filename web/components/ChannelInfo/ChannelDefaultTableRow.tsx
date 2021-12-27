@@ -45,7 +45,7 @@ export const RowChange = (prop: {change: number}) => {
   }
 };
 
-const ChannelTableRow = ({shared, chatters, data}: ChannelTableRowType) => {
+const ChannelDefaultTableRow = ({shared, chatters, data}: ChannelTableRowType) => {
   return (
     <>
       <tr className="border-b border-gray-300">
@@ -53,9 +53,9 @@ const ChannelTableRow = ({shared, chatters, data}: ChannelTableRowType) => {
         <td className="table-channel-col">
           <Link href={`/${data.loginName}`}>{data.displayName}</Link>
         </td>
-        <td className="table-stats-col">{((data.shared/shared)*100).toFixed(2).toLocaleString()}%</td>
+        <td className="table-stats-col">{((data.shared/shared)*100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
         <td className="table-stats-col">{data.shared.toLocaleString()}</td>
-        <td className="table-stats-col">{((data.shared/chatters)*100).toFixed(2).toLocaleString()}%</td>
+        <td className="table-stats-col">{((data.shared/chatters)*100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
         <td className="table-stats-col hover:underline hover:text-pink-500 truncate">
           <a href={`https://www.twitch.tv/directory/game/${data.game}`} target="_blank"
              rel="noopener noreferrer">{data.game}</a>
@@ -65,4 +65,4 @@ const ChannelTableRow = ({shared, chatters, data}: ChannelTableRowType) => {
   );
 };
 
-export default ChannelTableRow;
+export default ChannelDefaultTableRow;

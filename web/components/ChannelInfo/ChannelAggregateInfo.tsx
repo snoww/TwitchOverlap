@@ -24,8 +24,8 @@ const ChannelAggregateInfo = ({change, channelTotalOverlap, channelTotalUnique, 
         <div className="font-medium mb-1">Overlap Percentage</div>
         {change.overlapPercentChange !== null
           ? <ChannelOverlapPercentageInfo change={change.overlapPercentChange}
-                                          curr={(channelTotalOverlap / channelTotalUnique * 100).toFixed(2).toLocaleString()}/>
-          : <div>{(channelTotalOverlap / channelTotalUnique * 100).toFixed(2).toLocaleString()}%</div>
+                                          curr={(channelTotalOverlap / channelTotalUnique * 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/>
+          : <div>{(channelTotalOverlap / channelTotalUnique * 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</div>
         }
       </div>
       <div className="stats-card" title="Total number of chatters that was present in another stream">

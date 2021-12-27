@@ -1,4 +1,4 @@
-import ChannelTableRow, {ChannelOverlapData} from "./ChannelTableRow";
+import ChannelDefaultTableRow, {ChannelOverlapData} from "./ChannelDefaultTableRow";
 import {ChannelStats} from "../../pages/[...channel]";
 
 const ChannelDefaultTable = ({data, channel}: {data: ChannelOverlapData[], channel: ChannelStats}) => {
@@ -21,7 +21,7 @@ const ChannelDefaultTable = ({data, channel}: {data: ChannelOverlapData[], chann
           </thead>
           <tbody>
           {data.map(x =>
-            <ChannelTableRow key={x.loginName} shared={channel.shared} chatters={channel.chatters} data={x}/>
+            <ChannelDefaultTableRow key={x.loginName} shared={channel.shared} chatters={channel.chatters} data={x}/>
           )}
           </tbody>
         </table>

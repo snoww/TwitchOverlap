@@ -33,11 +33,11 @@ const ChannelDefaultInfo = ({channel}: {channel: ChannelStats}) => {
       </div>
       <div className="stats-card" title="Ratio of chatters to viewers, higher is better">
         <div className="font-medium mb-1">Chatter Ratio</div>
-        <div>{(channel.chatters / channel.viewers).toFixed(2).toLocaleString()}</div>
+        <div>{(channel.chatters / channel.viewers).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
       </div>
       <div className="stats-card" title="Percentage of total viewers that are watching another stream">
         <div className="font-medium mb-1">Overlap Percentage</div>
-        <div>{(channel.shared / channel.viewers * 100).toFixed(2).toLocaleString()}%</div>
+        <div>{(channel.shared / channel.viewers * 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</div>
       </div>
       <div className="stats-card" title="Total number of viewers watching another stream">
         <div className="font-medium mb-1">Total Shared</div>
