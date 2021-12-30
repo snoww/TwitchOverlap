@@ -5,16 +5,13 @@ import {useRef, useState} from "react";
 
 const Nav = () => {
   const [showDropdown, setShowShowDropdown] = useState(false);
-
   const dd = useRef<HTMLDivElement>(null);
 
   function openDropdown() {
     if (!showDropdown && dd.current !== null) {
-      setShowShowDropdown(true);
       dd.current.focus();
-    } else {
-      setShowShowDropdown(false);
     }
+    setShowShowDropdown(!showDropdown);
   }
 
   function closeDropdown() {
@@ -66,18 +63,19 @@ const Nav = () => {
             <i className="fas fa-search"/>
           </span>
         </div>
-        <div className="flex-1 flex justify-end sm:hidden">
-          <button className="h-8 w-8 mx-2 hover:text-pink-500 dark:hover:text-pink-800" onClick={openDropdown}>
+        <div className="flex-1 flex justify-end md:hidden">
+          <button id="showDropdown" className="h-8 w-8 mx-2 hover:text-pink-500 dark:hover:text-pink-800" onClick={openDropdown}>
             <i className="fas fa-ellipsis-v"/>
           </button>
         </div>
-        <div tabIndex={-1} ref={dd} onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget)) {
+        <div className="md:hidden"
+          tabIndex={-1} ref={dd} onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget) && e.relatedTarget?.id !== "showDropdown") {
             closeDropdown();
           }
         }}>
           {showDropdown && <div
-            className="sm:hidden absolute top-14 right-2 w-32 bg-slate-200 dark:bg-slate-700 rounded-md shadow-lg p-4">
+            className="md:hidden absolute top-14 right-2 w-32 bg-slate-200 dark:bg-slate-700 rounded-md shadow-lg p-4">
             <ul className="text-gray-700 dark:text-gray-200">
               <li className="pb-2 mb-2 border-b border-gray-400">
                 <Link href="/atlas">
@@ -106,7 +104,7 @@ const Nav = () => {
             </ul>
           </div>}
         </div>
-        <div className="hidden flex-1 sm:flex justify-end">
+        <div className="hidden flex-1 md:flex justify-end">
           <button
             className="mr-4 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-800 focus:outline-none"
           >
