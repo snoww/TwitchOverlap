@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {DefaultLocale} from "../../utils/helpers";
 
 export type ChannelTableRowType = {
   shared: number,
@@ -53,9 +54,9 @@ const ChannelDefaultTableRow = ({shared, chatters, data}: ChannelTableRowType) =
         <td className="table-channel-col">
           <Link href={`/${data.loginName}`}>{data.displayName}</Link>
         </td>
-        <td className="table-stats-col">{((data.shared/shared)*100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
-        <td className="table-stats-col">{data.shared.toLocaleString()}</td>
-        <td className="table-stats-col">{((data.shared/chatters)*100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+        <td className="table-stats-col">{((data.shared/shared)*100).toLocaleString(DefaultLocale, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
+        <td className="table-stats-col">{data.shared.toLocaleString(DefaultLocale)}</td>
+        <td className="table-stats-col">{((data.shared/chatters)*100).toLocaleString(DefaultLocale, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</td>
         <td className="table-stats-col hover:underline hover:text-pink-500 truncate">
           <a href={`https://www.twitch.tv/directory/game/${data.game}`} target="_blank"
              rel="noopener noreferrer">{data.game}</a>

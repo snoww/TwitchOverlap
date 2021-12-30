@@ -1,6 +1,6 @@
 import {ChannelInfoPercentage, ChannelOverlapPercentageInfo} from "./ChannelInfo";
 import {ChannelData} from "../../pages/[...channel]";
-import {getDateDiff} from "../../utils/helpers";
+import {DefaultLocale, getDateDiff} from "../../utils/helpers";
 import {DateTime} from "luxon";
 
 const ChannelAggregateInfo = ({change, channelTotalOverlap, channelTotalUnique, date}: ChannelData) => {
@@ -16,16 +16,16 @@ const ChannelAggregateInfo = ({change, channelTotalOverlap, channelTotalUnique, 
         {change.totalChatterChange !== null && change.totalChatterPercentageChange !== null
           ? <ChannelInfoPercentage curr={channelTotalUnique} prev={change.totalChatterPercentageChange}
                                    description=""
-                                   changeDescription={`${change.totalChatterChange >= 0 ? "+" : ""}${change.totalChatterChange.toLocaleString()} since last update`}/>
-          : <div>{channelTotalUnique.toLocaleString()}</div>
+                                   changeDescription={`${change.totalChatterChange >= 0 ? "+" : ""}${change.totalChatterChange.toLocaleString(DefaultLocale)} since last update`}/>
+          : <div>{channelTotalUnique.toLocaleString(DefaultLocale)}</div>
         }
       </div>
       <div className="stats-card" title="Percentage of total chatters that was present in another stream">
         <div className="font-medium mb-1">Overlap Percentage</div>
         {change.overlapPercentChange !== null
           ? <ChannelOverlapPercentageInfo change={change.overlapPercentChange}
-                                          curr={(channelTotalOverlap / channelTotalUnique * 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/>
-          : <div>{(channelTotalOverlap / channelTotalUnique * 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</div>
+                                          curr={(channelTotalOverlap / channelTotalUnique * 100).toLocaleString(DefaultLocale, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/>
+          : <div>{(channelTotalOverlap / channelTotalUnique * 100).toLocaleString(DefaultLocale, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%</div>
         }
       </div>
       <div className="stats-card" title="Total number of chatters that was present in another stream">
@@ -33,8 +33,8 @@ const ChannelAggregateInfo = ({change, channelTotalOverlap, channelTotalUnique, 
         {change.totalOverlapChange !== null && change.overlapPercentChange !== null
           ? <ChannelInfoPercentage curr={channelTotalOverlap} prev={change.totalOverlapPercentageChange}
                                    description=""
-                                   changeDescription={`${change.totalOverlapChange >= 0 ? "+" : ""}${change.totalOverlapChange.toLocaleString()} since last update`}/>
-          : <div>{channelTotalOverlap.toLocaleString()}</div>
+                                   changeDescription={`${change.totalOverlapChange >= 0 ? "+" : ""}${change.totalOverlapChange.toLocaleString(DefaultLocale)} since last update`}/>
+          : <div>{channelTotalOverlap.toLocaleString(DefaultLocale)}</div>
         }
       </div>
     </>

@@ -3,6 +3,7 @@ import useSWR from "swr";
 import {AggregateDays} from "../../pages/[...channel]";
 import {useTheme} from "next-themes";
 import {DateTime} from "luxon";
+import {DefaultLocale} from "../../utils/helpers";
 
 const stringToRGB = function (str: string) {
   let hash = 0;
@@ -73,9 +74,9 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
     for (let i = data.history.length - 1; i >= 0; i--) {
       const tmp = data.history[i];
       const dt = DateTime.fromISO(tmp.timestamp);
-      const dtStr = dt.toLocaleString({month: "short", day: "2-digit"})
+      const dtStr = dt.setLocale(DefaultLocale).toLocaleString({month: "short", day: "2-digit"})
         + " "
-        + dt.toLocaleString({hour: "numeric", minute: "numeric"});
+        + dt.setLocale(DefaultLocale).toLocaleString({hour: "numeric", minute: "numeric"});
       chartData.push({...tmp, timestamp: dtStr});
     }
   } else {
@@ -120,7 +121,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
         if (window.location.pathname.split("/").length > 2) {
           const dt = DateTime.fromJSDate(new Date(`${params[0].name} ${new Date(Date.now()).getUTCFullYear()}`));
           const before = dt.plus({days: -type});
-          output = `<div class="mb-2"><b>${before.toLocaleString({month: "short", day: "numeric"})} - ${dt.toLocaleString({month: "short", day: "numeric"})}</b></div>`;
+          output = `<div class="mb-2"><b>${before.setLocale(DefaultLocale).toLocaleString({month: "short", day: "numeric"})} - ${dt.setLocale(DefaultLocale).toLocaleString({month: "short", day: "numeric"})}</b></div>`;
         } else {
           output = `<div class="mb-2"><b>${params[0].name}</b></div>`;
         }
@@ -130,7 +131,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
           if (param == null) {
             continue;
           }
-          output += `<div class="flex justify-between"><div class="mr-4">${param.marker}${values[i][0]}</div><div class="font-mono">${values[i][1].toLocaleString()}</div></div>`;
+          output += `<div class="flex justify-between"><div class="mr-4">${param.marker}${values[i][0]}</div><div class="font-mono">${values[i][1].toLocaleString(DefaultLocale)}</div></div>`;
         }
         return output;
       }

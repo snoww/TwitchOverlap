@@ -48,3 +48,6 @@ export function getDateDiff(start: DateTime): string {
 
   return lastUpdated;
 }
+
+
+export const DefaultLocale = "en-US";

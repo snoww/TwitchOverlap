@@ -10,6 +10,7 @@ import ChannelAggregateTable from "../components/ChannelInfo/ChannelAggregateTab
 import {ParsedUrlQuery} from "querystring";
 import ChannelHeader from "../components/ChannelInfo/ChannelHeader";
 import Sadge from "../components/Images/Sadge";
+import {DefaultLocale} from "../utils/helpers";
 
 export enum AggregateDays {
   Default = 0,
@@ -74,7 +75,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
           <div className="pt-4">
             <Sadge/>
             <div className="pt-2">No data recorded for <span className="font-bold">{asPath.split("/")[1]}</span></div>
-            <div>Only channels above {(1000).toLocaleString()} concurrent viewers and 500 chatters are recorded at the
+            <div>Only channels above {(1000).toLocaleString(DefaultLocale)} concurrent viewers and 500 chatters are recorded at the
               moment, requirements may be lowered in the future.
             </div>
           </div>
@@ -113,10 +114,10 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
         <title>{`${channel.displayName}${type === AggregateDays.Default ? "" : ` - ${type.toString()} Day Aggregate`} - Twitch Viewer Overlap`}</title>
         <meta property="og:title" content={`${channel.displayName} - Twitch Community Overlap`}/>
         <meta property="og:description"
-              content={`Viewer and chatter overlap stats for ${channel.displayName}. Currently sharing ${channel.shared.toLocaleString()} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>
+              content={`Viewer and chatter overlap stats for ${channel.displayName}. Currently sharing ${channel.shared.toLocaleString(DefaultLocale)} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>
         <meta property="og:image" content={`https://static-cdn.jtvnw.net/jtv_user_pictures/${channel.avatar}`}/>
         <meta name="description"
-              content={`Viewer and chatter overlap stats for ${channel.displayName}. Showing ${channel.displayName}'s audience overlap. Currently sharing ${channel.shared.toLocaleString()} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>
+              content={`Viewer and chatter overlap stats for ${channel.displayName}. Showing ${channel.displayName}'s audience overlap. Currently sharing ${channel.shared.toLocaleString(DefaultLocale)} total viewers. Find out in detail which channels ${channel.displayName}'s viewers are watching, or who's viewers are watching ${channel.displayName}. The site is open source on GitHub.`}/>
       </Head>
       <Nav/>
       <div className="container w-full md:max-w-5xl xl:max-w-7xl mx-auto tracking-tight mt-16 mb-20">
