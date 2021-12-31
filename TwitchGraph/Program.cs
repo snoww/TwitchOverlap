@@ -19,103 +19,75 @@ namespace TwitchGraph
         private static string _twitchToken;
         private static string _twitchClient;
 
-        private const int MaxSearch = 1500;
-        private const int MaxChannels = 1000;
-        private const int MinOverlap = 1000;
+        private const int MinOverlap = 10000;
+        private const int MaxChannels = 1500;
 
         public static async Task Main()
         {
-            using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
-            {
-                _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
-                _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
-            }
+            // using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
+            // {
+            //     _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
+            //     _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
+            // }
 
             DateTime timestamp = DateTime.UtcNow;
-            string dirName = $"{timestamp.Month}-{timestamp.Year}";
+            // string dirName = $"{timestamp.Month}-{timestamp.Year}";
             Console.WriteLine($"importing channel chatters at {timestamp:u}");
-            
+
             var sw = new Stopwatch();
-            var sw2 = new Stopwatch();
             sw.Start();
-            sw2.Start();
-
-            var channelChatters = new Dictionary<string, HashSet<string>>();
-            var processed = new ConcurrentDictionary<string, ConcurrentDictionary<string, int>>();
-            var channels = new Dictionary<string, Channel>();
             
-            var info = new DirectoryInfo($@"C:\Users\Snow\Documents\projects\TwitchGraphData\{dirName}");
+            var files = Directory.GetFiles("/Users/snow/Documents/projects/twitch-graph-data", "*.json");
+            var agg = new AggregateDays();
+            var (channelOverlap, channelUniqueChatters) = await agg.Aggregate(files);
+            
+            Console.WriteLine($"aggregate took {sw.Elapsed.TotalSeconds}s");
+            
+            await File.WriteAllBytesAsync("channelOverlap.json", JsonSerializer.SerializeToUtf8Bytes(channelOverlap));
+            await File.WriteAllBytesAsync("channelUnique.json", JsonSerializer.SerializeToUtf8Bytes(channelUniqueChatters));
 
-            // only take the top `MaxSearch` # of channels, since its file size should some what correlate to the number of lines it contains
-            foreach (FileInfo file in info.GetFiles().OrderByDescending(p => p.Length).Take(MaxSearch))
+            // var channelOverlap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(await File.ReadAllTextAsync("channelOverlap.json"));
+            // var channelUniqueChatters = JsonSerializer.Deserialize<Dictionary<string, int>>(await File.ReadAllTextAsync("channelUnique.json"));
+            Debug.Assert(channelUniqueChatters != null, nameof(channelUniqueChatters) + " != null");
+            Debug.Assert(channelOverlap != null, nameof(channelOverlap) + " != null");
+            
+            var nodeSet = new HashSet<string>(MaxChannels);
+            foreach (var (channel, viewers) in channelUniqueChatters.OrderByDescending(x => x.Value).Take(MaxChannels))
             {
-                string ch = Path.GetFileNameWithoutExtension(file.Name);
-                channelChatters.TryAdd(ch, new HashSet<string>(File.ReadLines(file.FullName)));
-            }
-
-            // then we sort the channels by unique chatter count, i.e. number of lines in the file
-            // and take the top 1000
-            Dictionary<string, HashSet<string>> filteredChannels = channelChatters.OrderByDescending(x => x.Value.Count).Take(MaxChannels).ToDictionary(x => x.Key, x => x.Value);
-            foreach ((string ch, HashSet<string> chatters) in filteredChannels)
-            {
-                processed.TryAdd(ch, new ConcurrentDictionary<string, int>());
-                channels.TryAdd(ch, new Channel(ch, string.Empty, chatters.Count));
-            }
-
-            Console.WriteLine($"imported {filteredChannels.Count} channels in {sw.Elapsed.TotalSeconds}s");
-            sw.Restart();
-
-            Parallel.ForEach(GetKCombs(filteredChannels.Keys, 2), x =>
-            {
-                string[] pair = x.ToArray();
-                int count = filteredChannels[pair[0]].Count(y => filteredChannels[pair[1]].Contains(y));
-                if (count >= MinOverlap)
+                if (!channelOverlap.ContainsKey(channel))
                 {
-                    processed[pair[0]].TryAdd(pair[1], count);
+                    continue;
                 }
-            });
 
-            Console.WriteLine($"processed {processed.Count} channels");
-            Console.WriteLine($"calculated intersection in {sw.Elapsed.TotalSeconds}s");
-            sw.Restart();
-
-            Directory.CreateDirectory($"./data/{dirName}/");
-            await using (StreamWriter nodesStream = File.CreateText($"./data/{dirName}/nodes.csv"))
-            {
-                // await nodesStream.WriteLineAsync("id,label,size");
-
-                await GetChannelDisplayName(channels);
-
-                Console.WriteLine($"fetched display names in {sw.ElapsedMilliseconds}ms");
-                sw.Restart();
-
-                foreach ((string _, Channel channel) in channels)
+                if (!channelOverlap[channel].OrderByDescending(x => x.Value).Any(x => x.Value > MinOverlap))
                 {
-                    if (processed.ContainsKey(channel.Id))
+                    continue;
+                }
+
+                nodeSet.Add(channel);
+            }
+
+            await using StreamWriter nodeStream = File.CreateText("nodes.csv");
+            await nodeStream.WriteLineAsync("id,label,size");
+            await using StreamWriter edgeStream = File.CreateText("edges.csv");
+            await edgeStream.WriteLineAsync("source,target,weight");
+            
+            foreach (var channel in nodeSet)
+            {
+                foreach (var (ch, overlap) in channelOverlap[channel].OrderByDescending(x => x.Value).Where(x => x.Value > MinOverlap))
+                {
+                    if (!nodeSet.Contains(ch))
                     {
-                        await nodesStream.WriteLineAsync($"{channel.Id},{channel.DisplayName},{channel.Size}");
+                        continue;
                     }
+
+                    await edgeStream.WriteLineAsync($"{channel},{ch},{overlap}");
                 }
+                
+                await nodeStream.WriteLineAsync($"{channel},{channel},{channelUniqueChatters[channel]}");
             }
-            
-            Console.WriteLine($"saved nodes in {sw.ElapsedMilliseconds}ms");
-            sw.Restart();
-            
-            await using StreamWriter edgesStream = File.CreateText($"./data/{dirName}/edges.csv");
-            // await edgesStream.WriteLineAsync("source,target,weight");
-            
-            foreach ((string ch1, ConcurrentDictionary<string, int> intersection) in processed)
-            {
-                foreach ((string ch2, int weight) in intersection)
-                {
-                    await edgesStream.WriteLineAsync($"{ch1},{ch2},{weight}");
-                }
-            }
-            
-            Console.WriteLine($"saved edges in {sw.ElapsedMilliseconds}ms");
-            Console.WriteLine($"total time taken: {sw2.Elapsed.TotalSeconds}s");
         }
-        
+
         private static async Task GetChannelDisplayName(Dictionary<string, Channel> channels)
         {
             foreach (string reqString in RequestBuilder(channels.Keys.ToList()))
@@ -137,7 +109,7 @@ namespace TwitchGraph
 
         private static IEnumerable<string> RequestBuilder(IReadOnlyCollection<string> channels)
         {
-            var shards = (int) Math.Ceiling(channels.Count / 100.0);
+            var shards = (int)Math.Ceiling(channels.Count / 100.0);
             var list = new List<string>(shards);
             for (int i = 0; i < shards; i++)
             {
@@ -155,10 +127,10 @@ namespace TwitchGraph
 
         private static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
         {
-            if (length == 1) return list.Select(t => new[] {t});
+            if (length == 1) return list.Select(t => new[] { t });
             return GetKCombs(list, length - 1)
                 .SelectMany(t => list.Where(o => o.CompareTo(t.Last()) > 0),
-                    (t1, t2) => t1.Concat(new[] {t2}));
+                    (t1, t2) => t1.Concat(new[] { t2 }));
         }
     }
 }
