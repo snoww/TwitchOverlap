@@ -20,7 +20,7 @@ type Edge = {
 }
 
 const Atlas = () => {
-  const {data, error} = useSWR("http://localhost:8080/dec-fa-3.json", fetcher, {
+  const {data, error} = useSWR("http://192.168.1.220:8080/dec-fa-4.json", fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false
@@ -38,16 +38,6 @@ const Atlas = () => {
   }
 
   const option = {
-    title: {
-      text: "Twitch Atlas December 2021",
-      textStyle: {
-        fontFamily: "Inter",
-        fontWeight: "Normal",
-        color: "#fff"
-      },
-      top: "bottom",
-      left: "right"
-    },
     tooltip: {},
     series: [
       {
@@ -113,6 +103,10 @@ const Atlas = () => {
       <NavAtlas/>
       <div className="bg-gray-300 dark:bg-gray-800">
         <ReactECharts style={{height: "100vh"}} option={option} notMerge={true}/>
+      </div>
+      <div className="absolute bottom-0 right-0 flex flex-col m-2">
+        <div>Twitch Atlas December 2021</div>
+        <div className="font-mono text-sm ml-auto">stats.roki.sh/atlas</div>
       </div>
     </>
   );

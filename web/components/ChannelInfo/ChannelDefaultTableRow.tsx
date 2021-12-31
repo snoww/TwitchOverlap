@@ -34,13 +34,13 @@ export const RowChange = (prop: {change: number}) => {
   if (change > 0) {
     return (
       <td className="text-emerald-500 whitespace-nowrap" title="increased position">
-        <i className="fas fa-chevron-up pl-1"><span className="font-sans font-medium">{` ${change}`}</span></i>
+        <i className="fas fa-chevron-up pl-1"><span className="font-sans font-normal">{` ${change}`}</span></i>
       </td>
     );
   } else {
     return (
       <td className="text-red-500 whitespace-nowrap" title="increased position">
-        <i className="fas fa-chevron-down pl-1"><span className="font-sans font-medium">{` ${Math.abs(change)}`}</span></i>
+        <i className="fas fa-chevron-down pl-1"><span className="font-sans font-normal">{` ${Math.abs(change)}`}</span></i>
       </td>
     );
   }
