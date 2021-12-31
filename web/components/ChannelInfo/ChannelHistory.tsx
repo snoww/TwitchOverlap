@@ -3,7 +3,7 @@ import useSWR from "swr";
 import {AggregateDays} from "../../pages/[...channel]";
 import {useTheme} from "next-themes";
 import {DateTime} from "luxon";
-import {DefaultLocale} from "../../utils/helpers";
+import {DefaultLocale, fetcher} from "../../utils/helpers";
 
 const stringToRGB = function (str: string) {
   let hash = 0;
@@ -18,8 +18,6 @@ const stringToRGB = function (str: string) {
   }
   return colour;
 };
-
-const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 type ChannelHistory = {
   channel: string,

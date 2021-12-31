@@ -49,5 +49,20 @@ export function getDateDiff(start: DateTime): string {
   return lastUpdated;
 }
 
+// shade rgb
+// from https://stackoverflow.com/a/13542669/11934162
+export const RGBLinearShade = (percentage: number, color: string) => {
+  const i = parseInt,
+    r = Math.round,
+    [a, b, c, d] = color.split(","),
+    lz = percentage < 0,
+    t = lz ? 0 : 255 * percentage,
+    P = lz ? 1 + percentage : 1 - percentage;
+  return "rgb" + (d ? "a(" : "(") + r(i(a[3] == "a" ? a.slice(5) : a.slice(4)) * P + t) + "," + r(i(b) * P + t) + "," + r(i(c) * P + t) + (d ? "," + d : ")");
+};
+
+export const fetcher = (url: string) => fetch(url).then(res => res.json());
+export const fetcherText = (url: string) => fetch(url).then(res => res.text());
+
 
 export const DefaultLocale = "en-US";

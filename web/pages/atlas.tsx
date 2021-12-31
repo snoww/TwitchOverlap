@@ -1,13 +1,17 @@
 import Head from "next/head";
-import Nav from "../components/Nav";
 import ReactECharts from "echarts-for-react";
-import {GetStaticProps} from "next";
+import useSWR from "swr";
+import {fetcher} from "../utils/helpers";
+import NavAtlas from "../components/NavAtlas";
 
 type Node = {
   id: string,
   name: string,
+  value: number,
   size: number,
-  color: string
+  color: string,
+  x: number,
+  y: number
 }
 
 type Edge = {
@@ -15,26 +19,48 @@ type Edge = {
   target: string
 }
 
-type AtlasProps = {
-  data: {
-    nodes: Array<Node>,
-    edges: Array<Edge>
-  }
-}
+const Atlas = () => {
+  const {data, error} = useSWR("http://localhost:8080/dec-fa-3.json", fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false
+  });
 
-const Atlas = ({data}: AtlasProps) => {
+  if (error) {
+    return <div>Chart Error. :/</div>;
+  }
+
+  if (!data) {
+    return <ReactECharts className={"mt-4"} style={{width: "100%", height: "100vh"}}
+                         showLoading={true}
+                         loadingOption={{textColor: "#fff", maskColor: "rgba(255, 255, 255, 0)"}}
+                         option={{}} notMerge={true}/>;
+  }
+
   const option = {
+    title: {
+      text: "Twitch Atlas December 2021",
+      textStyle: {
+        fontFamily: "Inter",
+        fontWeight: "Normal",
+        color: "#fff"
+      },
+      top: "bottom",
+      left: "right"
+    },
     tooltip: {},
     series: [
       {
         name: "twitch atlas",
         type: "graph",
-        layout: "force",
         roam: true,
-        data: data.nodes.map(x => ({
+        data: data.nodes.map((x: Node) => ({
           id: x.id,
           name: x.name,
           symbolSize: x.size,
+          value: x.value,
+          x: x.x,
+          y: x.y,
           itemStyle: {
             color: x.color,
             borderColor: "#a9a9a9",
@@ -42,14 +68,15 @@ const Atlas = ({data}: AtlasProps) => {
           },
           label: {
             color: "#fff",
-            fontSize: x.size / 5 >= 12 ? x.size / 5 : 12
+            fontSize: x.size / 2 >= 12 ? x.size / 2 : 12,
+            fontFamily: "Inter"
           }
         })),
-        links: data.edges.map(x => ({
+        links: data.edges.map((x: Edge) => ({
           source: x.source,
           target: x.target,
           lineStyle: {
-            color: data.nodes.find(y => y.id === x.source)!.color,
+            color: data.nodes.find((y: Node) => y.id === x.source)?.color,
           }
         })),
         label: {
@@ -61,14 +88,13 @@ const Atlas = ({data}: AtlasProps) => {
         },
         lineStyle: {
           curveness: 0.3,
-          opacity: 0.2
+          opacity: 0.2,
         },
-        force: {
-          repulsion: 5000,
-          // layoutAnimation: false,
-          friction: 0.1,
-          gravity: 0.05
+        scaleLimit: {
+          min: 1,
+          max: 10
         },
+        zoom: 1.2,
         silent: true
       }
     ]
@@ -77,34 +103,19 @@ const Atlas = ({data}: AtlasProps) => {
   return (
     <>
       <Head>
-        <title>{"Twitch Atlas - June 1st > June 15th - Twitch Viewer Overlap"}</title>
+        <title>{"Twitch Atlas - December 2021 - Twitch Viewer Overlap"}</title>
         <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
         <meta property="og:description"
               content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. Inspired by /u/Kgersh's Twitch Atlas on Reddit. The site is open source on GitHub."/>
         <meta property="og:image"
               content="https://cdn.discordapp.com/attachments/220571291617329154/854254051524083742/twitch-community-graph-3.png"/>
       </Head>
-      <Nav/>
+      <NavAtlas/>
       <div className="bg-gray-300 dark:bg-gray-800">
-        <ReactECharts style={{height: "100vh"}} option={option}/>
+        <ReactECharts style={{height: "100vh"}} option={option} notMerge={true}/>
       </div>
     </>
   );
-};
-
-export const getStaticProps: GetStaticProps = async (context) => {
-  const res = await fetch("https://stats.roki.sh/data/6_2021_graph.json");
-  const data = await res.json();
-
-  if (!data) {
-    return {
-      notFound: true,
-    };
-  }
-
-  return {
-    props: {data}, // will be passed to the page component as props
-  };
 };
 
 export default Atlas;
