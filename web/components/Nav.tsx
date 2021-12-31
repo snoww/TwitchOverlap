@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ToggleDark from "./ToggleDark";
 import {useRef, useState} from "react";
+import Search from "./Search/Search";
 
 const Nav = () => {
   const [showDropdown, setShowShowDropdown] = useState(false);
@@ -54,15 +55,7 @@ const Nav = () => {
             </Link>
           </div>
         </div>
-        <div className="flex-grow flex justify-center">
-          <input type="text" id="search-channel"
-                 className="dark:bg-gray-700 focus:ring-pink-500 dark:focus:ring-pink-900 focus:border-pink-500 dark:focus:border-pink-900 border-gray-300 dark:border-gray-800 border block rounded-none rounded-l-md z-10 ml-2 xs:ml-0 w-40 xs:w-full md:w-1/2"
-                 placeholder="channel"/>
-          <span
-            className="border-gray-300 dark:border-gray-800 dark:bg-gray-700 hover:text-pink-500 inline-flex items-center px-3 border border-l-0 rounded-r-md cursor-pointer">
-            <i className="fas fa-search"/>
-          </span>
-        </div>
+        <Search/>
         <div className="flex-1 flex justify-end md:hidden">
           <button id="showDropdown" className="h-8 w-8 mx-2 hover:text-pink-500 dark:hover:text-pink-800" onClick={openDropdown}>
             <i className="fas fa-ellipsis-v"/>
