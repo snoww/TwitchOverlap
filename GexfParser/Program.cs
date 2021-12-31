@@ -9,7 +9,7 @@ namespace GexfParser
         public static void Main()
         {
             XmlDocument doc = new XmlDocument();
-            doc.Load("data/dec-fa-3.gexf");
+            doc.Load("data/dec-fa-4.gexf");
             using var json = JsonDocument.Parse(JsonConvert.SerializeXmlNode(doc));
             var graph = json.RootElement.GetProperty("gexf").GetProperty("graph");
             var nodes = graph.GetProperty("nodes").GetProperty("node");
@@ -41,7 +41,7 @@ namespace GexfParser
                 });
             }
             
-            File.WriteAllBytes("data/dec-fa-3.json", JsonSerializer.SerializeToUtf8Bytes(parsedGraph,new JsonSerializerOptions{PropertyNamingPolicy = JsonNamingPolicy.CamelCase}));
+            File.WriteAllBytes("data/dec-fa-4.json", JsonSerializer.SerializeToUtf8Bytes(parsedGraph,new JsonSerializerOptions{PropertyNamingPolicy = JsonNamingPolicy.CamelCase}));
         }
     }
 }

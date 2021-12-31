@@ -24,11 +24,11 @@ namespace TwitchGraph
 
         public static async Task Main()
         {
-            // using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
-            // {
-            //     _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
-            //     _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
-            // }
+            using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
+            {
+                _twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
+                _twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
+            }
 
             DateTime timestamp = DateTime.UtcNow;
             // string dirName = $"{timestamp.Month}-{timestamp.Year}";
@@ -48,8 +48,8 @@ namespace TwitchGraph
 
             // var channelOverlap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(await File.ReadAllTextAsync("channelOverlap.json"));
             // var channelUniqueChatters = JsonSerializer.Deserialize<Dictionary<string, int>>(await File.ReadAllTextAsync("channelUnique.json"));
-            Debug.Assert(channelUniqueChatters != null, nameof(channelUniqueChatters) + " != null");
-            Debug.Assert(channelOverlap != null, nameof(channelOverlap) + " != null");
+            // Debug.Assert(channelUniqueChatters != null, nameof(channelUniqueChatters) + " != null");
+            // Debug.Assert(channelOverlap != null, nameof(channelOverlap) + " != null");
             
             var nodeSet = new HashSet<string>(MaxChannels);
             foreach (var (channel, viewers) in channelUniqueChatters.OrderByDescending(x => x.Value).Take(MaxChannels))
@@ -67,6 +67,8 @@ namespace TwitchGraph
                 nodeSet.Add(channel);
             }
 
+            Dictionary<string, string> displayNameMap = await GetChannelDisplayName(nodeSet);
+
             await using StreamWriter nodeStream = File.CreateText("nodes.csv");
             await nodeStream.WriteLineAsync("id,label,size");
             await using StreamWriter edgeStream = File.CreateText("edges.csv");
@@ -83,14 +85,17 @@ namespace TwitchGraph
 
                     await edgeStream.WriteLineAsync($"{channel},{ch},{overlap}");
                 }
-                
-                await nodeStream.WriteLineAsync($"{channel},{channel},{channelUniqueChatters[channel]}");
+
+                var displayName = displayNameMap.ContainsKey(channel) ? displayNameMap[channel] : channel;
+                await nodeStream.WriteLineAsync($"{channel},{displayName},{channelUniqueChatters[channel]}");
             }
         }
 
-        private static async Task GetChannelDisplayName(Dictionary<string, Channel> channels)
+        private static async Task<Dictionary<string, string>> GetChannelDisplayName(IReadOnlyCollection<string> channels)
         {
-            foreach (string reqString in RequestBuilder(channels.Keys.ToList()))
+            var displayNameMap = new Dictionary<string, string>();
+
+            foreach (string reqString in RequestBuilder(channels))
             {
                 using var request = new HttpRequestMessage();
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _twitchToken);
@@ -101,10 +106,12 @@ namespace TwitchGraph
                 JsonElement.ArrayEnumerator data = json.RootElement.GetProperty("data").EnumerateArray();
                 foreach (JsonElement channel in data)
                 {
-                    string login = channel.GetProperty("login").GetString();
-                    channels[login!].DisplayName = channel.GetProperty("display_name").GetString();
+                    string login = channel.GetProperty("login").GetString()!;
+                    displayNameMap[login] = channel.GetProperty("display_name").GetString();
                 }
             }
+
+            return displayNameMap;
         }
 
         private static IEnumerable<string> RequestBuilder(IReadOnlyCollection<string> channels)
