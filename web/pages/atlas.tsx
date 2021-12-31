@@ -39,7 +39,6 @@ const Atlas = () => {
   }
 
   const option = {
-    tooltip: {},
     series: [
       {
         type: "graph",
@@ -58,10 +57,8 @@ const Atlas = () => {
             borderColor: "#a9a9a9",
             borderWidth: 2
           },
-          label: {
-            color: "#fff",
-            fontSize: x.size / 2 >= 12 ? x.size / 2 : 12,
-            fontFamily: "Inter"
+          labelLayout: {
+            fontSize: x.size / 2 >= 12 ? x.size / 2 : 12
           }
         })),
         links: data.edges.map((x: Edge) => ({
@@ -71,10 +68,6 @@ const Atlas = () => {
             color: data.nodes.find((y: Node) => y.id === x.source)?.color,
           }
         })),
-        label: {
-          show: true,
-          position: "inside"
-        },
         labelLayout: {
           hideOverlap: true
         },
@@ -86,6 +79,11 @@ const Atlas = () => {
           min: 1
         },
         zoom: 1.2,
+        label: {
+          show: true,
+          color: "#fff",
+          fontFamily: "Inter"
+        },
         silent: true
       }
     ]
