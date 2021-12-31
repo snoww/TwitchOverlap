@@ -10,6 +10,7 @@ type Node = {
   value: number,
   size: number,
   color: string,
+  category: number,
   x: number,
   y: number
 }
@@ -41,14 +42,15 @@ const Atlas = () => {
     tooltip: {},
     series: [
       {
-        name: "twitch atlas",
         type: "graph",
         roam: true,
+        categories: data.categories,
         data: data.nodes.map((x: Node) => ({
           id: x.id,
           name: x.name,
           symbolSize: x.size,
           value: x.value,
+          category: x.category,
           x: x.x,
           y: x.y,
           itemStyle: {
@@ -81,8 +83,7 @@ const Atlas = () => {
           opacity: 0.2,
         },
         scaleLimit: {
-          min: 1,
-          max: 10
+          min: 1
         },
         zoom: 1.2,
         silent: true

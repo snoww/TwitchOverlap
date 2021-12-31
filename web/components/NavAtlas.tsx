@@ -5,7 +5,7 @@ const Nav = () => {
   return (
     <nav className="fixed top-0 w-full z-50 top-0">
       <div className="w-full mx-auto flex flex-nowrap items-center justify-between py-2 tracking-tight">
-        <div className="mx-4 p-1 rounded-md bg-gray-100 shadow-md dark:bg-gray-700">
+        <div className="mx-4">
           <Link href="/">
             <a
               className="whitespace-nowrap text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 font-extrabold text-xl tracking-tighter">
