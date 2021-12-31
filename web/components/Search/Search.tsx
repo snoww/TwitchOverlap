@@ -47,6 +47,7 @@ const Search = () => {
                onChange={(e) => updateInput(e.target.value)}
                onKeyUp={(e) => {
                  if (e.key === "Enter" && search !== "") {
+                   setSearch("");
                    return router.push(search);
                  }
                }}
@@ -54,7 +55,10 @@ const Search = () => {
         />
         <span
           className="border-gray-300 dark:border-gray-800 dark:bg-gray-700 hover:text-pink-500 inline-flex items-center px-3 border border-l-0 rounded-r-md cursor-pointer"
-          onClick={() => router.push(search)}
+          onClick={() => {
+            setSearch("");
+            return router.push(search);
+          }}
         >
           <i className="fas fa-search"/>
         </span>
