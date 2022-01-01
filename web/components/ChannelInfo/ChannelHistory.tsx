@@ -30,7 +30,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
   const {
     data,
     error
-  } = useSWR(`http://truncate.1.104:5000/api/v1/history/${channel}${type === AggregateDays.Default ? "" : `/${type.toString()}`}`,
+  } = useSWR(`https://api.roki.sh/v2/history/${channel}${type === AggregateDays.Default ? "" : `/${type.toString()}`}`,
     fetcher, {
       revalidateIfStale: false,
       revalidateOnFocus: false,
