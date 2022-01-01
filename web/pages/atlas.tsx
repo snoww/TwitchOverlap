@@ -4,6 +4,7 @@ import useSWR from "swr";
 import {fetcher} from "../utils/helpers";
 import NavAtlas from "../components/NavAtlas";
 import Nav from "../components/Nav";
+import {useTheme} from "next-themes";
 
 type Node = {
   id: string,
@@ -22,6 +23,7 @@ type Edge = {
 }
 
 const Atlas = () => {
+  const {theme} = useTheme();
   const {data, error} = useSWR("https://d3me8i09xp7mrh.cloudfront.net/dec-21-atlas.json", fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
@@ -61,11 +63,11 @@ const Atlas = () => {
           y: x.y,
           itemStyle: {
             color: x.color,
-            borderColor: "#a9a9a9",
+            borderColor: "#a1a1aa",
             borderWidth: 2
           },
-          labelLayout: {
-            fontSize: x.size / 2 >= 12 ? x.size / 2 : 12
+          label: {
+            fontSize: x.size / 2 >= 12 ? x.size / 2 : 12,
           }
         })),
         links: data.edges.map((x: Edge) => ({
@@ -88,13 +90,17 @@ const Atlas = () => {
         zoom: 1.2,
         label: {
           show: true,
-          color: "#fff",
+          color: "#fafafa",
           fontFamily: "Inter"
         },
         silent: true
       }
     ]
   };
+
+  if (theme !== "dark") {
+    option.series[0].label.color = "#000";
+  }
 
   return (
     <>
