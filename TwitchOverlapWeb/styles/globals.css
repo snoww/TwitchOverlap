@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .channel-card {
+        @apply rounded-md dark:bg-gray-700 border border-gray-300 dark:border-gray-800 hover:bg-gray-400 dark:hover:bg-gray-900 shadow-lg p-2 sm:p-3
+    }
+
+    .stats-card {
+        @apply rounded dark:bg-gray-700 border border-gray-300 dark:border-gray-800 flex flex-col py-2 shadow-md
+    }
+
+    .table-channel-col {
+        @apply px-2 md:px-4 py-1 md:py-2 hover:underline hover:text-pink-500 truncate
+    }
+
+    .table-stats-col {
+        @apply px-2 md:px-4 py-2
+    }
+}
+
+/* derived from nprogress.css */
+#nprogress {
+    pointer-events: none;
+}
+
+#nprogress .bar {
+    background: #db2777;
+
+    position: fixed;
+    z-index: 1031;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 2px;
+}
+
+/* Fancy blur effect */
+#nprogress .peg {
+    display: block;
+    position: absolute;
+    right: 0px;
+    width: 100px;
+    height: 100%;
+    box-shadow: 0 0 10px #db2777, 0 0 5px #db2777;
+    opacity: 1.0;
+
+    -webkit-transform: rotate(3deg) translate(0px, -4px);
+    -ms-transform: rotate(3deg) translate(0px, -4px);
+    transform: rotate(3deg) translate(0px, -4px);
+}
+
+.nprogress-custom-parent {
+    overflow: hidden;
+    position: relative;
+}
+
+.nprogress-custom-parent #nprogress .spinner,
+.nprogress-custom-parent #nprogress .bar {
+    position: absolute;
+}
