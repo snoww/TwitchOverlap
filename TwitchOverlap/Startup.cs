@@ -36,7 +36,7 @@ namespace TwitchOverlap
                 options.AddDefaultPolicy(
                     builder =>
                     {
-                        builder.WithOrigins("https://stats.roki.sh");
+                        builder.AllowAnyOrigin();
                     });
             });
         }
