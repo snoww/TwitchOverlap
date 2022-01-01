@@ -3,7 +3,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace TwitchOverlap.Models
+namespace TwitchOverlapApi.Models
 {
     public class TwitchContext : DbContext
     {

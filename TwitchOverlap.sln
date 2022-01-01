@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChannelIntersection", "Utilities\ChannelIntersection\ChannelIntersection.csproj", "{3F4C96BF-4904-48AC-AC39-AF7A84B70EC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchOverlap", "TwitchOverlap\TwitchOverlap.csproj", "{88481136-6D01-477A-9220-0F3036771882}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchOverlapApi", "TwitchOverlapApi\TwitchOverlapApi.csproj", "{88481136-6D01-477A-9220-0F3036771882}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchGraph", "Utilities\TwitchGraph\TwitchGraph.csproj", "{70A58735-5F2A-49A8-AB2D-02828EBA775D}"
 EndProject

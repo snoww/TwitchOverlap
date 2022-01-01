@@ -1,6 +1,6 @@
 using StackExchange.Redis;
 
-namespace TwitchOverlap.Services
+namespace TwitchOverlapApi.Services
 {
     public interface IRedisCache
     {

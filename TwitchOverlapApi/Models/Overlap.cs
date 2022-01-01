@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace TwitchOverlap.Models
+namespace TwitchOverlapApi.Models
 {
     public class Overlap
     {

@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
-using TwitchOverlap.Extensions;
-using TwitchOverlap.Models;
-using TwitchOverlap.Services;
+using TwitchOverlapApi.Extensions;
+using TwitchOverlapApi.Models;
+using TwitchOverlapApi.Services;
 
-namespace TwitchOverlap.Controllers
+namespace TwitchOverlapApi.Controllers
 {
     [ApiController]
     [Route("v2")]

@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 #nullable disable
 
-namespace TwitchOverlap.Models
+namespace TwitchOverlapApi.Models
 {
     public class Channel
     {

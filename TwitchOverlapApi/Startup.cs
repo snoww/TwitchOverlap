@@ -6,10 +6,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using TwitchOverlap.Models;
-using TwitchOverlap.Services;
+using TwitchOverlapApi.Models;
+using TwitchOverlapApi.Services;
 
-namespace TwitchOverlap
+namespace TwitchOverlapApi
 {
     public class Startup
     {

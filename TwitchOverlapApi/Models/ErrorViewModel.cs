@@ -1,4 +1,4 @@
-namespace TwitchOverlap.Models
+namespace TwitchOverlapApi.Models
 {
     public class ErrorViewModel
     {

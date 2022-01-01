@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace TwitchOverlap.Extensions
+namespace TwitchOverlapApi.Extensions
 {
     public static class Extensions
     {
