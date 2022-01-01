@@ -13,16 +13,16 @@ using TwitchOverlap.Services;
 namespace TwitchOverlap.Controllers
 {
     [ApiController]
-    [Route("v1")]
+    [Route("v2")]
     public class DataController : ControllerBase
     {
         private readonly TwitchContext _context;
         private readonly IDatabase _cache;
 
-        private const string ApiIndexCacheKey = "api:twitch:index";
-        private const string ApiChannelCacheKey = "api:twitch:channel";
-        private const string ApiChannelsCacheKey = "api:twitch:channels";
-        private const string ApiChannelHistoryCacheKey = "api:twitch:history:";
+        private const string ApiIndexCacheKey = "api:v2:twitch:index";
+        private const string ApiChannelCacheKey = "api:v2:twitch:channel";
+        private const string ApiChannelsCacheKey = "api:v2:twitch:channels";
+        private const string ApiChannelHistoryCacheKey = "api:v2:twitch:history:";
         
         private static readonly JsonSerializerOptions SerializerOptions = new()
         {
