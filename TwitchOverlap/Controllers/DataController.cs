@@ -151,7 +151,7 @@ namespace TwitchOverlap.Controllers
                 });
             }
 
-            await _cache.StringSetAsync(ApiChannelCacheKey + name, JsonSerializer.Serialize(channelData), DateTime.UtcNow.GetCacheDuration());
+            await _cache.StringSetAsync(ApiChannelCacheKey + name, JsonSerializer.Serialize(channelData, SerializerOptions), DateTime.UtcNow.GetCacheDuration());
 
             return Ok(channelData);
         }
@@ -279,7 +279,7 @@ namespace TwitchOverlap.Controllers
                 }
             }
 
-            await _cache.StringSetAsync(ApiChannelCacheKey + cacheKey, JsonSerializer.Serialize(channelData), DateTime.UtcNow.GetDailyCacheDuration());
+            await _cache.StringSetAsync(ApiChannelCacheKey + cacheKey, JsonSerializer.Serialize(channelData, SerializerOptions), DateTime.UtcNow.GetDailyCacheDuration());
             return Ok(channelData);
         }
 
