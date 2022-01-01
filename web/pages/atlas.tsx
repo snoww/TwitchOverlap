@@ -21,7 +21,7 @@ type Edge = {
 }
 
 const Atlas = () => {
-  const {data, error} = useSWR("http://192.168.1.220:8080/dec-fa-4.json", fetcher, {
+  const {data, error} = useSWR("https://d3me8i09xp7mrh.cloudfront.net/dec-21-atlas.json", fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false

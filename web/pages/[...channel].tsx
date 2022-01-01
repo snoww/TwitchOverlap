@@ -150,7 +150,7 @@ interface Params extends ParsedUrlQuery {
 export const getStaticProps = async (context: { params: Params; }) => {
   const params = context.params as Params;
   const channel = params.channel;
-  const request = "http://192.168.1.104:5000/api/v1/channel/";
+  const request = "https://api.roki.sh/v2/channel/";
   if (channel === null || channel === undefined) {
     return {
       redirect: {
@@ -225,7 +225,7 @@ export const getStaticProps = async (context: { params: Params; }) => {
 };
 
 export async function getStaticPaths() {
-  const res = await fetch("http://192.168.1.104:5000/api/v1/channels/500");
+  const res = await fetch("https://api.roki.sh/v2/channels/500");
   const channels = await res.json();
 
   const paths = channels.map((x: string) => ({

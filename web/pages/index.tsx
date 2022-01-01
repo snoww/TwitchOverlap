@@ -49,7 +49,7 @@ export default function Home({channels, lastUpdate}: HomeProps) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const res = await fetch("http://192.168.1.104:5000/api/v1/index");
+  const res = await fetch("https://api.roki.sh/v2/index");
   const data = await res.json();
 
   if (!data) {
