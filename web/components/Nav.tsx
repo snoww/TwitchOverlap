@@ -26,7 +26,7 @@ const Nav = () => {
           <Link href="/">
             <a className="block">
               <div className="block pl-4" style={{fontSize: 0}}>
-                <Image src="/images/roki2-round-10.png" alt="Roki" width={48} height={48} quality={10} layout="fixed"/>
+                <Image src="/images/roki2-round-10.png" alt="Roki" width={48} height={48} quality={10} layout="fixed" priority={true}/>
               </div>
             </a>
           </Link>
