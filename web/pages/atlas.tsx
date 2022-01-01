@@ -3,6 +3,7 @@ import ReactECharts from "echarts-for-react";
 import useSWR from "swr";
 import {fetcher} from "../utils/helpers";
 import NavAtlas from "../components/NavAtlas";
+import Nav from "../components/Nav";
 
 type Node = {
   id: string,
@@ -28,7 +29,13 @@ const Atlas = () => {
   });
 
   if (error) {
-    return <div>Chart Error. :/</div>;
+    return (
+      <>
+        <Nav/>
+        <div className="text-center mt-24">Atlas Error :/</div>
+        <div className="text-center mt-2">Please try again later</div>
+      </>
+    );
   }
 
   if (!data) {

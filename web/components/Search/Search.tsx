@@ -10,7 +10,7 @@ const Search = () => {
   const [filteredChannels, setFilteredChannels] = useState<Array<string>>([]);
   const router = useRouter();
 
-  const {data} = useSWR("https://api.roki.sh/v2/channels",
+  const {data} = useSWR("https://api.roki.sh/v2/channels/2000",
     fetcher, {
       revalidateIfStale: false,
       revalidateOnFocus: false,

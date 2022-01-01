@@ -62,7 +62,6 @@ export const RGBLinearShade = (percentage: number, color: string) => {
 };
 
 export const fetcher = (url: string) => fetch(url).then(res => res.json());
-export const fetcherText = (url: string) => fetch(url).then(res => res.text());
 
 
 export const DefaultLocale = "en-US";
