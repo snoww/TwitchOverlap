@@ -25,14 +25,20 @@ namespace TwitchOverlap
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews();
             services.AddHttpClient();
             services.AddDbContext<TwitchContext>(options => options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
             services.AddRouting(options => options.LowercaseUrls = true);
             services.AddControllers();
             services.AddSingleton(Cache);
             
-            services.AddControllersWithViews().AddRazorRuntimeCompilation();
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.WithOrigins("https://stats.roki.sh");
+                    });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -49,18 +55,16 @@ namespace TwitchOverlap
             }
             else
             {
-                app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+            
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
+            app.UseCors();
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
             app.UseRouting();
-
             app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

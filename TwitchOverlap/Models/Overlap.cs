@@ -58,7 +58,7 @@ namespace TwitchOverlap.Models
 
     public class ChannelData
     {
-        public static AggregateDays Type => AggregateDays.Default;
+        public AggregateDays Type { get; set; } = AggregateDays.Default;
         public Channel Channel { get; }
         public List<Data> Data { get; set; } = new();
         
