@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Image from "next/image";
 
 export type ImageFallbackProps = {
     src: string,
@@ -17,7 +16,7 @@ const ImageFallback = (props: ImageFallbackProps) => {
     }
     return (
         // eslint-disable-next-line jsx-a11y/alt-text
-        <Image
+        <img
             {...rest}
             src={imgSrc ? fallbackSrc : src}
             onError={() => {

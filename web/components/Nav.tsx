@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import ToggleDark from "./ToggleDark";
 import {useRef, useState} from "react";
 import Search from "./Search/Search";
@@ -26,7 +25,7 @@ const Nav = () => {
           <Link href="/">
             <a className="block">
               <div className="block pl-4" style={{fontSize: 0}}>
-                <Image src="/images/roki2-round-10.png" alt="Roki" width={48} height={48} quality={10} layout="fixed" priority={true}/>
+                <img src="/images/roki2-round-10.png" alt="Roki" width={48} height={48} style={{minWidth: "48px"}}/>
               </div>
             </a>
           </Link>

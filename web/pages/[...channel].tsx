@@ -60,7 +60,7 @@ export type ChannelData = {
 
 const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data, notFound, type, date}: ChannelData) => {
   const {asPath} = useRouter();
-  if (notFound && (type === AggregateDays.Default || channel === null)) {
+  if (notFound && (type === AggregateDays.Default || channel === null) || notFound && !channel) {
     return (
       <>
         <Head>
@@ -72,7 +72,7 @@ const Channel = ({change, channel, channelTotalOverlap, channelTotalUnique, data
         </Head>
         <Nav/>
         <div className="container w-full md:max-w-5xl xl:max-w-7xl mx-auto tracking-tight mt-16 mb-20">
-          <div className="pt-4">
+          <div className="pt-4 px-4">
             <Sadge/>
             <div className="pt-2">No data recorded for <span className="font-bold">{asPath.split("/")[1]}</span></div>
             <div>Only channels above {(1000).toLocaleString(DefaultLocale)} concurrent viewers and 500 chatters are recorded at the
