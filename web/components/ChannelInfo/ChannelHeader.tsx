@@ -14,8 +14,7 @@ const ChannelHeader = ({channel, type}: {channel: ChannelStats, type: AggregateD
               fallbackSrc="https://i.imgur.com/V2dxUn8.png"
               className="rounded-full"
               alt={`${channel.loginName}-avatar`}
-              width="70" height="70" layout="fixed"
-              priority={true}
+              width="70" height="70" style={{minWidth:"70px"}}
             />
           </a>
           <div className="pl-3 flex flex-col">

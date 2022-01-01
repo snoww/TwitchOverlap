@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { abbreviateNumber } from "js-abbreviation-number";
+import {abbreviateNumber} from "js-abbreviation-number";
 import ImageFallback from "../ImageFallback";
 
 export type IndexChannelData = {
@@ -21,7 +21,8 @@ const ChannelCard = ({ id, avatar, displayName, chatters }: IndexChannelData) =>
                 fallbackSrc="https://i.imgur.com/V2dxUn8.png"
                 className="rounded-full"
                 alt={id}
-                width="50" height="50" layout="fixed" />
+                width="50" height="50" style={{minWidth: "50px"}}
+              />
             </div>
             <div className="flex flex-col pl-2 overflow-hidden">
               <div className="truncate">{displayName}</div>
