@@ -20,7 +20,7 @@ Motivation from [Subreddit User-Overlap](https://subredditstats.com/subreddit-us
 
 ### Twitch Atlas (Updated to December 2021)
 
-![december 2021 twitch atlas](https://cdn.discordapp.com/attachments/220646943498567680/927218161428877393/dec-21.png)
+![december 2021 twitch atlas](https://media.discordapp.net/attachments/220646943498567680/927218161428877393/dec-21.png?width=1024&height=1024)
 
 Force directed graph representation of communities of Twitch, at [stats.roki.sh/atlas](https://stats.roki.sh/atlas). This sub-project was inspired and motivated by /u/Kgersh's Twitch Atlas ([Github](https://github.com/KiranGershenfeld/VisualizingTwitchCommunities)).
 
