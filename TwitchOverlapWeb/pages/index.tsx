@@ -48,7 +48,7 @@ export default function Home({channels, lastUpdate}: HomeProps) {
   );
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getServerSideProps = async () => {
   const res = await fetch("https://api.roki.sh/v2/index");
   const data = await res.json();
 
@@ -62,7 +62,6 @@ export const getStaticProps: GetStaticProps = async () => {
     props: {
       channels: data.channels,
       lastUpdate: data.lastUpdate
-    },
-    revalidate: 60
+    }
   };
 };
