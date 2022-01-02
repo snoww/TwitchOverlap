@@ -13,13 +13,13 @@ const AtlasImage = () => {
         <meta name="description"
               content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta property="og:image"
-              content="https://media.discordapp.net/attachments/220646943498567680/927209177686888458/dec-21-trans.png?width=936&height=936"/>
+              content="https://media.discordapp.net/attachments/220646943498567680/927213689864597564/dec-21-trans.png?width=936&height=936"/>
       </Head>
       <NavAtlas version={"image"}/>
       <div className="overflow-hidden h-screen w-screen">
         <TransformWrapper limitToBounds={false} minScale={0.1} initialScale={0.2} maxScale={1}>
           <TransformComponent>
-            <img src="https://cdn.discordapp.com/attachments/220646943498567680/927209177686888458/dec-21-trans.png" alt="twitch atlas december 2021"
+            <img src="https://cdn.discordapp.com/attachments/220646943498567680/927213689864597564/dec-21-trans.png" alt="twitch atlas december 2021"
                  className="max-w-none"
             />
           </TransformComponent>
