@@ -1,4 +1,14 @@
-import ReactECharts from "echarts-for-react";
+import ReactEChartsCore from "echarts-for-react/lib/core";
+import * as echarts from "echarts/core";
+import {LineChart} from "echarts/charts";
+import {
+  DatasetComponent,
+  DataZoomComponent,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from "echarts/components";
+import {CanvasRenderer} from "echarts/renderers";
 import useSWR from "swr";
 import {AggregateDays} from "../../pages/[...channel]";
 import {useTheme} from "next-themes";
@@ -24,7 +34,17 @@ type ChannelHistory = {
   type: AggregateDays
 }
 
+echarts.use(
+  [LineChart,
+    GridComponent,
+    TooltipComponent,
+    LegendComponent,
+    DataZoomComponent,
+    DatasetComponent,
+    CanvasRenderer]);
+
 const ChannelHistory = ({channel, type}: ChannelHistory) => {
+
   const {theme} = useTheme();
 
   const {
@@ -42,10 +62,11 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
   }
 
   if (!data) {
-    return <ReactECharts className={"mt-4"} style={{width: "100%", minHeight: "480px"}}
-                         showLoading={true}
-                         loadingOption={{textColor: "#fff", maskColor: "rgba(255, 255, 255, 0)"}}
-                         option={{}} notMerge={true}/>;
+    return <ReactEChartsCore echarts={echarts} className={"mt-4"}
+                             style={{width: "100%", minHeight: "480px", maxWidth: "100%"}}
+                             showLoading={true}
+                             loadingOption={{textColor: "#fff", maskColor: "rgba(255, 255, 255, 0)"}}
+                             option={{}} notMerge={true}/>;
   }
 
   const lines = [];
@@ -119,7 +140,10 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
         if (window.location.pathname.split("/").length > 2) {
           const dt = DateTime.fromJSDate(new Date(`${params[0].name} ${new Date(Date.now()).getUTCFullYear()}`));
           const before = dt.plus({days: -type});
-          output = `<div class="mb-2"><b>${before.setLocale(DefaultLocale).toLocaleString({month: "short", day: "numeric"})} - ${dt.setLocale(DefaultLocale).toLocaleString({month: "short", day: "numeric"})}</b></div>`;
+          output = `<div class="mb-2"><b>${before.setLocale(DefaultLocale).toLocaleString({
+            month: "short",
+            day: "numeric"
+          })} - ${dt.setLocale(DefaultLocale).toLocaleString({month: "short", day: "numeric"})}</b></div>`;
         } else {
           output = `<div class="mb-2"><b>${params[0].name}</b></div>`;
         }
@@ -188,7 +212,8 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
   }
 
   return (
-    <ReactECharts className={"mt-4"} style={{width: "100%", minHeight: "480px"}} option={option} notMerge={true}/>
+    <ReactEChartsCore echarts={echarts} className={"mt-4"} style={{width: "100%", minHeight: "480px", maxWidth: "100%"}}
+                      option={option} notMerge={true}/>
   );
 };
 

@@ -1,5 +1,9 @@
+import ReactEChartsCore from "echarts-for-react/lib/core";
+import * as echarts from "echarts/core";
+import {GraphChart} from "echarts/charts";
+import {DatasetComponent} from "echarts/components";
+import {CanvasRenderer} from "echarts/renderers";
 import Head from "next/head";
-import ReactECharts from "echarts-for-react";
 import useSWR from "swr";
 import {fetcher} from "../utils/helpers";
 import NavAtlas from "../components/NavAtlas";
@@ -22,6 +26,12 @@ type Edge = {
   target: string
 }
 
+echarts.use([
+  GraphChart,
+  DatasetComponent,
+  CanvasRenderer
+]);
+
 const Atlas = () => {
   const {theme} = useTheme();
   const {data, error} = useSWR("https://d3me8i09xp7mrh.cloudfront.net/dec-21-atlas.json", fetcher, {
@@ -41,7 +51,7 @@ const Atlas = () => {
   }
 
   if (!data) {
-    return <ReactECharts className={"mt-4"} style={{width: "100%", height: "100vh"}}
+    return <ReactEChartsCore echarts={echarts} className={"mt-4"} style={{width: "100%", height: "100vh"}}
                          showLoading={true}
                          loadingOption={{textColor: "#fff", maskColor: "rgba(255, 255, 255, 0)"}}
                          option={{}} notMerge={true}/>;
@@ -114,7 +124,7 @@ const Atlas = () => {
       </Head>
       <NavAtlas/>
       <div className="bg-gray-300 dark:bg-gray-800">
-        <ReactECharts style={{height: "100vh"}} option={option} notMerge={true}/>
+        <ReactEChartsCore echarts={echarts} style={{height: "100vh"}} option={option} notMerge={true}/>
       </div>
       <div className="absolute bottom-0 right-0 flex flex-col m-2">
         <div>Twitch Atlas December 2021</div>

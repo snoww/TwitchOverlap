@@ -1,5 +1,5 @@
 import {useRouter} from "next/router";
-import {Dispatch, RefObject, SetStateAction, useEffect, useRef} from "react";
+import {Dispatch, SetStateAction, useEffect, useRef} from "react";
 
 const ChannelSuggestions = ({channelList = [], setFilter, setSearch}: {channelList: string[], setFilter: Dispatch<SetStateAction<string[]>>, setSearch: Dispatch<SetStateAction<string>>}) => {
   const router = useRouter();

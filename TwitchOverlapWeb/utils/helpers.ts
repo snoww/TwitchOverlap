@@ -38,7 +38,7 @@ export function getDateDiff(start: DateTime): string {
 
   const now = DateTime.utc();
   const diff = Interval.fromDateTimes(start, now);
-  if (diff.length("days") >= 1) {
+  if (diff.length("days") >= 0) {
     lastUpdated = "Today";
   } else if (diff.length("days") == 2) {
     lastUpdated = "Yesterday";
