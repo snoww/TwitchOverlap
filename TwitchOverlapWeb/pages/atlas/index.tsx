@@ -5,9 +5,9 @@ import {DatasetComponent} from "echarts/components";
 import {CanvasRenderer} from "echarts/renderers";
 import Head from "next/head";
 import useSWR from "swr";
-import {fetcher} from "../utils/helpers";
-import NavAtlas from "../components/NavAtlas";
-import Nav from "../components/Nav";
+import {fetcher} from "../../utils/helpers";
+import NavAtlas from "../../components/NavAtlas";
+import Nav from "../../components/Nav";
 import {useTheme} from "next-themes";
 
 type Node = {
@@ -118,11 +118,13 @@ const Atlas = () => {
         <title>{"Twitch Atlas - December 2021 - Twitch Viewer Overlap"}</title>
         <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
         <meta property="og:description"
-              content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. Inspired by /u/Kgersh's Twitch Atlas on Reddit. The site is open source on GitHub."/>
+              content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
+        <meta name="description"
+              content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta property="og:image"
-              content="https://cdn.discordapp.com/attachments/220571291617329154/854254051524083742/twitch-community-graph-3.png"/>
+              content="https://d3me8i09xp7mrh.cloudfront.net/dec-21-trans.png"/>
       </Head>
-      <NavAtlas/>
+      <NavAtlas version={"canvas"}/>
       <div className="bg-gray-300 dark:bg-gray-800">
         <ReactEChartsCore echarts={echarts} style={{height: "100vh"}} option={option} notMerge={true}/>
       </div>
