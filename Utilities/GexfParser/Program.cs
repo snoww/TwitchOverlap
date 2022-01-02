@@ -18,7 +18,7 @@ namespace GexfParser
             {
                 var rgb = node.GetProperty("viz:color");
                 var hex = $"#{int.Parse(rgb.GetProperty("@r").GetString()!):X2}{int.Parse(rgb.GetProperty("@g").GetString()!):X2}{int.Parse(rgb.GetProperty("@b").GetString()!):X2}";
-                
+
                 parsedGraph.Nodes.Add(new Node
                 {
                     Id = node.GetProperty("@id").GetString()!,
@@ -40,7 +40,7 @@ namespace GexfParser
                     Target = edge.GetProperty("@target").GetString()!
                 });
             }
-            
+
             File.WriteAllBytes("data/dec-fa-4.json", JsonSerializer.SerializeToUtf8Bytes(parsedGraph,new JsonSerializerOptions{PropertyNamingPolicy = JsonNamingPolicy.CamelCase}));
         }
     }
