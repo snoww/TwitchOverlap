@@ -1,6 +1,7 @@
 import NavAtlas from "../../components/NavAtlas";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import Head from "next/head";
+import ImageFallback from "../../components/ImageFallback";
 
 const AtlasImage = () => {
   return (
@@ -9,18 +10,19 @@ const AtlasImage = () => {
         <title>{"Twitch Atlas (Image) - December 2021 - Twitch Viewer Overlap"}</title>
         <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
         <meta property="og:description"
-              content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
+              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta name="description"
-              content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
+              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta property="og:image"
-              content="https://media.discordapp.net/attachments/220646943498567680/927213689864597564/dec-21-trans.png?width=936&height=936"/>
+              content="https://media.discordapp.net/attachments/220646943498567680/927213689864597564/dec-21-trans.png?width=1024&height=1024"/>
       </Head>
       <NavAtlas version={"image"}/>
       <div className="overflow-hidden h-screen w-screen">
         <TransformWrapper limitToBounds={false} minScale={0.1} initialScale={0.2} maxScale={1}>
           <TransformComponent>
-            <img src="https://cdn.discordapp.com/attachments/220646943498567680/927213689864597564/dec-21-trans.png" alt="twitch atlas december 2021"
-                 className="max-w-none"
+            <ImageFallback src="https://cdn.discordapp.com//attachments/220646943498567680/927213689864597564/dec-21-trans.png" alt="twitch atlas december 2021"
+                           fallbackSrc="https://d3me8i09xp7mrh.cloudfront.net/dec-21-trans.png"
+                           className="max-w-none"
             />
           </TransformComponent>
         </TransformWrapper>

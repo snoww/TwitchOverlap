@@ -118,11 +118,11 @@ const Atlas = () => {
         <title>{"Twitch Atlas - December 2021 - Twitch Viewer Overlap"}</title>
         <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
         <meta property="og:description"
-              content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
+              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta name="description"
-              content="Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
+              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta property="og:image"
-              content="https://d3me8i09xp7mrh.cloudfront.net/dec-21-trans.png"/>
+              content="https://media.discordapp.net/attachments/220646943498567680/927213689864597564/dec-21-trans.png?width=1024&height=1024"/>
       </Head>
       <NavAtlas version={"canvas"}/>
       <div className="bg-gray-300 dark:bg-gray-800">
