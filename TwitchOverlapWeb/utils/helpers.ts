@@ -27,7 +27,7 @@ export function getTimeDiff(start: DateTime): string {
       lastUpdated = `${rounded} days ago`;
     }
   } else {
-    lastUpdated = start.toLocaleString({year: "numeric", month: "2-digit", day: "numeric", hour: "numeric", minute: "numeric"});
+    lastUpdated = start.toLocaleString({year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "numeric"});
   }
 
   return lastUpdated;
@@ -38,12 +38,15 @@ export function getDateDiff(start: DateTime): string {
 
   const now = DateTime.utc();
   const diff = Interval.fromDateTimes(start, now);
-  if (diff.length("days") >= 0) {
+  const len = Math.floor(diff.length("day"));
+  if (len <= 1) {
     lastUpdated = "Today";
-  } else if (diff.length("days") == 2) {
+  } else if (len === 2) {
     lastUpdated = "Yesterday";
+  } else if (len === 7) {
+    lastUpdated = "1 week ago";
   } else {
-    lastUpdated = `${Math.floor(diff.length("day"))} days ago`;
+    lastUpdated = `${len} days ago`;
   }
 
   return lastUpdated;

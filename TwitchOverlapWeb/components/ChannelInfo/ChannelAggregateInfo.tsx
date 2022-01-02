@@ -9,7 +9,7 @@ const ChannelAggregateInfo = ({change, channelTotalOverlap, channelTotalUnique, 
     <>
       <div className="stats-card">
         <div className="font-medium mb-1">Last Updated</div>
-        <div title={parsedDate.toISO()}>{getDateDiff(parsedDate)}</div>
+        <div title={parsedDate.toLocaleString({year: "numeric", month: "long", day: "numeric"})}>{getDateDiff(parsedDate)}</div>
       </div>
       <div className="stats-card" title="Total unique chatters present in the channel in the time span">
         <div className="font-medium mb-1">Total Unique Chatters</div>
