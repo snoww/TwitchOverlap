@@ -27,7 +27,7 @@ export function getTimeDiff(start: DateTime): string {
       lastUpdated = `${rounded} days ago`;
     }
   } else {
-    lastUpdated = start.toISO();
+    lastUpdated = start.toLocaleString({year: "numeric", month: "2-digit", day: "numeric", hour: "numeric", minute: "numeric"});
   }
 
   return lastUpdated;
