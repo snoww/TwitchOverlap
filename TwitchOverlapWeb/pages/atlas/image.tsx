@@ -20,7 +20,7 @@ const AtlasImage = () => {
       <div className="overflow-hidden h-screen w-screen">
         <TransformWrapper limitToBounds={false} minScale={0.1} initialScale={0.2} maxScale={1}>
           <TransformComponent>
-            <ImageFallback src="https://cdn.discordapp.com//attachments/220646943498567680/927213689864597564/dec-21-trans.png" alt="twitch atlas december 2021"
+            <ImageFallback src="https://cdn.discordapp.com/attachments/220646943498567680/927213689864597564/dec-21-trans.png" alt="twitch atlas december 2021"
                            fallbackSrc="https://d3me8i09xp7mrh.cloudfront.net/dec-21-trans.png"
                            className="max-w-none"
             />
