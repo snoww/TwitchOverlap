@@ -20,11 +20,15 @@ Motivation from [Subreddit User-Overlap](https://subredditstats.com/subreddit-us
 
 ### Twitch Atlas (Updated to December 2021)
 
+![december 2021 twitch atlas](https://cdn.discordapp.com/attachments/220646943498567680/927218161428877393/dec-21.png)
+
 Force directed graph representation of communities of Twitch, at [stats.roki.sh/atlas](https://stats.roki.sh/atlas). This sub-project was inspired and motivated by /u/Kgersh's Twitch Atlas ([Github](https://github.com/KiranGershenfeld/VisualizingTwitchCommunities)).
 
 The graph shows the overlap of viewers in the top 1500 channels (by total unique viewership), and then using the Louvain algorithm for community detection. The site uses the [Apache ECharts](https://github.com/apache/echarts) library at the moment for the graph rendering (I've tried to get it working with Sigma.js for the smooth WebGL rendering, but couldn't get it to work how I wanted to). Since the graph is rendered on your local machine, it will be laggy due to the sheer amount of nodes and edges in the graph it needs to render. However, it does mean that you are able to zoom in and out and pan around to your liking.
 
-I plan on updating the atlas every month, with the option to select any past atlases generated.
+I added an image version of the graph at [stats.roki.sh/atlas/image](https://stats.roki.sh/atlas/image). This version is for people who prefer to have better performance while viewing.
+
+I plan on updating the atlas every month (hopefully), with the option to select any past atlases generated.
 
 ### `./TwitchOverlapApi`
 The backend is written with ASP.NET Core. It serves the data that is needed for the frontend website. Data is queried from a Postgres database that stores all the overlap data. Requests results are also cached using redis to speed up performance.
@@ -45,3 +49,7 @@ This project does the monthly overlap calculation. Then it uses the top 1500 cha
 ### `.Utilities/GexfParser`
 
 This project converts gephi files into json representation that is used for the atlas page.
+
+## Disclaimer
+
+Not affiliated with Twitch.tv. This project is a hobby of mine. 
