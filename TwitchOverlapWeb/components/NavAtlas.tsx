@@ -12,15 +12,6 @@ const Nav = ({version}: { version: string }) => {
               Twitch Overlap
             </a>
           </Link>
-          <div className="mt-1 whitespace-nowrap text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 text tracking-tighter">
-            {version === "canvas"
-              ? <Link href="/atlas/image">
-                <a>Click here for Image Version (better performance)</a>
-              </Link>
-              : <Link href="/atlas">
-                <a>Click here for Graph Version (better clarity)</a>
-              </Link>}
-          </div>
         </div>
         <div className="flex-1 flex justify-end">
           <button
@@ -32,6 +23,15 @@ const Nav = ({version}: { version: string }) => {
              target="_blank"
              rel="noopener noreferrer"><i className="fab fa-github fa-2x"/></a>
         </div>
+      </div>
+      <div className="mx-4 -mt-1 whitespace-nowrap text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 text tracking-tighter">
+        {version === "canvas"
+          ? <Link href="/atlas/image">
+            <a>Click here for Image Version (better performance)</a>
+          </Link>
+          : <Link href="/atlas">
+            <a>Click here for Graph Version (better clarity)</a>
+          </Link>}
       </div>
     </nav>
   );
