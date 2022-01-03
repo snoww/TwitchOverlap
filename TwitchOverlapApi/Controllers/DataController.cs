@@ -434,7 +434,7 @@ namespace TwitchOverlapApi.Controllers
 
             foreach (OverlapHistory timestamp in rawHistory)
             {
-                var time = timestamp.Timestamp.ToString("MMM dd");
+                var time = timestamp.Timestamp.ToString("MMM d");
                 foreach (ChannelOverlap overlap in timestamp.Shared)
                 {
                     values.Add(overlap.Name);

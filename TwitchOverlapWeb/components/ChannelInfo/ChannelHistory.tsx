@@ -63,7 +63,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
 
   if (!data) {
     return <ReactEChartsCore echarts={echarts} className={"mt-4"}
-                             style={{width: "100%", minHeight: "480px", maxWidth: "100%"}}
+                             style={{width: "100%", minHeight: "480px", maxWidth: "100vw"}}
                              showLoading={true}
                              loadingOption={{textColor: "#fff", maskColor: "rgba(255, 255, 255, 0)"}}
                              option={{}} notMerge={true}/>;
@@ -93,7 +93,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
     for (let i = data.history.length - 1; i >= 0; i--) {
       const tmp = data.history[i];
       const dt = DateTime.fromISO(tmp.timestamp);
-      const dtStr = dt.setLocale(DefaultLocale).toLocaleString({month: "short", day: "2-digit"})
+      const dtStr = dt.setLocale(DefaultLocale).toLocaleString({month: "short", day: "numeric"})
         + " "
         + dt.setLocale(DefaultLocale).toLocaleString({hour: "numeric", minute: "numeric"});
       chartData.push({...tmp, timestamp: dtStr});
@@ -212,7 +212,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
   }
 
   return (
-    <ReactEChartsCore echarts={echarts} className={"mt-4"} style={{width: "100%", minHeight: "480px", maxWidth: "100%"}}
+    <ReactEChartsCore echarts={echarts} className={"mt-4"} style={{width: "100%", minHeight: "480px", maxWidth: "100vw"}}
                       option={option} notMerge={true}/>
   );
 };
