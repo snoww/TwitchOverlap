@@ -17,7 +17,7 @@ const AtlasImage = () => {
               content="https://media.discordapp.net/attachments/220646943498567680/927213689864597564/dec-21-trans.png?width=1024&height=1024"/>
       </Head>
       <NavAtlas version={"image"}/>
-      <div className="overflow-hidden h-screen w-screen">
+      <div className="overflow-hidden h-screen w-screen bg-gray-300 dark:bg-gray-800">
         <TransformWrapper limitToBounds={false} minScale={0.1} initialScale={0.2} maxScale={1}>
           <TransformComponent>
             <ImageFallback src="https://cdn.discordapp.com/attachments/220646943498567680/927213689864597564/dec-21-trans.png" alt="twitch atlas december 2021"

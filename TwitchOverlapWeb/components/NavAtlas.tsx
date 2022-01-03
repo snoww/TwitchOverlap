@@ -24,14 +24,18 @@ const Nav = ({version}: { version: string }) => {
              rel="noopener noreferrer"><i className="fab fa-github fa-2x"/></a>
         </div>
       </div>
-      <div className="mx-4 -mt-1 whitespace-nowrap text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 text tracking-tighter">
-        {version === "canvas"
-          ? <Link href="/atlas/image">
-            <a>Click here for Image Version (better performance)</a>
-          </Link>
-          : <Link href="/atlas">
-            <a>Click here for Graph Version (better clarity)</a>
-          </Link>}
+      <div className="mx-4 -mt-1 whitespace-nowrap text-base tracking-tighter truncate">
+          {version === "canvas"
+            ? <Link href="/atlas/image">
+              <a className="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800">
+                Click here for Image Version (better performance)
+              </a>
+            </Link>
+            : <Link href="/atlas">
+              <a className="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800">
+                Click here for Graph Version (better clarity)
+              </a>
+            </Link>}
       </div>
     </nav>
   );
