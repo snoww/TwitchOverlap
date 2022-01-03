@@ -10,6 +10,7 @@
   ],
   "rules": {
     "semi": "error",
-    "quotes": ["error", "double"]
+    "quotes": ["error", "double"],
+    "@next/next/no-img-element": "off"
   }
 }
