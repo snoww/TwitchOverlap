@@ -393,7 +393,7 @@ namespace TwitchOverlapApi.Controllers
             }
             
             name = name.ToLowerInvariant();
-            const int points = 14;
+            const int numDays = 30;
             string cacheKey = name + days;
             string cachedHistory = await _cache.StringGetAsync(ApiChannelHistoryCacheKey + cacheKey);
             if (!string.IsNullOrEmpty(cachedHistory))
@@ -412,19 +412,19 @@ namespace TwitchOverlapApi.Controllers
                 1 => await _context.OverlapsDaily.AsNoTracking()
                     .Where(x => x.Channel == channel.Id)
                     .OrderByDescending(x => x.Date)
-                    .Take(points)
+                    .Take(numDays)
                     .Select(x => new OverlapHistory(x.Date, x.Shared.Take(6)))
                     .ToListAsync(),
                 3 => await _context.OverlapRolling3Days.AsNoTracking()
                     .Where(x => x.Channel == channel.Id)
                     .OrderByDescending(x => x.Date)
-                    .Take(points)
+                    .Take(numDays)
                     .Select(x => new OverlapHistory(x.Date, x.Shared.Take(6)))
                     .ToListAsync(),
                 _ => await _context.OverlapRolling7Days.AsNoTracking()
                     .Where(x => x.Channel == channel.Id)
                     .OrderByDescending(x => x.Date)
-                    .Take(points)
+                    .Take(numDays)
                     .Select(x => new OverlapHistory(x.Date, x.Shared.Take(6)))
                     .ToListAsync(),
             };
