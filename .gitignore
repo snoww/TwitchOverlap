@@ -359,7 +359,6 @@ MigrationBackup/
 
 # globs
 Makefile.in
-*.userprefs
 *.usertasks
 config.make
 config.status
@@ -442,3 +441,4 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 TwitchGraph/data/
+.next/
