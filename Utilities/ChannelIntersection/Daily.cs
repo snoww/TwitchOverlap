@@ -31,6 +31,7 @@ namespace ChannelIntersection
         private const int OneDayLimit = 100;
         private const int ThreeDayLimit = 200;
         private const int SevenDayLimit = 300;
+        private const int DeleteAfter = -40;
         private const string Dir = "chatters/";
         private const string Extension = ".json";
 
@@ -294,7 +295,7 @@ namespace ChannelIntersection
             });
 
             await _context.BulkInsertAsync(overlapData.ToList());
-            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_daily where date <= {_timestamp.AddDays(-14)}");
+            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_daily where date <= {_timestamp.AddDays(DeleteAfter)}");
             await _context.SaveChangesAsync();
         }
 
@@ -325,7 +326,7 @@ namespace ChannelIntersection
             });
 
             await _context.BulkInsertAsync(overlapData.ToList());
-            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_3_days where date <= {_timestamp.AddDays(-14)}");
+            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_3_days where date <= {_timestamp.AddDays(DeleteAfter)}");
             await _context.SaveChangesAsync();
         }
 
@@ -356,7 +357,7 @@ namespace ChannelIntersection
             });
 
             await _context.BulkInsertAsync(overlapData.ToList());
-            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_7_days where date <= {_timestamp.AddDays(-14)}");
+            await _context.Database.ExecuteSqlInterpolatedAsync($"delete from overlap_rolling_7_days where date <= {_timestamp.AddDays(DeleteAfter)}");
             await _context.SaveChangesAsync();
         }
 
