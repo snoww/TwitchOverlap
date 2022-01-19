@@ -7,6 +7,10 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Amazon;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Amazon.S3.Transfer;
 using ChannelIntersection.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -15,7 +19,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ChannelIntersection
 {
-    public class ChannelProcessor
+    public class ChannelProcessor : IDisposable
     {
         private static readonly HttpClient Http = new();
         private static readonly DateTime Timestamp = DateTime.UtcNow;
@@ -25,6 +29,9 @@ namespace ChannelIntersection
         private readonly string _psqlConnection;
         private readonly string _twitchClient;
         private readonly string _twitchToken;
+        private readonly IAmazonS3 _client;
+        private const string S3BucketName = "twitch-overlap";
+        private const int AggregateKeptDays = -40;
         private AggregateFlags _flags;
 
         private Dictionary<string, Channel> _topChannels;
@@ -35,11 +42,12 @@ namespace ChannelIntersection
         private const int MinViewers = 750;
         private const int MinAggregateChatters = 1000;
 
-        public ChannelProcessor(string psqlConnection, string twitchClient, string twitchToken)
+        public ChannelProcessor(string psqlConnection, string twitchClient, string twitchToken, string s3AccessKey, string s3SecretKey)
         {
             _psqlConnection = psqlConnection;
             _twitchClient = twitchClient;
             _twitchToken = twitchToken;
+            _client = new AmazonS3Client(s3AccessKey, s3SecretKey, RegionEndpoint.USEast2);
         }
 
         public async Task Run()
@@ -108,11 +116,34 @@ namespace ChannelIntersection
 
             if (_flags.HasFlag(AggregateFlags.Daily))
             {
-                await using var context = new TwitchContext(_psqlConnection);
-                await using IDbContextTransaction trans = await context.Database.BeginTransactionAsync();
-                var daily = new Daily(context, Timestamp);
-                await daily.Aggregate();
-                await trans.CommitAsync();
+                var day = Timestamp.Day;
+                // check if next update will happen the next calender day
+                if (Timestamp.AddHours(1).Day != day)
+                {
+                    var path = $"chatters/{Timestamp.Date.ToShortDateString()}.json";
+                    Helper.CompressFile(path);
+                    using var transfer = new TransferUtility(_client);
+                    await transfer.UploadAsync(path + ".gz", S3BucketName);
+
+                    try
+                    {
+                        await _client.DeleteObjectAsync(new DeleteObjectRequest
+                        {
+                            BucketName = S3BucketName,
+                            Key = $"chatters/{Timestamp.AddDays(AggregateKeptDays).ToShortDateString()}.json.gz"
+                        });
+                    }
+                    catch (Exception)
+                    {
+                        // file does not exist
+                    }
+                    ListObjectsV2Response listObjects = await _client.ListObjectsV2Async(new ListObjectsV2Request
+                        { BucketName = S3BucketName, Prefix = "chatters"});
+                    foreach (var file in listObjects.S3Objects)
+                    {
+                        Console.WriteLine(file.Key);
+                    }
+                }
             }
 
             sw.Stop();
@@ -331,6 +362,11 @@ namespace ChannelIntersection
                     }
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            _client.Dispose();
         }
     }
 }

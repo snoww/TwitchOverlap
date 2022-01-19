@@ -71,7 +71,7 @@ create table if not exists overlap_rolling_30_days
 
 create index if not exists channel_last_update_index on channel (last_update desc);
 create unique index if not exists overlap_timestamp_desc_channel_uindex on overlap (timestamp desc, channel);
-create unique index if not exists chatters_daily_date_desc_username_uindex on chatters (date desc, username);
+-- create unique index if not exists chatters_daily_date_desc_username_uindex on chatters (date desc, username);
 create unique index if not exists overlap_daily_date_desc_channel_uindex on overlap_daily (date desc, channel);
 create unique index if not exists overlap_rolling_3_days_date_desc_channel_uindex on overlap_rolling_3_days (date desc, channel);
 create unique index if not exists overlap_rolling_7_days_date_desc_channel_uindex on overlap_rolling_7_days (date desc, channel);

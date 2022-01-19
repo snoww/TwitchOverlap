@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -8,17 +9,9 @@ namespace ChannelIntersection
     {
         public static async Task Main()
         {
-            string twitchToken;
-            string twitchClient;
-            string psqlConnection;
-            using (JsonDocument json = JsonDocument.Parse(await File.ReadAllTextAsync("config.json")))
-            {
-                twitchToken = json.RootElement.GetProperty("TWITCH_TOKEN").GetString();
-                twitchClient = json.RootElement.GetProperty("TWITCH_CLIENT").GetString();
-                psqlConnection = json.RootElement.GetProperty("POSTGRES").GetString();
-            }
+            Dictionary<string, string> config = JsonSerializer.Deserialize<Dictionary<string, string>>(File.OpenRead("config.json")) ?? new Dictionary<string, string>();
 
-            var processor = new ChannelProcessor(psqlConnection, twitchClient, twitchToken);
+            using var processor = new ChannelProcessor(config["POSTGRES"], config["TWITCH_CLIENT"], config["TWITCH_TOKEN"], config["S3AccessKey"], config["S3SecretKey"]);
             await processor.Run();
         }
     }

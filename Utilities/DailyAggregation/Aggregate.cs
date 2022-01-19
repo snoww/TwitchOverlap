@@ -23,9 +23,10 @@ public class Aggregate : IDisposable
     private static readonly object AggregateLock = new();
     private static readonly object ChannelOverlapLock = new();
     private static readonly object ChannelTotalOverlapCountLock = new();
+
+    private const int MaxChannels = 4000;
     
     private static readonly DateTime Timestamp = DateTime.UtcNow.AddDays(-1);
-    // private static readonly DateTime Timestamp = DateTime.Parse("2021-12-31");
 
     private readonly IAmazonS3 _client;
     private readonly DatabaseContext _database;
@@ -33,7 +34,7 @@ public class Aggregate : IDisposable
     public Aggregate()
     {
         Dictionary<string, string> config = JsonSerializer.Deserialize<Dictionary<string, string>>(File.OpenRead("config.json")) ?? new Dictionary<string, string>();
-        if (config.Count != 3)
+        if (config.Count == 0)
         {
             Console.WriteLine("empty config, exiting");
             Environment.Exit(-1);
@@ -82,15 +83,15 @@ public class Aggregate : IDisposable
 
             switch (i)
             {
-                case 0:
-                    await _database.InsertDailyToDatabase(totalUnique, _channelTotalOverlap, overlap);
-                    break;
-                case 1:
-                    await _database.Insert3DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
-                    break;
-                case 2:
-                    await _database.Insert7DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
-                    break;
+                // case 0:
+                //     await _database.InsertDailyToDatabase(totalUnique, _channelTotalOverlap, overlap);
+                //     break;
+                // case 1:
+                //     await _database.Insert3DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
+                //     break;
+                // case 2:
+                //     await _database.Insert7DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
+                //     break;
                 case 3:
                     await _database.Insert30DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
                     break;
@@ -151,7 +152,7 @@ public class Aggregate : IDisposable
     
     private Dictionary<string, int> TransposeChatters()
     {
-        var filter = _channelViewers.OrderByDescending(x => x.Value.Count).ToList();
+        var filter = _channelViewers.OrderByDescending(x => x.Value.Count).Take(MaxChannels).ToList();
         foreach (var (channel, user) in filter)
         {
             foreach (int hash in user)

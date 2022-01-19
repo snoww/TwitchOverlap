@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,6 +35,14 @@ namespace ChannelIntersection
             }
 
             return list;
+        }
+        
+        public static void CompressFile(string path)
+        {
+            using FileStream originalFileStream = File.Open(path, FileMode.Open);
+            using FileStream compressedFileStream = File.Create(path + ".gz");
+            using var compressor = new GZipStream(compressedFileStream, CompressionMode.Compress);
+            originalFileStream.CopyTo(compressor);
         }
     }
     
