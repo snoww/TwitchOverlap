@@ -78,20 +78,17 @@ public class Aggregate : IDisposable
             Console.WriteLine($"finished overlap calculation in {sw.Elapsed:mm\\:ss}");
             sw.Restart();
             
-            Console.WriteLine("channels total: " + overlap.Count);
-            Console.WriteLine("channel1: " + overlap.First().Value.Count);
-
             switch (i)
             {
-                // case 0:
-                //     await _database.InsertDailyToDatabase(totalUnique, _channelTotalOverlap, overlap);
-                //     break;
-                // case 1:
-                //     await _database.Insert3DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
-                //     break;
-                // case 2:
-                //     await _database.Insert7DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
-                //     break;
+                case 0:
+                    await _database.InsertDailyToDatabase(totalUnique, _channelTotalOverlap, overlap);
+                    break;
+                case 1:
+                    await _database.Insert3DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
+                    break;
+                case 2:
+                    await _database.Insert7DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
+                    break;
                 case 3:
                     await _database.Insert30DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
                     break;
@@ -201,64 +198,43 @@ public class Aggregate : IDisposable
                 }
             }
             
-            var localChannelOverlap = new Dictionary<string, Dictionary<string, int>>();
             foreach (IEnumerable<string> combs in GetKCombs(channels, 2))
             {
                 string[] pair = combs.ToArray();
-                if (!localChannelOverlap.ContainsKey(pair[0]))
+                lock (ChannelOverlapLock)
                 {
-                    localChannelOverlap[pair[0]] = new Dictionary<string, int> { { pair[1], 1 } };
-                }
-                else
-                {
-                    if (!localChannelOverlap[pair[0]].ContainsKey(pair[1]))
+                    if (!channelOverlap.ContainsKey(pair[0]))
                     {
-                        localChannelOverlap[pair[0]][pair[1]] = 1;
+                        channelOverlap[pair[0]] = new Dictionary<string, int> { { pair[1], 1 } };
                     }
                     else
                     {
-                        localChannelOverlap[pair[0]][pair[1]]++;
+                        if (!channelOverlap[pair[0]].ContainsKey(pair[1]))
+                        {
+                            channelOverlap[pair[0]][pair[1]] = 1;
+                        }
+                        else
+                        {
+                            channelOverlap[pair[0]][pair[1]]++;
+                        }
                     }
                 }
                 
-            
-                if (!localChannelOverlap.ContainsKey(pair[1]))
-                {
-                    localChannelOverlap[pair[1]] = new Dictionary<string, int> {{pair[0], 1}};
-                }
-                else
-                {
-                    if (!localChannelOverlap[pair[1]].ContainsKey(pair[0]))
-                    {
-                        localChannelOverlap[pair[1]][pair[0]] = 1;
-                    }
-                    else
-                    {
-                        localChannelOverlap[pair[1]][pair[0]]++;
-                    }
-                }
-            }
-
-            foreach (var (channel, overlaps) in localChannelOverlap)
-            {
                 lock (ChannelOverlapLock)
                 {
-                    if (!channelOverlap.ContainsKey(channel))
+                    if (!channelOverlap.ContainsKey(pair[1]))
                     {
-                        channelOverlap[channel] = overlaps;
+                        channelOverlap[pair[1]] = new Dictionary<string, int> {{pair[0], 1}};
                     }
                     else
                     {
-                        foreach (var (ch, amount) in overlaps)
+                        if (!channelOverlap[pair[1]].ContainsKey(pair[0]))
                         {
-                            if (!channelOverlap[channel].ContainsKey(ch))
-                            {
-                                channelOverlap[channel][ch] = amount;
-                            }
-                            else
-                            {
-                                channelOverlap[channel][ch] += amount;
-                            }
+                            channelOverlap[pair[1]][pair[0]] = 1;
+                        }
+                        else
+                        {
+                            channelOverlap[pair[1]][pair[0]]++;
                         }
                     }
                 }
