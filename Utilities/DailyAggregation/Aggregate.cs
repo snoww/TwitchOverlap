@@ -64,6 +64,11 @@ public class Aggregate : IDisposable
         
             Console.WriteLine($"aggregating {map[i]} day(s) of chatters ...");
             await AggregateChatters(dates);
+            if (_channelViewers.Count == 0)
+            {
+                Console.WriteLine("no viewer data, skipping");
+                continue;
+            }
             Console.WriteLine($"finished aggregation in {sw.Elapsed:mm\\:ss}");
             sw.Restart();
         
