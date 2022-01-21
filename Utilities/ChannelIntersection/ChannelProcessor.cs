@@ -116,15 +116,15 @@ namespace ChannelIntersection
 
             if (_flags.HasFlag(AggregateFlags.Daily))
             {
-                var day = Timestamp.Day;
                 // check if next update will happen the next calender day
-                if (Timestamp.AddHours(1).Day != day)
+                if (Timestamp.AddHours(1).Day != Timestamp.Day)
                 {
                     var path = $"chatters/{Timestamp.Date.ToShortDateString()}.json";
                     Helper.CompressFile(path);
                     using var transfer = new TransferUtility(_client);
                     await transfer.UploadAsync(path + ".gz", S3BucketName);
-
+                    Console.WriteLine("uploaded daily chatter aggregate");
+                    
                     try
                     {
                         await _client.DeleteObjectAsync(new DeleteObjectRequest
@@ -136,12 +136,6 @@ namespace ChannelIntersection
                     catch (Exception)
                     {
                         // file does not exist
-                    }
-                    ListObjectsV2Response listObjects = await _client.ListObjectsV2Async(new ListObjectsV2Request
-                        { BucketName = S3BucketName, Prefix = "chatters"});
-                    foreach (var file in listObjects.S3Objects)
-                    {
-                        Console.WriteLine(file.Key);
                     }
                 }
             }
