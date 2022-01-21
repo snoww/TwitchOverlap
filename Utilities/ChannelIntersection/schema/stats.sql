@@ -75,4 +75,4 @@ create unique index if not exists overlap_timestamp_desc_channel_uindex on overl
 create unique index if not exists overlap_daily_date_desc_channel_uindex on overlap_daily (date desc, channel);
 create unique index if not exists overlap_rolling_3_days_date_desc_channel_uindex on overlap_rolling_3_days (date desc, channel);
 create unique index if not exists overlap_rolling_7_days_date_desc_channel_uindex on overlap_rolling_7_days (date desc, channel);
-create unique index if not exists overlap_rolling_30_days_date_desc_channel_uindex on overlap_rolling_7_days (date desc, channel);
+create unique index if not exists overlap_rolling_30_days_date_desc_channel_uindex on overlap_rolling_30_days (date desc, channel);
