@@ -42,6 +42,10 @@ public class Aggregate : IDisposable
         
         _client = new AmazonS3Client(config["S3AccessKey"], config["S3SecretKey"], RegionEndpoint.USEast2);
         _database = new DatabaseContext(config["POSTGRES"], Timestamp);
+        if (_database.AlreadyAggregated())
+        {
+            Environment.Exit(-1);
+        }
     }
 
     public async Task BeginAggregation()

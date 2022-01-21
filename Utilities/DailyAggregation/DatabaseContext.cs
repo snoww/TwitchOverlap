@@ -21,6 +21,11 @@ public class DatabaseContext : IDisposable
         _context = new TwitchContext(connectionString);
         _date = DateOnly.FromDateTime(timestamp.AddDays(-1));
     }
+
+    public bool AlreadyAggregated()
+    {
+        return _context.OverlapsDaily.Any(x => x.Date == DateOnly.FromDateTime(DateTime.UtcNow));
+    }
     
     private async Task<Dictionary<string, int>> FetchChannelIds(Dictionary<string, int> uniqueChatters)
     {
