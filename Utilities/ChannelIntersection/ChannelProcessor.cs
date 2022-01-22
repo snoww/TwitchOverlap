@@ -116,10 +116,11 @@ namespace ChannelIntersection
 
             if (_flags.HasFlag(AggregateFlags.Daily))
             {
-                var path = $"chatters/{Timestamp.Date.ToShortDateString()}.json";
+                var filename = $"{Timestamp.AddDays(-1).Date.ToShortDateString()}";
+                var path = $"chatters/{filename}.json";
                 Helper.CompressFile(path);
                 using var transfer = new TransferUtility(_client);
-                await transfer.UploadAsync(path + ".gz", S3BucketName);
+                await transfer.UploadAsync(path + ".gz", S3BucketName, path + ".gz");
                 Console.WriteLine("uploaded daily chatter aggregate");
                 
                 try

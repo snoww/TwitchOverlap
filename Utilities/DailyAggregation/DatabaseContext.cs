@@ -19,7 +19,7 @@ public class DatabaseContext : IDisposable
     public DatabaseContext(string connectionString, DateTime timestamp)
     {
         _context = new TwitchContext(connectionString);
-        _date = DateOnly.FromDateTime(timestamp.AddDays(-1));
+        _date = DateOnly.FromDateTime(timestamp);
     }
 
     public bool AlreadyAggregated()
