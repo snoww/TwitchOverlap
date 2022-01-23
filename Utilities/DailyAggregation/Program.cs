@@ -7,6 +7,7 @@ public static class Program
     public static async Task Main()
     {
         var sw = new Stopwatch();
+        sw.Start();
         Console.WriteLine($"beginning daily overlap calculation at {DateTime.UtcNow:u}");
         using var agg = new Aggregate();
         await agg.BeginAggregation();
