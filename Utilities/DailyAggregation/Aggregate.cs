@@ -5,7 +5,6 @@ using System.Text.Json;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Transfer;
-using DailyAggregation.Models;
 
 // ReSharper disable InconsistentlySynchronizedField
 
@@ -122,6 +121,7 @@ public class Aggregate : IDisposable
 
     private async Task AggregateChatters(List<string> files)
     {
+        var temp = new ConcurrentDictionary<string, ConcurrentBag<int>>();
         await Parallel.ForEachAsync(files, async (file, token) =>
         {
             Dictionary<string, List<string>> data;
@@ -143,21 +143,28 @@ public class Aggregate : IDisposable
             {
                 foreach (string channel in channels)
                 {
-                    lock (AggregateLock)
+
+                    // there will be hash collisions since GetHashCode() isn't guaranteed to return a unique hash
+                    // for every string. The memory savings is worth the trade off since the overlap isn't
+                    // the same every run anyways.
+                    if (!temp.ContainsKey(channel))
                     {
-                        // there will be hash collisions since GetHashCode() isn't guaranteed to return a unique hash
-                        // for every string. The memory savings is worth the trade off since the overlap isn't
-                        // the same every run anyways.
-                        if (!_channelViewers.ContainsKey(channel))
-                        {
-                            _channelViewers[channel] = new HashSet<int> { user.GetHashCode() };
-                        }
-                        else
-                        {
-                            _channelViewers[channel].Add(user.GetHashCode());
-                        }
+                        temp[channel] = new ConcurrentBag<int> { user.GetHashCode() };
+                    }
+                    else
+                    {
+                        temp[channel].Add(user.GetHashCode());
                     }
                 }
+            }
+        });
+
+        Parallel.ForEach(temp, x =>
+        {
+            var hashTable = new HashSet<int>(x.Value);
+            lock (AggregateLock)
+            {
+                _channelViewers[x.Key] = hashTable;
             }
         });
 
