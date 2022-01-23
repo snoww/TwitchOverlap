@@ -33,7 +33,7 @@ public class DatabaseContext : IDisposable
     }
     
     
-    public async Task InsertDailyToDatabase(Dictionary<string, int> uniqueChatters, IReadOnlyDictionary<string, int> totalOverlap, IReadOnlyDictionary<string, Dictionary<string, int>> overlap)
+    public async Task InsertDailyToDatabase(Dictionary<string, int> uniqueChatters, IReadOnlyDictionary<string, int> totalOverlap, ConcurrentDictionary<string, ConcurrentDictionary<string, int>> overlap)
     {
         var overlapData = new ConcurrentBag<OverlapDaily>();
 
@@ -64,7 +64,7 @@ public class DatabaseContext : IDisposable
         await _context.SaveChangesAsync();
     }
     
-    public async Task Insert3DayToDatabase(Dictionary<string, int> uniqueChatters, IReadOnlyDictionary<string, int> totalOverlap, IReadOnlyDictionary<string, Dictionary<string, int>> overlap)
+    public async Task Insert3DayToDatabase(Dictionary<string, int> uniqueChatters, IReadOnlyDictionary<string, int> totalOverlap, ConcurrentDictionary<string, ConcurrentDictionary<string, int>> overlap)
     {
         var overlapData = new ConcurrentBag<OverlapRolling3Days>();
 
@@ -95,7 +95,7 @@ public class DatabaseContext : IDisposable
         await _context.SaveChangesAsync();
     }
     
-    public async Task Insert7DayToDatabase(Dictionary<string, int> uniqueChatters, IReadOnlyDictionary<string, int> totalOverlap, IReadOnlyDictionary<string, Dictionary<string, int>> overlap)
+    public async Task Insert7DayToDatabase(Dictionary<string, int> uniqueChatters, IReadOnlyDictionary<string, int> totalOverlap, ConcurrentDictionary<string, ConcurrentDictionary<string, int>> overlap)
     {
         var overlapData = new ConcurrentBag<OverlapRolling7Days>();
 
@@ -126,7 +126,7 @@ public class DatabaseContext : IDisposable
         await _context.SaveChangesAsync();
     }
     
-    public async Task Insert30DayToDatabase(Dictionary<string, int> uniqueChatters, IReadOnlyDictionary<string, int> totalOverlap, IReadOnlyDictionary<string, Dictionary<string, int>> overlap)
+    public async Task Insert30DayToDatabase(Dictionary<string, int> uniqueChatters, IReadOnlyDictionary<string, int> totalOverlap, ConcurrentDictionary<string, ConcurrentDictionary<string, int>> overlap)
     {
         var overlapData = new ConcurrentBag<OverlapRolling30Days>();
 

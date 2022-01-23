@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text.Json;
@@ -5,6 +6,7 @@ using Amazon;
 using Amazon.S3;
 using Amazon.S3.Transfer;
 using DailyAggregation.Models;
+
 // ReSharper disable InconsistentlySynchronizedField
 
 namespace DailyAggregation;
@@ -21,11 +23,10 @@ public class Aggregate : IDisposable
     private readonly Dictionary<string, int> _channelTotalOverlap = new();
 
     private static readonly object AggregateLock = new();
-    private static readonly object ChannelOverlapLock = new();
     private static readonly object ChannelTotalOverlapCountLock = new();
 
     private const int MaxChannels = 4000;
-    
+
     private static readonly DateTime Timestamp = DateTime.UtcNow.AddDays(-1);
 
     private readonly IAmazonS3 _client;
@@ -33,13 +34,15 @@ public class Aggregate : IDisposable
 
     public Aggregate()
     {
-        Dictionary<string, string> config = JsonSerializer.Deserialize<Dictionary<string, string>>(File.OpenRead("config.json")) ?? new Dictionary<string, string>();
+        Dictionary<string, string> config =
+            JsonSerializer.Deserialize<Dictionary<string, string>>(File.OpenRead("config.json")) ??
+            new Dictionary<string, string>();
         if (config.Count == 0)
         {
             Console.WriteLine("empty config, exiting");
             Environment.Exit(-1);
         }
-        
+
         _client = new AmazonS3Client(config["S3AccessKey"], config["S3SecretKey"], RegionEndpoint.USEast2);
         _database = new DatabaseContext(config["POSTGRES"], Timestamp);
         if (_database.AlreadyAggregated())
@@ -55,9 +58,7 @@ public class Aggregate : IDisposable
 
         var dates = new List<string>();
         var map = new[] { 1, 3, 7, 30 };
-        var types = new AggregateOverlap[]
-            { new OverlapDaily(), new OverlapRolling3Days(), new OverlapRolling7Days(), new OverlapRolling30Days() };
-        
+
         for (int i = 0; i < 4; i++)
         {
             dates = GetFilenames(map[i]);
@@ -65,7 +66,7 @@ public class Aggregate : IDisposable
             await RetrieveChatters(dates);
             Console.WriteLine($"finished retrieving chatters, took {sw.Elapsed.TotalSeconds:N4}s");
             sw.Restart();
-        
+
             Console.WriteLine($"aggregating {map[i]} day(s) of chatters ...");
             await AggregateChatters(dates);
             if (_channelViewers.Count == 0)
@@ -73,20 +74,21 @@ public class Aggregate : IDisposable
                 Console.WriteLine("no viewer data, skipping");
                 continue;
             }
+
             Console.WriteLine($"finished aggregation in {sw.Elapsed:mm\\:ss}");
             sw.Restart();
-        
+
             Console.WriteLine("beginning transposition ...");
             var totalUnique = TransposeChatters();
             _channelViewers.Clear();
             Console.WriteLine($"finished transposition in {sw.Elapsed:mm\\:ss}");
             sw.Restart();
-        
+
             Console.WriteLine("beginning overlap calculation ...");
             var overlap = CalculateOverlap();
             Console.WriteLine($"finished overlap calculation in {sw.Elapsed:mm\\:ss}");
             sw.Restart();
-            
+
             switch (i)
             {
                 case 0:
@@ -102,7 +104,7 @@ public class Aggregate : IDisposable
                     await _database.Insert30DayToDatabase(totalUnique, _channelTotalOverlap, overlap);
                     break;
             }
-            
+
             _channelTotalOverlap.Clear();
             _chatterChannels.Clear();
         }
@@ -130,19 +132,25 @@ public class Aggregate : IDisposable
                 // file not found
                 return;
             }
+
             await using (FileStream fs = File.OpenRead(string.Format(FilenameFormat, file)))
             {
-                data = await JsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(fs, cancellationToken: token) ?? new Dictionary<string, List<string>>();
+                data = await JsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(fs,
+                    cancellationToken: token) ?? new Dictionary<string, List<string>>();
             }
+
             foreach (var (user, channels) in data)
             {
                 foreach (string channel in channels)
                 {
                     lock (AggregateLock)
                     {
+                        // there will be hash collisions since GetHashCode() isn't guaranteed to return a unique hash
+                        // for every string. The memory savings is worth the trade off since the overlap isn't
+                        // the same every run anyways.
                         if (!_channelViewers.ContainsKey(channel))
                         {
-                            _channelViewers[channel] = new HashSet<int>();
+                            _channelViewers[channel] = new HashSet<int> { user.GetHashCode() };
                         }
                         else
                         {
@@ -152,10 +160,10 @@ public class Aggregate : IDisposable
                 }
             }
         });
-        
+
         Console.WriteLine($"aggregated {_channelViewers.Count:N0} channels");
     }
-    
+
     private Dictionary<string, int> TransposeChatters()
     {
         var filter = _channelViewers.OrderByDescending(x => x.Value.Count).Take(MaxChannels).ToList();
@@ -173,14 +181,15 @@ public class Aggregate : IDisposable
                 }
             }
         }
+
         Console.WriteLine($"transposed {_chatterChannels.Count:N0} chatters");
         return filter.ToDictionary(x => x.Key, y => y.Value.Count);
     }
 
-    private Dictionary<string, Dictionary<string, int>> CalculateOverlap()
+    private ConcurrentDictionary<string, ConcurrentDictionary<string, int>> CalculateOverlap()
     {
-        var channelOverlap = new Dictionary<string, Dictionary<string, int>>();
-        
+        var channelOverlap = new ConcurrentDictionary<string, ConcurrentDictionary<string, int>>();
+
         Parallel.ForEach(_chatterChannels, x =>
         {
             var (_, channels) = x;
@@ -188,12 +197,12 @@ public class Aggregate : IDisposable
             {
                 return;
             }
-            
+
             foreach (string channel in channels)
             {
                 // appears in multiple channels
                 // increment overlap chatter count
-                
+
                 lock (ChannelTotalOverlapCountLock)
                 {
                     if (!_channelTotalOverlap.ContainsKey(channel))
@@ -206,50 +215,37 @@ public class Aggregate : IDisposable
                     }
                 }
             }
-            
+
+            // there will be race conditions when incrementing the overlap count
+            // however the speed up using ConcurrentDictionary is worth it over manually locking the entire Dictionary
+            // so the overlap count won't be deterministic
             foreach (IEnumerable<string> combs in GetKCombs(channels, 2))
             {
                 string[] pair = combs.ToArray();
-                lock (ChannelOverlapLock)
+
+                if (!channelOverlap.ContainsKey(pair[0]))
                 {
-                    if (!channelOverlap.ContainsKey(pair[0]))
-                    {
-                        channelOverlap[pair[0]] = new Dictionary<string, int> { { pair[1], 1 } };
-                    }
-                    else
-                    {
-                        if (!channelOverlap[pair[0]].ContainsKey(pair[1]))
-                        {
-                            channelOverlap[pair[0]][pair[1]] = 1;
-                        }
-                        else
-                        {
-                            channelOverlap[pair[0]][pair[1]]++;
-                        }
-                    }
+                    channelOverlap.TryAdd(pair[0], new ConcurrentDictionary<string, int> { [pair[1]] = 1 });
                 }
-                
-                lock (ChannelOverlapLock)
+                else
                 {
-                    if (!channelOverlap.ContainsKey(pair[1]))
-                    {
-                        channelOverlap[pair[1]] = new Dictionary<string, int> {{pair[0], 1}};
-                    }
-                    else
-                    {
-                        if (!channelOverlap[pair[1]].ContainsKey(pair[0]))
-                        {
-                            channelOverlap[pair[1]][pair[0]] = 1;
-                        }
-                        else
-                        {
-                            channelOverlap[pair[1]][pair[0]]++;
-                        }
-                    }
+                    channelOverlap[pair[0]].TryGetValue(pair[1], out var count);
+                    channelOverlap[pair[0]][pair[1]] = count + 1;
+                }
+
+
+                if (!channelOverlap.ContainsKey(pair[1]))
+                {
+                    channelOverlap.TryAdd(pair[1], new ConcurrentDictionary<string, int> { [pair[0]] = 1 });
+                }
+                else
+                {
+                    channelOverlap[pair[1]].TryGetValue(pair[0], out var count);
+                    channelOverlap[pair[1]][pair[0]] = count + 1;
                 }
             }
         });
-        
+
         return channelOverlap;
     }
 
@@ -269,18 +265,19 @@ public class Aggregate : IDisposable
                     Console.WriteLine("data for " + date + " not found. skipping.");
                     continue;
                 }
-                
+
                 DecompressFile(date);
             }
         }
     }
-    
+
     private async Task DownloadChatters(string date)
     {
         using var transfer = new TransferUtility(_client);
-        await transfer.DownloadAsync(string.Format(FilenameFormat, date) + ".gz", S3BucketName, string.Format(S3KeyFormat, date));
+        await transfer.DownloadAsync(string.Format(FilenameFormat, date) + ".gz", S3BucketName,
+            string.Format(S3KeyFormat, date));
     }
-    
+
     private static void DecompressFile(string date)
     {
         var compressedFileName = string.Format(FilenameFormat, date) + ".gz";
@@ -290,7 +287,7 @@ public class Aggregate : IDisposable
         {
             decompressor.CopyTo(outputFileStream);
         }
-        
+
         File.Delete(compressedFileName);
     }
 
@@ -312,7 +309,7 @@ public class Aggregate : IDisposable
 
         return dates;
     }
-    
+
     private static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
     {
         if (length == 1) return list.Select(t => new[] { t });
