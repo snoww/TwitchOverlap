@@ -304,24 +304,7 @@ public class Aggregate : IDisposable
         }
         else
         {
-            int end;
-            switch (days)
-            {
-                case 3:
-                    end = 3;
-                    break;
-                case 7:
-                    end = 7;
-                    break;
-                case 14:
-                    end = 14;
-                    break;
-                default: // case 30:
-                    end = 30;
-                    break;
-            }
-
-            for (int i = 0; i < end; i++)
+            for (int i = 0; i < days; i++)
             {
                 dates.Add(Timestamp.AddDays(-i).ToString("yyyy-MM-dd"));
             }
