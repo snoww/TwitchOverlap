@@ -41,8 +41,11 @@ namespace ChannelIntersection
         {
             using FileStream originalFileStream = File.Open(path, FileMode.Open);
             using FileStream compressedFileStream = File.Create(path + ".gz");
-            using var compressor = new GZipStream(compressedFileStream, CompressionMode.Compress);
-            originalFileStream.CopyTo(compressor);
+            using (var compressor = new GZipStream(compressedFileStream, CompressionMode.Compress))
+            {
+                originalFileStream.CopyTo(compressor);
+            }
+            File.Delete(path);
         }
     }
     
