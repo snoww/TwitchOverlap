@@ -2,10 +2,11 @@ import Link from "next/link";
 import {ChannelOverlapData, RowChange} from "./ChannelDefaultTableRow";
 import {DefaultLocale} from "../../utils/helpers";
 
-const ChannelAggregateTableRow = ({shared, chatters, data, type}: {shared: number, chatters: number, data: ChannelOverlapData, type: string}) => {
+const ChannelAggregateTableRow = ({shared, chatters, index, data, type}: {shared: number, chatters: number, index: number, data: ChannelOverlapData, type: string}) => {
   return (
     <>
       <tr className="border-b border-gray-300">
+        <td className={"text-center"}>{index + 1}</td>
         <RowChange change={data.change}/>
         <td className="table-channel-col">
           <Link href={`/${data.loginName}/${type}`}>{data.displayName}</Link>

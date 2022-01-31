@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,9 +15,8 @@ public class AggregateDays
     private readonly Dictionary<int, List<string>> _chatterChannels = new();
 
     private static readonly object AggregateLock = new();
-    private static readonly object ChannelOverlapLock = new();
 
-    public async Task<(Dictionary<string, Dictionary<string, int>> channelOverlap, Dictionary<string, int> channelUniqueChatters)> Aggregate(string[] files)
+    public async Task<(ConcurrentDictionary<string, ConcurrentDictionary<string, int>> channelOverlap, Dictionary<string, int> channelUniqueChatters)> Aggregate(string[] files)
     {
         Console.WriteLine("beginning aggregation");
         var sw = new Stopwatch();
@@ -87,10 +87,9 @@ public class AggregateDays
         return filter.ToDictionary(x => x.Key, y => y.Value.Count);
     }
 
-    private Dictionary<string, Dictionary<string, int>> CalculateOverlap()
+    private ConcurrentDictionary<string, ConcurrentDictionary<string, int>> CalculateOverlap()
     {
-        var channelOverlap = new Dictionary<string, Dictionary<string, int>>();
-        
+        var channelOverlap = new ConcurrentDictionary<string, ConcurrentDictionary<string, int>>();
         var sw = new Stopwatch();
         Parallel.ForEach(_chatterChannels, x =>
         {
@@ -103,23 +102,24 @@ public class AggregateDays
             foreach (IEnumerable<string> combs in GetKCombs(channels, 2))
             {
                 string[] pair = combs.ToArray();
-                lock (ChannelOverlapLock)
+                if (!channelOverlap.ContainsKey(pair[0]))
                 {
-                    if (!channelOverlap.ContainsKey(pair[0]))
-                    {
-                        channelOverlap[pair[0]] = new Dictionary<string, int> { { pair[1], 1 } };
-                    }
-                    else
-                    {
-                        if (!channelOverlap[pair[0]].ContainsKey(pair[1]))
-                        {
-                            channelOverlap[pair[0]][pair[1]] = 1;
-                        }
-                        else
-                        {
-                            channelOverlap[pair[0]][pair[1]]++;
-                        }
-                    }
+                    channelOverlap.TryAdd(pair[0], new ConcurrentDictionary<string, int> { [pair[1]] = 1 });
+                }
+                else
+                {
+                    channelOverlap[pair[0]].TryGetValue(pair[1], out var count);
+                    channelOverlap[pair[0]][pair[1]] = count + 1;
+                }
+
+                if (!channelOverlap.ContainsKey(pair[1]))
+                {
+                    channelOverlap.TryAdd(pair[1], new ConcurrentDictionary<string, int> { [pair[0]] = 1 });
+                }
+                else
+                {
+                    channelOverlap[pair[1]].TryGetValue(pair[0], out var count);
+                    channelOverlap[pair[1]][pair[0]] = count + 1;
                 }
             }
         });

@@ -5,6 +5,7 @@ export type ChannelTableRowType = {
   shared: number,
   chatters: number,
   data: ChannelOverlapData,
+  index: number
 }
 
 export type ChannelOverlapData = {
@@ -20,36 +21,37 @@ export const RowChange = (prop: {change: number}) => {
   if (change === null) {
     return (
       <td className="text-blue-500" title="new overlap">
-        <i className="fas fa-plus pl-1"/>
+        <i className="fas fa-plus pl-2"/>
       </td>
     );
   }
   if (change === 0) {
     return (
       <td title="no change in position">
-        <i className="fas fa-minus pl-1"/>
+        {/*<i className="fas fa-minus pl-2"/>*/}
       </td>
     );
   }
   if (change > 0) {
     return (
       <td className="text-emerald-500 whitespace-nowrap" title="increased position">
-        <i className="fas fa-chevron-up pl-1"><span className="font-sans font-normal">{` ${change}`}</span></i>
+        <i className="fas fa-chevron-up pl-2"><span className="font-sans font-normal">{` ${change}`}</span></i>
       </td>
     );
   } else {
     return (
-      <td className="text-red-500 whitespace-nowrap" title="increased position">
-        <i className="fas fa-chevron-down pl-1"><span className="font-sans font-normal">{` ${Math.abs(change)}`}</span></i>
+      <td className="text-red-500 whitespace-nowrap" title="decreased position">
+        <i className="fas fa-chevron-down pl-2"><span className="font-sans font-normal">{` ${Math.abs(change)}`}</span></i>
       </td>
     );
   }
 };
 
-const ChannelDefaultTableRow = ({shared, chatters, data}: ChannelTableRowType) => {
+const ChannelDefaultTableRow = ({shared, chatters, data, index}: ChannelTableRowType) => {
   return (
     <>
       <tr className="border-b border-gray-300">
+        <td className={"text-center"}>{index + 1}</td>
         <RowChange change={data.change}/>
         <td className="table-channel-col">
           <Link href={`/${data.loginName}`}>{data.displayName}</Link>
