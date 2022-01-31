@@ -13,7 +13,7 @@ import useSWR from "swr";
 import {AggregateDays} from "../../pages/[...channel]";
 import {useTheme} from "next-themes";
 import {DateTime} from "luxon";
-import {DefaultLocale, fetcher} from "../../utils/helpers";
+import {API, DefaultLocale, fetcher} from "../../utils/helpers";
 
 const stringToRGB = function (str: string) {
   let hash = 0;
@@ -50,7 +50,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
   const {
     data,
     error
-  } = useSWR(`https://api.roki.sh/v2/history/${channel}${type === AggregateDays.Default ? "" : `/${type.toString()}`}`,
+  } = useSWR(`${API}/history/${channel}${type === AggregateDays.Default ? "" : `/${type.toString()}`}`,
     fetcher, {
       revalidateIfStale: false,
       revalidateOnFocus: false,

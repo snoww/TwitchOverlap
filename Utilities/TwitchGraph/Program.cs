@@ -29,7 +29,7 @@ namespace TwitchGraph
             }
 
             DateTime timestamp = DateTime.UtcNow;
-            // string dirName = $"{timestamp.Month}-{timestamp.Year}";
+            string filename = $"{timestamp:yyyy-MM}-";
             Console.WriteLine($"importing channel chatters at {timestamp:u}");
 
             var sw = new Stopwatch();
@@ -41,8 +41,8 @@ namespace TwitchGraph
             
             Console.WriteLine($"aggregate took {sw.Elapsed.TotalSeconds}s");
             
-            await File.WriteAllBytesAsync("channelOverlap.json", JsonSerializer.SerializeToUtf8Bytes(channelOverlap));
-            await File.WriteAllBytesAsync("channelUnique.json", JsonSerializer.SerializeToUtf8Bytes(channelUniqueChatters));
+            await File.WriteAllBytesAsync(filename + "channelOverlap.json", JsonSerializer.SerializeToUtf8Bytes(channelOverlap));
+            await File.WriteAllBytesAsync(filename + "channelUnique.json", JsonSerializer.SerializeToUtf8Bytes(channelUniqueChatters));
 
             // var channelOverlap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(await File.ReadAllTextAsync("channelOverlap.json"));
             // var channelUniqueChatters = JsonSerializer.Deserialize<Dictionary<string, int>>(await File.ReadAllTextAsync("channelUnique.json"));
@@ -67,9 +67,9 @@ namespace TwitchGraph
 
             Dictionary<string, string> displayNameMap = await GetChannelDisplayName(nodeSet);
 
-            await using StreamWriter nodeStream = File.CreateText("nodes.csv");
+            await using StreamWriter nodeStream = File.CreateText(filename + "nodes.csv");
             await nodeStream.WriteLineAsync("id,label,size");
-            await using StreamWriter edgeStream = File.CreateText("edges.csv");
+            await using StreamWriter edgeStream = File.CreateText(filename + "edges.csv");
             await edgeStream.WriteLineAsync("source,target,weight");
             
             foreach (var channel in nodeSet)

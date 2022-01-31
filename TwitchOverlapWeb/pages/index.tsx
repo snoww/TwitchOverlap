@@ -2,7 +2,7 @@ import Head from "next/head";
 import Nav from "../components/Nav";
 import ChannelCard, {IndexChannelData} from "../components/ChannelInfo/ChannelCard";
 import {DateTime} from "luxon";
-import {getTimeDiff} from "../utils/helpers";
+import {API, getTimeDiff} from "../utils/helpers";
 import React from "react";
 
 type HomeProps = {
@@ -49,7 +49,7 @@ export default function Home({channels, lastUpdate}: HomeProps) {
 }
 
 export const getServerSideProps = async () => {
-  const res = await fetch("https://api.roki.sh/v2/index");
+  const res = await fetch(`${API}/index`);
   const data = await res.json();
 
   if (!data) {

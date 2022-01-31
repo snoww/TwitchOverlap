@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
 import useSWR from "swr";
-import {fetcher} from "../../utils/helpers";
+import {API, fetcher} from "../../utils/helpers";
 import ChannelSuggestions from "./ChannelSuggestions";
 
 const Search = () => {
@@ -10,7 +10,7 @@ const Search = () => {
   const [filteredChannels, setFilteredChannels] = useState<Array<string>>([]);
   const router = useRouter();
 
-  const {data} = useSWR("https://api.roki.sh/v2/channels/2000",
+  const {data} = useSWR(`${API}/channels/2000`,
     fetcher, {
       revalidateIfStale: false,
       revalidateOnFocus: false,

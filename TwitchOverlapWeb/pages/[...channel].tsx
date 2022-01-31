@@ -10,7 +10,7 @@ import ChannelAggregateTable from "../components/ChannelInfo/ChannelAggregateTab
 import {ParsedUrlQuery} from "querystring";
 import ChannelHeader from "../components/ChannelInfo/ChannelHeader";
 import Sadge from "../components/Images/Sadge";
-import {DefaultLocale} from "../utils/helpers";
+import {API, DefaultLocale} from "../utils/helpers";
 
 export enum AggregateDays {
   Default = 0,
@@ -150,7 +150,7 @@ interface Params extends ParsedUrlQuery {
 export const getServerSideProps = async (context: { params: Params; }) => {
   const params = context.params as Params;
   const channel = params.channel;
-  const request = "https://api.roki.sh/v2/channel/";
+  const request = `${API}/channel/`;
   if (channel === null || channel === undefined) {
     return {
       redirect: {

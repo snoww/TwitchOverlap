@@ -66,5 +66,6 @@ export const RGBLinearShade = (percentage: number, color: string) => {
 
 export const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-
 export const DefaultLocale = "en-US";
+
+export const API = "https://api.roki.sh/v2";
