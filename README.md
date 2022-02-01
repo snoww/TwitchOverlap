@@ -18,7 +18,13 @@ The probability score is calculated by `channel_shared/total_shared`.
 
 Motivation from [Subreddit User-Overlap](https://subredditstats.com/subreddit-user-overlaps).
 
-### Twitch Atlas (Updated to December 2021)
+### Twitch Atlas (Updated to January 2022)
+
+**January 2022**
+
+![january 2022 twitch atlas](https://media.discordapp.net/attachments/220646943498567680/937858925309591592/2022-01-atlas.png?width=1024&height=1024)
+
+**December 2021**
 
 ![december 2021 twitch atlas](https://media.discordapp.net/attachments/220646943498567680/927218161428877393/dec-21.png?width=1024&height=1024)
 

@@ -15,7 +15,7 @@ const Nav = ({version}: { version: string }) => {
         </div>
         <div className="flex-1 flex justify-end">
           <button
-            className="mr-4 dark:text-gray-200 hover:text-pink-500 dark:hover:text-pink-800 focus:outline-none"
+            className="mr-4 hover:text-pink-500 dark:hover:text-pink-800 focus:outline-none"
           >
             <ToggleDark/>
           </button>

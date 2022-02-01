@@ -5,7 +5,7 @@ import {DatasetComponent} from "echarts/components";
 import {CanvasRenderer} from "echarts/renderers";
 import Head from "next/head";
 import useSWR from "swr";
-import {fetcher} from "../../utils/helpers";
+import {AtlasDates, fetcher} from "../../utils/helpers";
 import NavAtlas from "../../components/NavAtlas";
 import Nav from "../../components/Nav";
 import {useTheme} from "next-themes";
@@ -33,8 +33,9 @@ echarts.use([
 ]);
 
 const Atlas = () => {
+  const latestAtlas = AtlasDates[0];
   const {theme} = useTheme();
-  const {data, error} = useSWR("https://d3me8i09xp7mrh.cloudfront.net/dec-21-atlas.json", fetcher, {
+  const {data, error} = useSWR(latestAtlas.json, fetcher, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false
@@ -115,21 +116,21 @@ const Atlas = () => {
   return (
     <>
       <Head>
-        <title>{"Twitch Atlas - December 2021 - Twitch Viewer Overlap"}</title>
+        <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
         <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
         <meta property="og:description"
               content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta name="description"
               content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta property="og:image"
-              content="https://media.discordapp.net/attachments/220646943498567680/927213689864597564/dec-21-trans.png?width=1024&height=1024"/>
+              content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
       </Head>
       <NavAtlas version={"canvas"}/>
       <div className="bg-gray-300 dark:bg-gray-800">
         <ReactEChartsCore echarts={echarts} style={{height: "100vh"}} option={option} notMerge={true}/>
       </div>
       <div className="absolute bottom-0 right-0 flex flex-col m-2">
-        <div>Twitch Atlas December 2021</div>
+        <div>Twitch Atlas {latestAtlas.name}</div>
         <div className="font-mono text-sm ml-auto">stats.roki.sh/atlas</div>
       </div>
     </>
