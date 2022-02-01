@@ -73,7 +73,7 @@ const Nav = () => {
                 <Link href="/atlas">
                   <a className="hover:text-pink-500 dark:hover:text-pink-800 flex items-center">
                     <i className="fas fa-lg fa-project-diagram mr-4"/>
-                    <div>Altas</div>
+                    <div>Atlas</div>
                   </a>
                 </Link>
               </li>
