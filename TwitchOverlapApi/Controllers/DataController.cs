@@ -184,7 +184,7 @@ namespace TwitchOverlapApi.Controllers
                 {
                     return NotFound($"no aggregate data available for {name}");
                 }
-                await _cache.StringSetAsync(ApiChannelInfoCacheKey + cacheKey, JsonSerializer.Serialize(channel, SerializerOptions), DateTime.UtcNow.GetDailyCacheDuration());
+                await _cache.StringSetAsync(ApiChannelInfoCacheKey + cacheKey, JsonSerializer.Serialize(channel, SerializerOptions), DateTime.UtcNow.GetCacheDuration());
             }
             
             if (!string.IsNullOrEmpty(cachedChannelData))
