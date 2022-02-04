@@ -19,9 +19,10 @@ namespace TwitchOverlapApi.Controllers
         private readonly TwitchContext _context;
         private readonly IDatabase _cache;
 
-        private const string ApiIndexCacheKey = "api:v2:twitch:index";
-        private const string ApiChannelCacheKey = "api:v2:twitch:channel";
-        private const string ApiChannelsCacheKey = "api:v2:twitch:channels";
+        private const string ApiIndexCacheKey = "api:v2:twitch:index:";
+        private const string ApiChannelCacheKey = "api:v2:twitch:channel:";
+        private const string ApiChannelInfoCacheKey = "api:v2:twitch:channelinfo:";
+        private const string ApiChannelsCacheKey = "api:v2:twitch:channels:";
         private const string ApiChannelHistoryCacheKey = "api:v2:twitch:history:";
         
         private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -29,7 +30,7 @@ namespace TwitchOverlapApi.Controllers
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        
+
         public DataController(TwitchContext context, IRedisCache cache)
         {
             _context = context;
@@ -90,6 +91,8 @@ namespace TwitchOverlapApi.Controllers
             {
                 return NotFound($"no data for {name}");
             }
+
+            await _cache.StringSetAsync(ApiChannelInfoCacheKey + name, JsonSerializer.Serialize(channel, SerializerOptions), DateTime.UtcNow.GetCacheDuration());
 
             List<Overlap> overlaps = await _context.Overlaps.AsNoTracking()
                 .Where(x => x.Channel == channel.Id)
@@ -166,18 +169,34 @@ namespace TwitchOverlapApi.Controllers
 
             name = name.ToLowerInvariant();
             string cacheKey = name + days;
+            string cachedChannelInfo = await _cache.StringGetAsync(ApiChannelInfoCacheKey + cacheKey);
             string cachedChannelData = await _cache.StringGetAsync(ApiChannelCacheKey + cacheKey);
+
+            Channel channel;
+            if (!string.IsNullOrEmpty(cachedChannelInfo))
+            {
+                channel = JsonSerializer.Deserialize<Channel>(cachedChannelInfo, SerializerOptions);
+            }
+            else
+            {
+                channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.LoginName == name);
+                if (channel == null)
+                {
+                    return NotFound($"no aggregate data available for {name}");
+                }
+                await _cache.StringSetAsync(ApiChannelInfoCacheKey + cacheKey, JsonSerializer.Serialize(channel, SerializerOptions), DateTime.UtcNow.GetDailyCacheDuration());
+            }
+            
             if (!string.IsNullOrEmpty(cachedChannelData))
             {
-                return Ok(cachedChannelData);
+                var channelAggregateData = JsonSerializer.Deserialize<ChannelAggregateData>(cachedChannelData, SerializerOptions);
+                if (channelAggregateData != null)
+                {
+                    channelAggregateData.Channel = channel;
+                    return Ok(channelAggregateData);
+                }
             }
-
-            Channel channel = await _context.Channels.AsNoTracking().SingleOrDefaultAsync(x => x.LoginName == name);
-            if (channel == null)
-            {
-                return NotFound($"no aggregate data available for {name}");
-            }
-
+            
             List<OverlapAggregate> overlaps;
             AggregateDays type;
             switch (days)
