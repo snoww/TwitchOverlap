@@ -78,13 +78,13 @@ export const AtlasDates = [
     json: `${CDN}2022-01-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
     imageFallback: `${CDN}2021-12-atlas.png`,
-    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/927218161428877393/dec-21.png"
+    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
   },
   {
     name: "December 2021",
     json: `${CDN}2021-12-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/927213689864597564/dec-21-trans.png",
     imageFallback: `${CDN}2021-12-atlas.png`,
-    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
+    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/927218161428877393/dec-21.png"
   },
 ];

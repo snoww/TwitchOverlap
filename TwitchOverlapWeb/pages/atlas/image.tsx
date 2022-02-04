@@ -6,17 +6,22 @@ import {AtlasDates} from "../../utils/helpers";
 
 const AtlasImage = () => {
   const latestAtlas = AtlasDates[0];
-
+  // todo: allow user to change to past atlas
   return (
     <>
       <Head>
         <title>{`Twitch Atlas (Image) - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
         <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
+        <meta property="twitter:title" content="Twitch Atlas - Twitch Community Map"/>
         <meta property="og:description"
               content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta name="description"
               content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
+        <meta name="twitter:description"
+              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
         <meta property="og:image"
+              content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
+        <meta property="twitter:image"
               content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
       </Head>
       <NavAtlas version={"image"}/>
