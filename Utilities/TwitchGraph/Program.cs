@@ -18,7 +18,7 @@ namespace TwitchGraph
         private static string _twitchClient;
 
         private const int MinOverlap = 10000;
-        private const int MaxChannels = 1500;
+        private const int MaxChannels = 2000;
 
         public static async Task Main()
         {
@@ -35,17 +35,17 @@ namespace TwitchGraph
             var sw = new Stopwatch();
             sw.Start();
             
-            var files = Directory.GetFiles("/Users/snow/Documents/projects/twitch-graph-data", "*.json");
-            var agg = new AggregateDays();
-            var (channelOverlap, channelUniqueChatters) = await agg.Aggregate(files);
-            
-            Console.WriteLine($"aggregate took {sw.Elapsed.TotalSeconds}s");
-            
-            await File.WriteAllBytesAsync(filename + "channelOverlap.json", JsonSerializer.SerializeToUtf8Bytes(channelOverlap));
-            await File.WriteAllBytesAsync(filename + "channelUnique.json", JsonSerializer.SerializeToUtf8Bytes(channelUniqueChatters));
+            // var files = Directory.GetFiles("/Users/snow/Documents/projects/twitch-graph-data", "*.json");
+            // var agg = new AggregateDays();
+            // var (channelOverlap, channelUniqueChatters) = await agg.Aggregate(files);
+            //
+            // Console.WriteLine($"aggregate took {sw.Elapsed.TotalSeconds}s");
+            //
+            // await File.WriteAllBytesAsync(filename + "channelOverlap.json", JsonSerializer.SerializeToUtf8Bytes(channelOverlap));
+            // await File.WriteAllBytesAsync(filename + "channelUnique.json", JsonSerializer.SerializeToUtf8Bytes(channelUniqueChatters));
 
-            // var channelOverlap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(await File.ReadAllTextAsync("channelOverlap.json"));
-            // var channelUniqueChatters = JsonSerializer.Deserialize<Dictionary<string, int>>(await File.ReadAllTextAsync("channelUnique.json"));
+            var channelOverlap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(await File.ReadAllTextAsync(filename + "channelOverlap.json"));
+            var channelUniqueChatters = JsonSerializer.Deserialize<Dictionary<string, int>>(await File.ReadAllTextAsync(filename + "channelUnique.json"));
             // Debug.Assert(channelUniqueChatters != null, nameof(channelUniqueChatters) + " != null");
             // Debug.Assert(channelOverlap != null, nameof(channelOverlap) + " != null");
             
@@ -57,10 +57,10 @@ namespace TwitchGraph
                     continue;
                 }
 
-                if (!channelOverlap[channel].OrderByDescending(x => x.Value).Any(x => x.Value > MinOverlap))
-                {
-                    continue;
-                }
+                // if (!channelOverlap[channel].OrderByDescending(x => x.Value).Any(x => x.Value > MinOverlap))
+                // {
+                //     continue;
+                // }
 
                 nodeSet.Add(channel);
             }
@@ -71,6 +71,8 @@ namespace TwitchGraph
             await nodeStream.WriteLineAsync("id,label,size");
             await using StreamWriter edgeStream = File.CreateText(filename + "edges.csv");
             await edgeStream.WriteLineAsync("source,target,weight");
+
+            var written = new HashSet<string>();
             
             foreach (var channel in nodeSet)
             {
@@ -82,10 +84,21 @@ namespace TwitchGraph
                     }
 
                     await edgeStream.WriteLineAsync($"{channel},{ch},{overlap}");
-                }
 
-                var displayName = displayNameMap.ContainsKey(channel) ? displayNameMap[channel] : channel;
-                await nodeStream.WriteLineAsync($"{channel},{displayName},{channelUniqueChatters[channel]}");
+                    if (!written.Contains(channel))
+                    {
+                        written.Add(channel);
+                        var displayName = displayNameMap.ContainsKey(channel) ? displayNameMap[channel] : channel;
+                        await nodeStream.WriteLineAsync($"{channel},{displayName},{channelUniqueChatters[channel]}");
+                    }
+                    
+                    if (!written.Contains(ch))
+                    {
+                        written.Add(ch);
+                        var displayName = displayNameMap.ContainsKey(ch) ? displayNameMap[ch] : ch;
+                        await nodeStream.WriteLineAsync($"{ch},{displayName},{channelUniqueChatters[ch]}");
+                    }
+                }
             }
         }
 

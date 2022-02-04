@@ -111,16 +111,6 @@ public class AggregateDays
                     channelOverlap[pair[0]].TryGetValue(pair[1], out var count);
                     channelOverlap[pair[0]][pair[1]] = count + 1;
                 }
-
-                if (!channelOverlap.ContainsKey(pair[1]))
-                {
-                    channelOverlap.TryAdd(pair[1], new ConcurrentDictionary<string, int> { [pair[0]] = 1 });
-                }
-                else
-                {
-                    channelOverlap[pair[1]].TryGetValue(pair[0], out var count);
-                    channelOverlap[pair[1]][pair[0]] = count + 1;
-                }
             }
         });
 
