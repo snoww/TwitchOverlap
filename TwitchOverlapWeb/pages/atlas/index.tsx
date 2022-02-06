@@ -6,9 +6,10 @@ import {CanvasRenderer} from "echarts/renderers";
 import Head from "next/head";
 import useSWR from "swr";
 import {AtlasDates, fetcher} from "../../utils/helpers";
-import NavAtlas from "../../components/NavAtlas";
+import NavAtlas from "../../components/Atlas/NavAtlas";
 import Nav from "../../components/Nav";
 import {useTheme} from "next-themes";
+import AtlasMeta from "../../components/Atlas/AtlasMeta";
 
 type Node = {
   id: string,
@@ -46,18 +47,7 @@ const Atlas = () => {
       <>
         <Head>
           <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
-          <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
-          <meta property="twitter:title" content="Twitch Atlas - Twitch Community Map"/>
-          <meta property="og:description"
-                content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-          <meta name="description"
-                content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-          <meta name="twitter:description"
-                content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-          <meta property="og:image"
-                content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
-          <meta property="twitter:image"
-                content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
+          <AtlasMeta thumbnail={latestAtlas.thumbnail}/>
         </Head>
         <Nav/>
         <div className="text-center mt-24">Atlas Error :/</div>
@@ -71,18 +61,7 @@ const Atlas = () => {
       <>
         <Head>
           <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
-          <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
-          <meta property="twitter:title" content="Twitch Atlas - Twitch Community Map"/>
-          <meta property="og:description"
-                content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-          <meta name="description"
-                content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-          <meta name="twitter:description"
-                content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-          <meta property="og:image"
-                content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
-          <meta property="twitter:image"
-                content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
+          <AtlasMeta thumbnail={latestAtlas.thumbnail}/>
         </Head>
         <NavAtlas version={"canvas"}/>
         <ReactEChartsCore echarts={echarts} className={"mt-4"} style={{width: "100%", height: "100vh"}}
@@ -152,18 +131,7 @@ const Atlas = () => {
     <>
       <Head>
         <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
-        <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
-        <meta property="twitter:title" content="Twitch Atlas - Twitch Community Map"/>
-        <meta property="og:description"
-              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-        <meta name="description"
-              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-        <meta name="twitter:description"
-              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-        <meta property="og:image"
-              content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
-        <meta property="twitter:image"
-              content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
+        <AtlasMeta thumbnail={latestAtlas.thumbnail}/>
       </Head>
       <NavAtlas version={"canvas"}/>
       <div className="bg-gray-300 dark:bg-gray-800">

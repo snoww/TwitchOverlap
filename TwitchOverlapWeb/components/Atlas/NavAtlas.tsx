@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ToggleDark from "./ToggleDark";
+import ToggleDark from "../ToggleDark";
 
 const Nav = ({version}: { version: string }) => {
   return (

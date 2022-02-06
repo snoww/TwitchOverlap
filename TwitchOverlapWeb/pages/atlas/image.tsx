@@ -1,8 +1,9 @@
-import NavAtlas from "../../components/NavAtlas";
+import NavAtlas from "../../components/Atlas/NavAtlas";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import Head from "next/head";
 import ImageFallback from "../../components/ImageFallback";
 import {AtlasDates} from "../../utils/helpers";
+import AtlasMeta from "../../components/Atlas/AtlasMeta";
 
 const AtlasImage = () => {
   const latestAtlas = AtlasDates[0];
@@ -11,18 +12,7 @@ const AtlasImage = () => {
     <>
       <Head>
         <title>{`Twitch Atlas (Image) - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
-        <meta property="og:title" content="Twitch Atlas - Twitch Community Map"/>
-        <meta property="twitter:title" content="Twitch Atlas - Twitch Community Map"/>
-        <meta property="og:description"
-              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-        <meta name="description"
-              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-        <meta name="twitter:description"
-              content="Twitch Atlas. Map of the different communities across Twitch. A network graph showing the overlap in communities of the top channels on Twitch. The site is open source on GitHub."/>
-        <meta property="og:image"
-              content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
-        <meta property="twitter:image"
-              content={`${latestAtlas.thumbnail}?width=1024&height=1024`}/>
+        <AtlasMeta thumbnail={latestAtlas.thumbnail}/>
       </Head>
       <NavAtlas version={"image"}/>
       <div className="overflow-hidden h-screen w-screen bg-gray-300 dark:bg-gray-800">
