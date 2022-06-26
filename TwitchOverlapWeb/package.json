@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^1.4.3",
     "@tailwindcss/forms": "^0.4.0",
     "echarts": "^5.2.2",
     "echarts-for-react": "^3.0.2",

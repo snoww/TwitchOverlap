@@ -1,7 +1,8 @@
 import Link from "next/link";
-import ToggleDark from "./ToggleDark";
+import ToggleDark from "../ToggleDark";
 import {useRef, useState} from "react";
-import Search from "./Search/Search";
+import Search from "../Search/Search";
+import NavDropdown from "./NavDropdown";
 
 const Nav = () => {
   const [showDropdown, setShowShowDropdown] = useState(false);

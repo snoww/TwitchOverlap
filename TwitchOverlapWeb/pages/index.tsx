@@ -1,5 +1,5 @@
 import Head from "next/head";
-import Nav from "../components/Nav";
+import Nav from "../components/Nav/Nav";
 import ChannelCard, {IndexChannelData} from "../components/ChannelInfo/ChannelCard";
 import {DateTime} from "luxon";
 import {API, getTimeDiff} from "../utils/helpers";

@@ -7,7 +7,7 @@ import Head from "next/head";
 import useSWR from "swr";
 import {AtlasDates, fetcher} from "../../utils/helpers";
 import NavAtlas from "../../components/Atlas/NavAtlas";
-import Nav from "../../components/Nav";
+import Nav from "../../components/Nav/Nav";
 import {useTheme} from "next-themes";
 import AtlasMeta from "../../components/Atlas/AtlasMeta";
 
