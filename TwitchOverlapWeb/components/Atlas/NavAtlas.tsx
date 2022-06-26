@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ToggleDark from "../ToggleDark";
+import NavAtlasDropdown from "./NavAtlasDropdown";
 
 const Nav = ({version}: { version: string }) => {
   return (

@@ -4,6 +4,7 @@ import Head from "next/head";
 import ImageFallback from "../../components/ImageFallback";
 import {AtlasDates} from "../../utils/helpers";
 import AtlasMeta from "../../components/Atlas/AtlasMeta";
+import NavAtlasFooter from "../../components/Atlas/NavAtlasFooter";
 
 const AtlasImage = () => {
   const latestAtlas = AtlasDates[0];
@@ -25,10 +26,7 @@ const AtlasImage = () => {
           </TransformComponent>
         </TransformWrapper>
       </div>
-      <div className="absolute bottom-0 right-0 flex flex-col m-2">
-        <div>Twitch Atlas {latestAtlas.name}</div>
-        <div className="font-mono text-sm ml-auto">stats.roki.sh/atlas</div>
-      </div>
+      <NavAtlasFooter name={latestAtlas.name}/>
     </>
   );
 };

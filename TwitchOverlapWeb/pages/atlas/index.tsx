@@ -10,6 +10,7 @@ import NavAtlas from "../../components/Atlas/NavAtlas";
 import Nav from "../../components/Nav/Nav";
 import {useTheme} from "next-themes";
 import AtlasMeta from "../../components/Atlas/AtlasMeta";
+import NavAtlasFooter from "../../components/Atlas/NavAtlasFooter";
 
 type Node = {
   id: string,
@@ -137,10 +138,7 @@ const Atlas = () => {
       <div className="bg-gray-300 dark:bg-gray-800">
         <ReactEChartsCore echarts={echarts} style={{height: "100vh"}} option={option} notMerge={true}/>
       </div>
-      <div className="absolute bottom-0 right-0 flex flex-col m-2">
-        <div>Twitch Atlas {latestAtlas.name}</div>
-        <div className="font-mono text-sm ml-auto">stats.roki.sh/atlas</div>
-      </div>
+      <NavAtlasFooter name={latestAtlas.name}/>
     </>
   );
 };
