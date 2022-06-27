@@ -33,6 +33,10 @@ export function getTimeDiff(start: DateTime): string {
   return lastUpdated;
 }
 
+export function isASCII(str: string) {
+  return /^[\x00-\x7F]*$/.test(str);
+}
+
 export function getDateDiff(start: DateTime): string {
   let lastUpdated: string;
 

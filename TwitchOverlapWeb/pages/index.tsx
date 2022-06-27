@@ -40,7 +40,7 @@ export default function Home({channels, lastUpdate}: HomeProps) {
         <div
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-4 mx-2 sm:mx-4">
           {channels.map(x =>
-            <ChannelCard key={x.id} id={x.id} avatar={x.avatar} displayName={x.displayName} chatters={x.chatters}/>
+            <ChannelCard key={x.id} id={x.id} avatar={x.avatar} displayName={x.displayName} username={x.id} chatters={x.chatters}/>
           )}
         </div>
       </div>

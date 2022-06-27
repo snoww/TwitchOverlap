@@ -1,8 +1,13 @@
 import ImageFallback from "../ImageFallback";
 import Link from "next/link";
 import {AggregateDays, ChannelStats} from "../../pages/[...channel]";
+import {isASCII} from "../../utils/helpers";
 
 const ChannelHeader = ({channel, type}: {channel: ChannelStats, type: AggregateDays}) => {
+  let channelName = channel.displayName;
+  if (!isASCII(channelName)) {
+    channelName = `${channel.displayName} (${channel.loginName})`;
+  }
   return (
     <>
       <div className="block md:flex justify-between">
@@ -20,7 +25,7 @@ const ChannelHeader = ({channel, type}: {channel: ChannelStats, type: AggregateD
           <div className="pl-3 flex flex-col">
             <a className="text-2xl hover:underline hover:text-pink-500"
                href={`https://www.twitch.tv/${channel.loginName}`} target="_blank"
-               rel="noopener noreferrer">{channel.displayName}</a>
+               rel="noopener noreferrer">{channelName}</a>
             <a className="hover:underline hover:text-pink-500"
                href={`https://www.twitch.tv/directory/game/${channel.game}`} target="_blank"
                rel="noopener noreferrer">{channel.game}</a>
