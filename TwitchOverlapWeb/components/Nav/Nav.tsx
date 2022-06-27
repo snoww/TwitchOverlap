@@ -40,16 +40,22 @@ const Nav = () => {
           <div className="pl-8 hidden lg:flex xl:hidden items-center font-medium">
             <Link href="/atlas">
               <a
-                className="whitespace-nowrap text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 text-xl tracking-tighter">
-                Atlas
+                className="whitespace-nowrap text-base no-underline hover:no-underline text-xl tracking-tighter">
+                <div className={"inline-flex text-center items-center"}>
+                  <div className={"hover:text-pink-500 dark:hover:text-pink-800"}>Atlas</div>
+                  <div className={"text-xs rounded bg-gray-600 p-1 ml-1"}>May</div>
+                </div>
               </a>
             </Link>
           </div>
           <div className="pl-8 hidden xl:flex items-center font-medium">
             <Link href="/atlas">
               <a
-                className="whitespace-nowrap text-base no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800 text-xl tracking-tighter">
-                Twitch Atlas
+                className="whitespace-nowrap text-base no-underline hover:no-underline text-xl tracking-tighter">
+                <div className={"inline-flex text-center items-center"}>
+                  <div className={"hover:text-pink-500 dark:hover:text-pink-800"}>Twitch Atlas</div>
+                  <div className={"text-sm rounded bg-gray-600 p-1 ml-1"}>May 2022</div>
+                </div>
               </a>
             </Link>
           </div>

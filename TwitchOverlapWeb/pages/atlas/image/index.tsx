@@ -8,7 +8,6 @@ import NavAtlasFooter from "../../../components/Atlas/NavAtlasFooter";
 
 const AtlasImage = () => {
   const latestAtlas = AtlasDates[AtlasDates.length - 1];
-  // todo: allow user to change to past atlas
   return (
     <>
       <Head>
