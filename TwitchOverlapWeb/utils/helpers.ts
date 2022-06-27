@@ -88,52 +88,43 @@ export const AtlasDates = [
     path: "jan22",
     json: `${CDN}2022-01-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
-    imageFallback: `${CDN}2021-12-atlas.png`,
+    imageFallback: `${CDN}2022-01-atlas.png`,
     thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
   },
   {
     name: "February 2022",
     shortName: "Feb. 2021",
     path: "feb22",
-    json: `${CDN}2022-01-atlas.json`,
-    image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
-    imageFallback: `${CDN}2021-12-atlas.png`,
-    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
+    json: `${CDN}2022-02-atlas.json`,
+    image: "https://cdn.discordapp.com/attachments/220646943498567680/990852271338303488/2022-02-atlas-trans.png",
+    imageFallback: `${CDN}2022-02-atlas-trans.png`,
+    thumbnail: "https://cdn.discordapp.com/attachments/220646943498567680/990852272378486814/2022-02-atlas.png"
   },
   {
     name: "March 2022",
     shortName: "Mar. 2021",
     path: "mar22",
-    json: `${CDN}2022-01-atlas.json`,
-    image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
-    imageFallback: `${CDN}2021-12-atlas.png`,
-    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
+    json: `${CDN}2022-03-atlas.json`,
+    image: "https://cdn.discordapp.com/attachments/220646943498567680/990852330868064256/2022-03-atlas-trans.png",
+    imageFallback: `${CDN}2022-03-atlas-trans.png`,
+    thumbnail: "https://cdn.discordapp.com/attachments/220646943498567680/990852329731412048/2022-03-atlas.png"
   },
   {
     name: "April 2022",
     shortName: "Apr. 2021",
     path: "apr22",
-    json: `${CDN}2022-01-atlas.json`,
-    image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
-    imageFallback: `${CDN}2021-12-atlas.png`,
-    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
+    json: `${CDN}2022-04-atlas.json`,
+    image: "https://cdn.discordapp.com/attachments/220646943498567680/990853612605440021/2022-04-atlas-trans.png",
+    imageFallback: `${CDN}2022-04-atlas-trans.png`,
+    thumbnail: "https://cdn.discordapp.com/attachments/220646943498567680/990852306490757140/2022-04-atlas.png"
   },
   {
     name: "May 2022",
     shortName: "May 2021",
     path: "may22",
-    json: `${CDN}2022-01-atlas.json`,
-    image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
-    imageFallback: `${CDN}2021-12-atlas.png`,
-    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
-  },
-  {
-    name: "September 2022",
-    shortName: "Sept. 2021",
-    path: "sept22",
-    json: `${CDN}2022-01-atlas.json`,
-    image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
-    imageFallback: `${CDN}2021-12-atlas.png`,
-    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
+    json: `${CDN}2022-05-atlas.json`,
+    image: "https://cdn.discordapp.com/attachments/220646943498567680/990852345787187210/2022-05-atlas-trans.png",
+    imageFallback: `${CDN}2022-05-atlas-trans.png`,
+    thumbnail: "https://cdn.discordapp.com/attachments/220646943498567680/990852344851865640/2022-05-atlas.png"
   },
 ];

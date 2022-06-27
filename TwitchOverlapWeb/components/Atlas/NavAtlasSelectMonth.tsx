@@ -15,18 +15,18 @@ const NavAtlasSelectMonth = ({index}: {index: number}) => {
       >
         <Listbox.Options className={"ml-auto mb-1 py-1 text-right bg-gray-400 dark:bg-gray-600 rounded-lg shadow w-40"}>
           {AtlasDates.map((month) => (
-            <Listbox.Option
-              key={month.name}
-              value={month}
-              className={({ active }) =>
-                `cursor-default select-none py-1 px-4 ${
-                  active ? "bg-pink-500 dark:bg-pink-800" : ""
-                }`}
-            >
-              <a href={`/atlas/${month.path}`}>
+            <a href={`/atlas/${month.path}`} key={month.name} className={"cursor-pointer select-none"}>
+              <Listbox.Option
+                key={month.name}
+                value={month}
+                className={({ active }) =>
+                  `py-1 px-4 ${
+                    active ? "bg-pink-500 dark:bg-pink-800" : ""
+                  }`}
+              >
                 {month.name}
-              </a>
-            </Listbox.Option>
+              </Listbox.Option>
+            </a>
           ))}
         </Listbox.Options>
       </Transition>

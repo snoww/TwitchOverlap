@@ -1,7 +1,7 @@
 import Link from "next/link";
 import ToggleDark from "../ToggleDark";
 
-const Nav = ({version}: { version: string }) => {
+const Nav = ({version, enableSwitch = true}: { version: string , enableSwitch: boolean}) => {
   return (
     <nav className="fixed top-0 w-full z-50 top-0">
       <div className="w-full mx-auto flex flex-nowrap items-center justify-between py-2 tracking-tight">
@@ -25,17 +25,20 @@ const Nav = ({version}: { version: string }) => {
         </div>
       </div>
       <div className="mx-4 -mt-1 whitespace-nowrap text-base tracking-tighter truncate">
-          {version === "canvas"
-            ? <Link href="/atlas/image">
-              <a className="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800">
-                Click here for Image Version (better performance)
-              </a>
-            </Link>
-            : <Link href="/atlas">
-              <a className="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800">
-                Click here for Graph Version (better clarity)
-              </a>
-            </Link>}
+          {enableSwitch ?
+            version === "canvas"
+              ? <Link href="/atlas/image">
+                <a className="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800">
+                  Click here for Image Version (better performance)
+                </a>
+              </Link>
+              : <Link href="/atlas">
+                <a className="no-underline hover:no-underline hover:text-pink-500 dark:hover:text-pink-800">
+                  Click here for Graph Version (better clarity)
+                </a>
+              </Link>
+            : ""
+          }
       </div>
     </nav>
   );

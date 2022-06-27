@@ -64,7 +64,7 @@ const Atlas = () => {
           <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
           <AtlasMeta thumbnail={latestAtlas.thumbnail} month={latestAtlas.name}/>
         </Head>
-        <NavAtlas version={"canvas"}/>
+        <NavAtlas version={"canvas"} enableSwitch/>
         <ReactEChartsCore echarts={echarts} className={"mt-4"} style={{width: "100%", height: "100vh"}}
                            showLoading={true}
                            loadingOption={{textColor: "#fff", maskColor: "rgba(255, 255, 255, 0)"}}
@@ -134,7 +134,7 @@ const Atlas = () => {
         <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
         <AtlasMeta thumbnail={latestAtlas.thumbnail} month={latestAtlas.name}/>
       </Head>
-      <NavAtlas version={"canvas"}/>
+      <NavAtlas version={"canvas"} enableSwitch/>
       <div className="bg-gray-300 dark:bg-gray-800">
         <ReactEChartsCore echarts={echarts} style={{height: "100vh"}} option={option} notMerge={true}/>
       </div>
