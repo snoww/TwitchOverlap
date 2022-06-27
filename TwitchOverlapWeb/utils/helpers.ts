@@ -76,6 +76,7 @@ export const AtlasDates = [
   {
     name: "December 2021",
     shortName: "Dec. 2021",
+    path: "dec21",
     json: `${CDN}2021-12-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/927213689864597564/dec-21-trans.png",
     imageFallback: `${CDN}2021-12-atlas.png`,
@@ -83,7 +84,8 @@ export const AtlasDates = [
   },
   {
     name: "January 2022",
-    shortName: "Jan. 2021",
+    shortName: "Jan. 2022",
+    path: "jan22",
     json: `${CDN}2022-01-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
     imageFallback: `${CDN}2021-12-atlas.png`,
@@ -92,6 +94,7 @@ export const AtlasDates = [
   {
     name: "February 2022",
     shortName: "Feb. 2021",
+    path: "feb22",
     json: `${CDN}2022-01-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
     imageFallback: `${CDN}2021-12-atlas.png`,
@@ -100,6 +103,7 @@ export const AtlasDates = [
   {
     name: "March 2022",
     shortName: "Mar. 2021",
+    path: "mar22",
     json: `${CDN}2022-01-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
     imageFallback: `${CDN}2021-12-atlas.png`,
@@ -108,6 +112,16 @@ export const AtlasDates = [
   {
     name: "April 2022",
     shortName: "Apr. 2021",
+    path: "apr22",
+    json: `${CDN}2022-01-atlas.json`,
+    image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
+    imageFallback: `${CDN}2021-12-atlas.png`,
+    thumbnail: "https://media.discordapp.net/attachments/220646943498567680/937858525361766460/2022-01-atlas.png"
+  },
+  {
+    name: "May 2022",
+    shortName: "May 2021",
+    path: "may22",
     json: `${CDN}2022-01-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
     imageFallback: `${CDN}2021-12-atlas.png`,
@@ -116,6 +130,7 @@ export const AtlasDates = [
   {
     name: "September 2022",
     shortName: "Sept. 2021",
+    path: "sept22",
     json: `${CDN}2022-01-atlas.json`,
     image: "https://cdn.discordapp.com/attachments/220646943498567680/937858525361766460/2022-01-atlas.png",
     imageFallback: `${CDN}2021-12-atlas.png`,

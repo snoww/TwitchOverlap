@@ -35,7 +35,7 @@ echarts.use([
 ]);
 
 const Atlas = () => {
-  const latestAtlas = AtlasDates[0];
+  const latestAtlas = AtlasDates[AtlasDates.length - 1];
   const {theme} = useTheme();
   const {data, error} = useSWR(latestAtlas.json, fetcher, {
     revalidateIfStale: false,
@@ -48,7 +48,7 @@ const Atlas = () => {
       <>
         <Head>
           <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
-          <AtlasMeta thumbnail={latestAtlas.thumbnail}/>
+          <AtlasMeta thumbnail={latestAtlas.thumbnail} month={latestAtlas.name}/>
         </Head>
         <Nav/>
         <div className="text-center mt-24">Atlas Error :/</div>
@@ -62,7 +62,7 @@ const Atlas = () => {
       <>
         <Head>
           <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
-          <AtlasMeta thumbnail={latestAtlas.thumbnail}/>
+          <AtlasMeta thumbnail={latestAtlas.thumbnail} month={latestAtlas.name}/>
         </Head>
         <NavAtlas version={"canvas"}/>
         <ReactEChartsCore echarts={echarts} className={"mt-4"} style={{width: "100%", height: "100vh"}}
@@ -132,13 +132,13 @@ const Atlas = () => {
     <>
       <Head>
         <title>{`Twitch Atlas - ${latestAtlas.name} - Twitch Viewer Overlap`}</title>
-        <AtlasMeta thumbnail={latestAtlas.thumbnail}/>
+        <AtlasMeta thumbnail={latestAtlas.thumbnail} month={latestAtlas.name}/>
       </Head>
       <NavAtlas version={"canvas"}/>
       <div className="bg-gray-300 dark:bg-gray-800">
         <ReactEChartsCore echarts={echarts} style={{height: "100vh"}} option={option} notMerge={true}/>
       </div>
-      <NavAtlasFooter name={latestAtlas.name}/>
+      <NavAtlasFooter name={latestAtlas.name} index={-1}/>
     </>
   );
 };
