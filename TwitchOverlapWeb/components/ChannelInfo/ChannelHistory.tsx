@@ -107,7 +107,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
   const legendData = data.channels.slice(1).sort();
   const option = {
     textStyle: {
-      fontFamily: "Inter",
+      fontFamily: "sans-serif",
       color: "#fff"
     },
     legend: {
@@ -193,7 +193,7 @@ const ChannelHistory = ({channel, type}: ChannelHistory) => {
 
   if (theme !== "dark") {
     option.textStyle = {
-      fontFamily: "Inter",
+      fontFamily: "sans-serif",
       color: "#000"
     };
     option.legend = {
