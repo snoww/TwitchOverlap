@@ -117,7 +117,7 @@ const Atlas = () => {
         label: {
           show: true,
           color: "#fafafa",
-          fontFamily: "sans-serif"
+          fontFamily: "Inter"
         },
         silent: true
       }
