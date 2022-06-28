@@ -6,4 +6,5 @@ module.exports = withTM({
   images: {
     domains: ["static-cdn.jtvnw.net", "i.imgur.com", "cdn.frankerfacez.com"],
   },
+  optimizeFonts: false
 });
