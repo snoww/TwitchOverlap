@@ -74,7 +74,7 @@ export const DefaultLocale = "en-US";
 
 export const API = "https://api.roki.sh/v2";
 
-export const CDN = "https://d7d8uit9j3127.cloudfront.net/";
+export const CDN = "https://twitchoverlap.s3.us-east-005.backblazeb2.com/";
 
 export const AtlasDates = [
   {
